@@ -1,5 +1,3 @@
-<!-- src/lib/components/SettingsModal.svelte -->
-
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
@@ -8,13 +6,6 @@
 	import { authStore } from '$lib/stores/authStore';
 
 	export let isOpen: boolean = false;
-
-	// Theme options for the dropdown
-	const themes = [
-		{ value: 'light', label: 'Kawaii Light' },
-		{ value: 'lain', label: 'Cyberpunk Lain' },
-		{ value: 'forest', label: 'Forest Spirit' }
-	];
 
 	const dispatch = createEventDispatcher();
 	function closeModal() {
@@ -46,7 +37,7 @@
 		class="fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2"
 	>
 		<div
-			class="relative flex flex-col gap-4 rounded-lg border border-foreground/10 bg-background p-6 shadow-xl"
+			class="relative flex flex-col gap-4 rounded-xl border border-border bg-muted p-6 shadow-2xl"
 		>
 			<!-- Header -->
 			<div>
@@ -56,31 +47,14 @@
 
 			<!-- Settings Sections -->
 			<div class="flex flex-col gap-6 pt-2">
-				<!-- Theme Section -->
-				<div class="flex flex-col gap-2">
-					<label for="theme-select" class="text-sm font-semibold">Appearance</label>
-					<p class="text-xs text-muted-foreground -mt-1 mb-1">
-						Choose a theme that suits your style.
-					</p>
-					<select
-						id="theme-select"
-						bind:value={$settingsStore.theme}
-						class="w-full rounded-md border border-foreground/20 bg-background/50 p-2 focus:outline-none focus:ring-2 focus:ring-primary"
-					>
-						{#each themes as theme}
-							<option value={theme.value}>{theme.label}</option>
-						{/each}
-					</select>
-				</div>
-
 				<!-- Display Section -->
 				<div class="flex flex-col gap-2">
-					<h3 class="text-sm font-semibold">Display</h3>
+					<h3 class="text-sm font-semibold text-foreground/80">Display</h3>
 					<label
-						class="flex cursor-pointer items-center justify-between rounded-md border border-foreground/10 bg-muted/30 p-3"
+						class="flex cursor-pointer items-center justify-between rounded-lg border border-border bg-background p-3 transition-colors hover:bg-background/50"
 					>
 						<div>
-							<p class="font-medium">Show File Previews</p>
+							<p class="font-medium text-foreground">Show File Previews</p>
 							<p class="text-xs text-muted-foreground">Display previews for images and videos.</p>
 						</div>
 						<input
@@ -92,11 +66,11 @@
 				</div>
 
 				<!-- Account Section -->
-				<div class="flex flex-col gap-2 border-t border-foreground/10 pt-6">
-					<h3 class="text-sm font-semibold">Account</h3>
+				<div class="flex flex-col gap-4 border-t border-border pt-6">
+					<h3 class="text-sm font-semibold text-foreground/80">Account</h3>
 					<button
 						on:click={handleLogout}
-						class="flex w-full items-center justify-center gap-2 rounded-md bg-red-500/10 py-2 text-red-500 transition-colors hover:bg-red-500/20"
+						class="flex w-full items-center justify-center gap-2 rounded-md bg-danger/10 py-2 font-semibold text-danger transition-colors hover:bg-danger/20"
 					>
 						<LogOut class="h-4 w-4" />
 						Logout
@@ -113,7 +87,7 @@
 		position: relative;
 		width: 38px;
 		height: 22px;
-		border-radius: 9999px;
+		border-radius: var(--radius-full);
 		background-color: hsl(var(--muted));
 		transition: background-color 0.2s ease;
 		flex-shrink: 0;
@@ -125,7 +99,7 @@
 		left: 3px;
 		width: 16px;
 		height: 16px;
-		border-radius: 9999px;
+		border-radius: var(--radius-full);
 		background-color: white;
 		transition: transform 0.2s ease;
 	}

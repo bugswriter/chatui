@@ -1,5 +1,3 @@
-// src/lib/utils.ts
-
 /**
  * Converts a file size in bytes to a human-readable string (KB, MB, GB).
  * @param bytes The file size in bytes.

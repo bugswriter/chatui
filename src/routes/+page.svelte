@@ -1,4 +1,3 @@
-<!-- src/routes/+page.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/authStore';
@@ -16,12 +15,12 @@
 	let reattachedFiles: Attachment[] = [];
 
 	onMount(() => {
+		// Initialize authentication, which checks for an existing session.
 		authStore.initialize();
 	});
 
 	function handleReattach(event: CustomEvent<Attachment>) {
 		const newAttachment = event.detail;
-		// Prevent adding duplicate files
 		if (!reattachedFiles.some((file) => file.s3_key === newAttachment.s3_key)) {
 			reattachedFiles = [...reattachedFiles, newAttachment];
 		}
@@ -31,40 +30,32 @@
 		reattachedFiles = reattachedFiles.filter((_, i) => i !== event.detail.index);
 	}
 
-	// ✅ REFACTORED: Simplified logic based on the new chatStore.
 	async function handleSendMessage(event: CustomEvent<{ message: string; attachments: Attachment[] }>) {
 		const { message, attachments } = event.detail;
-
-		// The store now handles optimistic UI updates and setting isLoading.
 		chatStore.sendMessage(message, attachments);
-		
-		// Clear re-attached files immediately after sending.
 		reattachedFiles = [];
 
-		// The streamChat function now calls the store's handlers directly.
-		// The store itself will reset its state on stream_end or error events.
 		await streamChat(
 			message,
 			$chatStore.sessionId,
 			attachments,
-			chatStore.handleStreamEvent, // The success handler
-			chatStore.handleStreamFailure  // The fatal error handler
+			chatStore.handleStreamEvent,
+			chatStore.handleStreamFailure
 		);
 	}
 
-	// ✅ NEW: Calculate isStreaming based on the new activeStreams set.
 	$: isStreaming = $chatStore.activeStreams.size > 0;
-
 </script>
 
 <!-- Initial Auth Check Loading Spinner -->
 {#if $authStore.isLoading}
-	<div class="flex h-screen w-full items-center justify-center">
+	<div class="flex h-screen w-full items-center justify-center bg-background">
 		<div
-			class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
+			class="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"
 		></div>
 	</div>
-	<!-- Main Chat App (Authenticated) -->
+
+<!-- Main Chat App (Authenticated) -->
 {:else if $authStore.isAuthenticated && $authStore.user}
 	<main class="flex h-screen flex-col bg-background text-foreground">
 		<Navbar on:settingsClick={() => (isSettingsOpen = true)} />
@@ -85,24 +76,25 @@
 			/>
 		</div>
 	</main>
-	<!-- Logged-out Landing Page -->
+
+<!-- Logged-out Landing Page -->
 {:else}
 	<div
 		class="flex h-screen w-full flex-col items-center justify-center bg-background p-4 text-center"
 	>
 		<h1
-			class="text-5xl font-bold bg-gradient-to-r from-primary to-user bg-clip-text text-transparent"
+			class="text-6xl font-bold tracking-tighter bg-gradient-to-br from-primary via-user to-primary bg-clip-text text-transparent"
 		>
-			Welcome to Hannah's Hive
+			munni.ai
 		</h1>
-		<p class="mt-4 max-w-md text-xl text-muted-foreground">
-			Your intelligent AI assistant is ready to help with anything you need.
+		<p class="mt-4 max-w-md text-lg text-muted-foreground">
+			Your intelligent AI assistant, reimagined.
 		</p>
 		<button
 			on:click={() => (isLoginOpen = true)}
-			class="mt-8 rounded-full bg-primary py-3 px-8 font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105"
+			class="mt-8 rounded-full bg-primary py-3 px-8 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:scale-105"
 		>
-			Login & Go to Chat
+			Login to Continue
 		</button>
 	</div>
 {/if}

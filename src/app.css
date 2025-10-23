@@ -1,50 +1,54 @@
-/* src/app.css */
+/* Import a modern, clean font suitable for a professional UI */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* 1. Import Tailwind's base, components, and utilities */
-@import 'tailwindcss';
+/* Import base Tailwind styles */
+@import "tailwindcss";
 
-/* 2. Define your theme tokens using the @theme directive */
+/* 
+  Define our single, cohesive theme using Tailwind's @theme directive.
+  This is a Light & Professional color scheme.
+*/
 @theme {
-	/* Colors */
-	--color-background: hsl(240 10% 97%);
-	--color-foreground: hsl(240 10% 20%);
-	--color-muted: hsl(240 5% 85%);
-	--color-muted-foreground: hsl(240 5% 45%);
-	--color-primary: hsl(330 80% 65%);
-	--color-primary-foreground: hsl(0 0% 100%);
-	--color-user: hsl(210 100% 70%);
-	--color-user-foreground: hsl(0 0% 100%);
+  /* Font Family */
+  --font-sans: 'Inter', sans-serif;
+  --background-image-tile: url('https://mermaidgrey.neocities.org/images/misc%20pics/69.gif');
 
-	/* Border Radius */
-	--radius: 1rem;
+  /* Color Palette - Light Professional */
+  --color-background: oklch(98% 0.01 240);       /* Soft, slightly cool off-white */
+  --color-foreground: oklch(18% 0.02 240);      /* Dark slate gray for high contrast text */
+  
+  --color-muted: oklch(100% 0 0);               /* Pure white for cards and distinct surfaces */
+  --color-muted-foreground: oklch(45% 0.02 240); /* Medium gray for placeholders and metadata */
+  
+  --color-primary: oklch(55% 0.15 250);         /* A strong, professional slate blue */
+  --color-primary-foreground: oklch(100% 0 0);  /* White text for primary elements */
+
+  --color-user: oklch(55% 0.15 250);            /* User messages use the primary color for consistency */
+  --color-user-foreground: oklch(100% 0 0);     /* White text for user messages */
+
+  --color-border: oklch(90% 0.01 240);         /* Subtle light gray borders */
+  --color-ring: oklch(55% 0.15 250 / 0.5);      /* Semi-transparent blue for focus rings */
+  
+  --color-danger: oklch(65% 0.2 15);            /* A clear but not jarring red */
+  --color-danger-foreground: oklch(100% 0 0);   /* White text on danger elements */
+  
+  --color-success: oklch(65% 0.18 145);         /* A pleasant, clear green */
+  --color-success-foreground: oklch(100% 0 0);
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-full: 9999px;
 }
 
-/* 3. Define global keyframes. These are still needed here. */
-@keyframes fade-in {
-	from {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-@keyframes bounce {
-	0%,
-	100% {
-		transform: translateY(-25%);
-		animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-	}
-	50% {
-		transform: translateY(0);
-		animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-	}
-}
-
-/* 4. (Optional) A nice-to-have transition for when you add theme-switching back later */
+/* Base Styles */
 @layer base {
-	body {
-		transition: background-color 0.3s ease, color 0.3s ease;
-	}
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
 }

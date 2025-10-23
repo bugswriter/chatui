@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { Bot, User } from 'svelte-lucide';
+	import { Bot, User } from 'lucide-svelte';
 	import { marked } from 'marked';
 	import { createEventDispatcher } from 'svelte';
 	import type { Message, ProgressInfo, Attachment, Agent } from '$lib/types';
 	import { getPresignedUrl } from '$lib/services/files';
 	import { chatStore } from '$lib/stores/chatStore';
-	import { agentStore } from '$lib/stores/agentStore'; // ✅ IMPORT agentStore
+	import { agentStore } from '$lib/stores/agentStore';
 	import AttachmentPreview from './AttachmentPreview.svelte';
-	import AgentPopover from './AgentPopover.svelte'; // ✅ IMPORT the new popover
+	import AgentPopover from './AgentPopover.svelte';
 
 	// --- Props ---
 	export let message: Message;
@@ -19,9 +19,9 @@
 	// --- Component State ---
 	let attachmentUrls: Record<string, string> = {};
 	let isCurrentlyStreaming = false;
-	let parsedContent: string = ''; // Will hold the HTML with highlighted agent tags
+	let parsedContent: string = '';
 
-	// --- ✅ NEW: State for Agent Popover ---
+	// --- Agent Popover State ---
 	let hoveredAgent: Agent | undefined = undefined;
 	let hoveredAgentElement: HTMLElement | null = null;
 
@@ -29,33 +29,27 @@
 	$: isUser = message?.role === 'user';
 	$: displayName = isUser ? userName : message?.agent?.name || 'Assistant';
 
-	chatStore.subscribe(store => {
+	chatStore.subscribe((store) => {
 		isCurrentlyStreaming = store.activeStreams.has(message.id);
 	});
 
 	$: showCursor = isCurrentlyStreaming && message.content && message.content.length > 0;
-	$: progressPercent = progress ? (progress.progress / progress.total) * 100 : 0;
 	$: isProgressActive = !isUser && isCurrentlyStreaming && progress;
 
-	// ✅ NEW: Reactive block to parse content for agent tags
+	// Reactive block to parse content for agent tags
 	$: {
-		// First, parse the markdown to HTML
-		const baseHtml = marked.parse(message.content);
-		
-		// Then, find and replace valid @agent tags within the HTML
+		const baseHtml = marked.parse(message.content || '');
 		parsedContent = baseHtml.replace(/@(\w+)/g, (match, agentName) => {
 			const agent = agentStore.findByName(agentName);
 			if (agent) {
-				// If a valid agent is found, wrap it in a styled span with a data attribute
 				return `<span class="agent-tag" data-agent-name="${agentName}">${match}</span>`;
 			}
-			// If not a valid agent, return the original text
 			return match;
 		});
 	}
 
+	// Attachment URL loading logic
 	$: {
-		// ... (attachment URL loading logic is unchanged)
 		const loadUrls = async () => {
 			if (message?.attachments) {
 				const urlsToSet: Record<string, string> = {};
@@ -66,8 +60,7 @@
 						urlsToSet[key] = att.url;
 					} else if (att.file_id && message.role === 'assistant' && !attachmentUrls[key]) {
 						try {
-							const presignedUrl = await getPresignedUrl(att.file_id);
-							urlsToSet[key] = presignedUrl;
+							urlsToSet[key] = await getPresignedUrl(att.file_id);
 						} catch (e) {
 							console.error(`Failed to fetch temp URL for ${att.file_id}:`, e);
 						}
@@ -99,7 +92,7 @@
 		}
 	}
 
-	// --- ✅ NEW: Event Handlers for Popover ---
+	// --- Popover Event Handlers ---
 	function handleMouseOver(event: MouseEvent) {
 		const target = event.target as HTMLElement;
 		if (target.classList.contains('agent-tag')) {
@@ -120,7 +113,7 @@
 	}
 </script>
 
-<!-- ✅ NEW: Render the popover component, it will be controlled by state -->
+<!-- The Agent Popover component is controlled by state -->
 <AgentPopover agent={hoveredAgent} targetElement={hoveredAgentElement} />
 
 <div
@@ -129,7 +122,6 @@
 	class:justify-start={!isUser}
 >
 	{#if !isUser}
-		<!-- ... (Avatar logic is unchanged) ... -->
 		<div class="flex h-10 w-10 flex-shrink-0 self-end rounded-full bg-muted shadow-md">
 			{#if message.agent?.avatar}
 				<img
@@ -152,12 +144,14 @@
 	>
 		<div class="px-1 text-xs font-medium text-muted-foreground">{displayName}</div>
 
-		<!-- ... (Progress indicator and attachment logic are unchanged) ... -->
 		{#if isProgressActive}
-			<div class="flex items-center gap-2 rounded-lg bg-muted/60 backdrop-blur-lg p-3 text-sm text-foreground shadow-sm">
-				<!-- ... progress svg ... -->
+			<div
+				class="flex items-center gap-2 rounded-lg bg-muted/60 backdrop-blur-lg p-3 text-sm text-foreground shadow-sm"
+			>
+				<!-- Progress indicator can be styled here if needed -->
 			</div>
 		{/if}
+
 		{#if message.attachments && message.attachments.length > 0}
 			<div class="flex w-full max-w-sm flex-col gap-2">
 				{#each message.attachments as attachment (attachment.s3_key || attachment.file_id)}
@@ -174,15 +168,23 @@
 
 		{#if message.content || isCurrentlyStreaming}
 			<div
-				class="relative z-10 rounded-[18px] px-4 py-2.5 text-base leading-relaxed shadow-sm {isUser
+				class="relative z-10 rounded-xl px-4 py-2.5 text-base leading-relaxed shadow-sm {isUser
 					? 'bg-user text-user-foreground'
-					: 'bg-muted/60 backdrop-blur-lg text-foreground'}"
+					: 'bg-muted text-foreground'}"
 				on:mouseover={handleMouseOver}
 				on:mouseout={handleMouseOut}
 			>
 				<div class="prose">
 					{#if !message.content && isCurrentlyStreaming}
-						<!-- ... (typing indicator logic is unchanged) ... -->
+						<div class="flex items-center gap-1.5">
+							<span class="h-2 w-2 rounded-full bg-current/60 animate-bounce"></span>
+							<span
+								class="h-2 w-2 rounded-full bg-current/60 animate-bounce [animation-delay:0.2s]"
+							></span>
+							<span
+								class="h-2 w-2 rounded-full bg-current/60 animate-bounce [animation-delay:0.4s]"
+							></span>
+						</div>
 					{:else}
 						{@html parsedContent}
 						{#if showCursor}<span class="inline-block animate-pulse">▋</span>{/if}
@@ -193,7 +195,6 @@
 	</div>
 
 	{#if isUser}
-		<!-- ... (User avatar logic is unchanged) ... -->
 		<div
 			class="flex h-10 w-10 flex-shrink-0 items-center justify-center self-end rounded-full bg-user text-user-foreground shadow-md"
 		>
@@ -203,21 +204,25 @@
 </div>
 
 <style>
-	/* ... (Prose styles are unchanged) ... */
-	.prose :global(p) { margin-bottom: 0.5rem; }
-	.prose :global(p:last-child) { margin-bottom: 0; }
+	/* Scoped prose styles for message bubbles */
+	.prose :global(p) {
+		margin-bottom: 0.5rem;
+	}
+	.prose :global(p:last-child) {
+		margin-bottom: 0;
+	}
 
-	/* ✅ NEW: Styles for the highlighted agent tag */
+	/* Styles for the highlighted agent tag */
 	.prose :global(.agent-tag) {
 		font-weight: 600;
-		background-color: hsla(var(--primary) / 0.1);
-		padding: 2px 4px;
-		border-radius: 4px;
-		border-bottom: 2px solid hsla(var(--primary) / 0.3);
+		background-color: hsl(var(--primary) / 0.15);
+		padding: 2px 5px;
+		border-radius: var(--radius-sm);
+		border-bottom: 2px solid hsl(var(--primary) / 0.3);
 		cursor: pointer;
 		transition: background-color 0.2s;
 	}
 	.prose :global(.agent-tag:hover) {
-		background-color: hsla(var(--primary) / 0.2);
+		background-color: hsl(var(--primary) / 0.25);
 	}
 </style>
