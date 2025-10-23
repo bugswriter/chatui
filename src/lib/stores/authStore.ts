@@ -1,6 +1,6 @@
 // src/lib/stores/authStore.ts
 
-import { writable, get } from 'svelte/store';
+import { writable } from 'svelte/store';
 import { getAuthToken, clearAuthToken } from '$lib/services/api';
 import {
 	login as apiLogin,
@@ -9,6 +9,7 @@ import {
 	type UserDetails
 } from '$lib/services/auth';
 import { chatStore } from './chatStore';
+import { agentStore } from './agentStore'; // ✅ IMPORT the new agent store
 
 // --- Type Definition for the store's state ---
 type AuthState = {
@@ -39,6 +40,7 @@ function createAuthStore() {
 			try {
 				const user = await getUserDetails();
 				set({ isAuthenticated: true, user, isLoading: false, error: null });
+				agentStore.initialize(); // ✅ INITIALIZE agents on successful session load
 			} catch (error) {
 				// Token is invalid or expired
 				clearAuthToken();
@@ -57,8 +59,10 @@ function createAuthStore() {
 		update((state) => ({ ...state, isLoading: true, error: null }));
 		try {
 			await apiLogin(username, password);
+
 			const user = await getUserDetails();
 			update((state) => ({ ...state, isAuthenticated: true, user, isLoading: false }));
+			agentStore.initialize(); // ✅ INITIALIZE agents on successful login
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Login failed';
 			update((state) => ({ ...state, isAuthenticated: false, error: errorMessage, isLoading: false }));
@@ -74,6 +78,7 @@ function createAuthStore() {
 		apiLogout(); // Clears the token from localStorage
 		chatStore.reset(); // Reset the chat history and session
 		set({ isAuthenticated: false, user: null, isLoading: false, error: null });
+		// We don't need to reset the agent store, it will just be re-initialized on next login.
 	}
 
 	return {

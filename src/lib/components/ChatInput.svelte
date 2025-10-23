@@ -1,10 +1,11 @@
-<!-- src/lib/components/ChatInput.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { Send, Paperclip, X, FileIcon, Reply } from 'lucide-svelte';
 	import { getUploadUrl } from '$lib/services/files';
 	import { getAuthToken } from '$lib/services/api';
-	import type { Attachment } from '$lib/types';
+	import { agentStore } from '$lib/stores/agentStore'; // ✅ IMPORT agent store
+	import type { Attachment, Agent } from '$lib/types';
 
 	export let isLoading: boolean = false;
 	export let isStreaming: boolean = false;
@@ -19,11 +20,33 @@
 
 	const dispatch = createEventDispatcher();
 
+	// --- ✅ NEW: State for Agent Suggestions ---
+	let showSuggestions = false;
+	let suggestions: Agent[] = [];
+	let activeSuggestionIndex = 0;
+	let suggestionPosition = { top: 0, left: 0 };
+	let suggestionTriggerPosition = 0; // The character index of the '@'
+	let ghostElement: HTMLDivElement; // For calculating cursor position
+
 	interface StagedAttachment {
 		file: File;
 		uploadData: { upload_url: string; upload_fields: Record<string, string>; file_id: string; s3_key: string; };
 		filename: string;
 		preview?: string;
+	}
+	
+	onMount(() => {
+		// Close suggestions if user clicks outside
+		document.addEventListener('click', handleClickOutside);
+	});
+	onDestroy(() => {
+		document.removeEventListener('click', handleClickOutside);
+	});
+
+	function handleClickOutside(event: MouseEvent) {
+		if (showSuggestions && !event.composedPath().includes(textareaElement)) {
+			showSuggestions = false;
+		}
 	}
 
 	function autoresize(element: HTMLTextAreaElement) {
@@ -70,13 +93,82 @@
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
-		if (event.key === 'Enter' && !event.shiftKey) {
+		if (showSuggestions) {
+			if (event.key === 'ArrowDown') {
+				event.preventDefault();
+				activeSuggestionIndex = (activeSuggestionIndex + 1) % suggestions.length;
+			} else if (event.key === 'ArrowUp') {
+				event.preventDefault();
+				activeSuggestionIndex = (activeSuggestionIndex - 1 + suggestions.length) % suggestions.length;
+			} else if (event.key === 'Enter' || event.key === 'Tab') {
+				event.preventDefault();
+				selectSuggestion(suggestions[activeSuggestionIndex]);
+			} else if (event.key === 'Escape') {
+				event.preventDefault();
+				showSuggestions = false;
+			}
+		} else if (event.key === 'Enter' && !event.shiftKey) {
 			event.preventDefault();
 			handleSubmit();
 		}
 	}
 
+	// ✅ NEW: Handle input to trigger suggestions
+	function handleInput() {
+		const cursorPosition = textareaElement.selectionStart;
+		const textBeforeCursor = message.substring(0, cursorPosition);
+		const atMatch = textBeforeCursor.match(/@(\w*)$/);
+
+		if (atMatch) {
+			const query = atMatch[1];
+			const results = agentStore.search(query);
+			
+			if (results.length > 0) {
+				suggestions = results;
+				showSuggestions = true;
+				activeSuggestionIndex = 0;
+				suggestionTriggerPosition = atMatch.index!;
+				
+				// Calculate position for the suggestion box
+				const textToMeasure = message.substring(0, suggestionTriggerPosition);
+				ghostElement.textContent = textToMeasure;
+				const ghostSpan = document.createElement('span');
+				ghostElement.appendChild(ghostSpan);
+				
+				const rect = textareaElement.getBoundingClientRect();
+				const ghostRect = ghostSpan.getBoundingClientRect();
+
+				suggestionPosition = {
+					top: rect.top - (ghostRect.top - rect.top),
+					left: rect.left + (ghostRect.left - rect.left)
+				};
+
+			} else {
+				showSuggestions = false;
+			}
+		} else {
+			showSuggestions = false;
+		}
+	}
+
+	// ✅ NEW: Select a suggestion and update the textarea
+	function selectSuggestion(agent: Agent) {
+		const textBefore = message.substring(0, suggestionTriggerPosition);
+		const textAfter = message.substring(textareaElement.selectionStart);
+		message = `${textBefore}@${agent.name} ${textAfter}`;
+		
+		showSuggestions = false;
+		
+		// Move cursor after the inserted name
+		setTimeout(() => {
+			const newCursorPos = suggestionTriggerPosition + agent.name.length + 2;
+			textareaElement.focus();
+			textareaElement.setSelectionRange(newCursorPos, newCursorPos);
+		}, 0);
+	}
+
 	async function handleFileSelect(event: Event) {
+		// ... (function unchanged)
 		const target = event.target as HTMLInputElement;
 		const files = Array.from(target.files || []);
 		if (files.length === 0) return;
@@ -102,20 +194,48 @@
 			if (fileInputElement) fileInputElement.value = '';
 		}
 	}
-
 	function removeStagedFile(index: number) {
+		// ... (function unchanged)
 		const file = stagedFiles[index];
 		if (file.preview) URL.revokeObjectURL(file.preview);
 		stagedFiles = stagedFiles.filter((_, i) => i !== index);
 	}
-
 	function removeReattachedFile(index: number) {
+		// ... (function unchanged)
 		dispatch('removeReattached', { index });
 	}
 </script>
 
 <div class="w-full bg-transparent px-4 py-2">
-	<div class="max-w-4xl mx-auto">
+	<div class="max-w-4xl mx-auto relative">
+		<!-- ✅ NEW: Agent Suggestion Popup -->
+		{#if showSuggestions}
+			<div
+				transition:fade={{ duration: 100 }}
+				class="absolute bottom-full mb-2 w-full max-w-md rounded-lg border border-foreground/10 bg-background/90 backdrop-blur-md shadow-2xl overflow-hidden z-30"
+				style="left: {suggestionPosition.left}px; transform: translateX(-50%); max-height: 300px; overflow-y: auto;"
+			>
+				<ul class="p-1">
+					{#each suggestions as agent, i (agent.id)}
+						<li>
+							<button
+								class="w-full text-left flex items-center gap-3 p-2 rounded-md transition-colors"
+								class:bg-primary={activeSuggestionIndex === i}
+								on:click={() => selectSuggestion(agent)}
+								on:mouseenter={() => (activeSuggestionIndex = i)}
+							>
+								<img src={agent.avatar} alt={agent.name} class="w-10 h-10 rounded-md object-cover flex-shrink-0" />
+								<div class="min-w-0">
+									<p class="font-semibold text-foreground truncate">{agent.name}</p>
+									<p class="text-xs text-muted-foreground truncate">{agent.description}</p>
+								</div>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
+
 		<!-- Staged File Preview Area -->
 		{#if stagedFiles.length > 0}
 			<div class="mb-3 flex flex-wrap gap-3">
@@ -147,7 +267,7 @@
 			</div>
 		{/if}
 
-		<!-- ✅ ADDED: Re-attached File Preview Area -->
+		<!-- Re-attached File Preview Area -->
 		{#if reattachedFiles.length > 0}
 			<div class="mb-3 flex flex-wrap gap-3">
 				{#each reattachedFiles as file, index (file.s3_key)}
@@ -178,6 +298,9 @@
 			</div>
 		{/if}
 
+		<!-- ✅ NEW: Ghost element for cursor position calculation -->
+		<div bind:this={ghostElement} class="absolute whitespace-pre-wrap -z-10 opacity-0 pointer-events-none chat-input-ghost"></div>
+
 		<!-- Main Input Container -->
 		<div
 			class="relative flex w-full items-end rounded-3xl bg-background/80 backdrop-blur-lg border border-foreground/10 shadow-md transition-all focus-within:border-primary/50 focus-within:shadow-lg"
@@ -198,9 +321,10 @@
 				use:autoresize
 				bind:value={message}
 				on:keydown={handleKeyDown}
+				on:input={handleInput}
 				disabled={isLoading || isStreaming || isUploading}
 				placeholder="Message Hannah..."
-				class="flex-1 resize-none bg-transparent py-[18px] text-base placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+				class="flex-1 resize-none bg-transparent py-[18px] text-base placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 chat-input-textarea"
 				rows="1"
 			></textarea>
 			<div class="flex-shrink-0 p-2">
@@ -216,3 +340,18 @@
 		</div>
 	</div>
 </div>
+
+<!-- ✅ NEW: Styles for the ghost element to match the textarea -->
+<style>
+	.chat-input-textarea, .chat-input-ghost {
+		flex: 1 1 0%;
+		resize: none;
+		background-color: transparent;
+		padding-top: 18px;
+		padding-bottom: 18px;
+		font-size: 1rem; /* 16px */
+		line-height: 1.5rem; /* 24px */
+		border: none;
+		outline: none;
+	}
+</style>

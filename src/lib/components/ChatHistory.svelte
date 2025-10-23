@@ -50,14 +50,6 @@
 				<p class="mt-3 max-w-md text-base text-muted-foreground leading-relaxed">
 					Your quirky assistant is ready to help. Start a conversation or upload files to begin.
 				</p>
-				<div class="mt-6 flex gap-3">
-					<button class="px-5 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition">
-						Start Chat
-					</button>
-					<button class="px-5 py-2 rounded-lg border border-primary text-primary hover:bg-primary/10 transition">
-						Upload Files
-					</button>
-				</div>
 			</div>
 		{:else}
 			<!-- Message List -->
