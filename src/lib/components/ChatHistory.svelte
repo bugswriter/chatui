@@ -1,5 +1,4 @@
 <!-- src/lib/components/ChatHistory.svelte -->
-
 <script lang="ts">
 	import { afterUpdate } from 'svelte';
 	import type { Message, ProgressInfo } from '$lib/types';
@@ -7,10 +6,8 @@
 	import LoadingMessage from './LoadingMessage.svelte';
 
 	export let messages: Message[] = [];
-	// REMOVED: pendingMessage is no longer needed.
-	export let streamingMessageId: string | null = null;
 	export let progress: ProgressInfo | null = null;
-	export let isLoading: boolean = false;
+	export let isLoading: boolean = false; // This is the global loading state before the first AI message appears
 	export let userName: string = 'You';
 
 	let scrollContainer: HTMLDivElement;
@@ -65,19 +62,22 @@
 		{:else}
 			<!-- Message List -->
 			<div class="flex flex-col gap-4">
-				{#each messages as message, index (message.id)}
-					{@const isLastAssistant = message.role === 'assistant' && index === messages.length - 1}
+				{#each messages as message (message.id)}
+					<!-- ✅ REFACTORED: The progress prop is no longer needed here.
+					    It will be displayed as a separate element within MessageBubble.
+					    We also remove the complex isLastAssistant logic. -->
 					<MessageBubble
 						{message}
-						isStreaming={streamingMessageId === message.id}
-						progress={isLastAssistant ? progress : null}
+						{progress}
 						{userName}
+						on:reattach
 					/>
 				{/each}
 
-				<!-- Loading Indicator for Assistant shows after user message is added -->
-				{#if isLoading && !streamingMessageId}
-					<div class="flex justify-center mt-4">
+				<!-- ✅ SIMPLIFIED: Shows a generic loading message bubble after the user message is sent,
+				     and disappears when the assistant's placeholder bubble (`assistant_message_start`) arrives. -->
+				{#if isLoading}
+					<div class="flex justify-start mt-4">
 						<LoadingMessage />
 					</div>
 				{/if}

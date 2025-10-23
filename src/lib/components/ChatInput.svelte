@@ -1,14 +1,14 @@
 <!-- src/lib/components/ChatInput.svelte -->
-
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { Send, Paperclip, X, FileIcon } from 'lucide-svelte';
+	import { Send, Paperclip, X, FileIcon, Reply } from 'lucide-svelte';
 	import { getUploadUrl } from '$lib/services/files';
 	import { getAuthToken } from '$lib/services/api';
+	import type { Attachment } from '$lib/types';
 
 	export let isLoading: boolean = false;
 	export let isStreaming: boolean = false;
-	export let reattachedFiles: any[] = [];
+	export let reattachedFiles: Attachment[] = [];
 
 	let message = '';
 	let stagedFiles: StagedAttachment[] = [];
@@ -38,7 +38,7 @@
 	}
 
 	async function handleSubmit() {
-		if (isLoading || isStreaming || (!message.trim() && stagedFiles.length === 0)) return;
+		if (isLoading || isStreaming || (!message.trim() && stagedFiles.length === 0 && reattachedFiles.length === 0)) return;
 		isUploading = true;
 		uploadError = null;
 		try {
@@ -54,7 +54,7 @@
 						s3_key: fileInfo.uploadData.s3_key,
 						filename: fileInfo.filename,
 						content_type: fileInfo.file.type || 'application/octet-stream',
-						size: fileInfo.file.size // ✅ ADDED: Include the file size
+						size: fileInfo.file.size
 					};
 				})
 			);
@@ -114,10 +114,9 @@
 	}
 </script>
 
-<!-- The MARKUP remains unchanged -->
 <div class="w-full bg-transparent px-4 py-2">
 	<div class="max-w-4xl mx-auto">
-		<!-- File Preview Area -->
+		<!-- Staged File Preview Area -->
 		{#if stagedFiles.length > 0}
 			<div class="mb-3 flex flex-wrap gap-3">
 				{#each stagedFiles as file, index (file.filename + file.file.size)}
@@ -140,6 +139,37 @@
 							on:click={() => removeStagedFile(index)}
 							class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foreground/80 text-background opacity-0 group-hover:opacity-100 transition-opacity hover:bg-foreground"
 							aria-label="Remove file"
+						>
+							<X class="w-3 h-3" />
+						</button>
+					</div>
+				{/each}
+			</div>
+		{/if}
+
+		<!-- ✅ ADDED: Re-attached File Preview Area -->
+		{#if reattachedFiles.length > 0}
+			<div class="mb-3 flex flex-wrap gap-3">
+				{#each reattachedFiles as file, index (file.s3_key)}
+					<div
+						class="relative group flex items-center gap-2 rounded-lg bg-primary/10 backdrop-blur-sm p-2 border border-primary/20 shadow-md"
+					>
+						<div class="flex h-11 w-11 items-center justify-center rounded-md bg-black/10">
+							{#if file.url && file.content_type?.startsWith('image/')}
+								<img
+									src={file.url}
+									alt={file.filename}
+									class="w-full h-full rounded-md object-cover"
+								/>
+							{:else}
+								<Reply class="w-5 h-5 text-primary" />
+							{/if}
+						</div>
+						<span class="text-sm max-w-[120px] truncate text-foreground">{file.filename}</span>
+						<button
+							on:click={() => removeReattachedFile(index)}
+							class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foreground/80 text-background opacity-0 group-hover:opacity-100 transition-opacity hover:bg-foreground"
+							aria-label="Remove re-attached file"
 						>
 							<X class="w-3 h-3" />
 						</button>
@@ -176,7 +206,7 @@
 			<div class="flex-shrink-0 p-2">
 				<button
 					on:click={handleSubmit}
-					disabled={isLoading || isStreaming || isUploading || (!message.trim() && stagedFiles.length === 0)}
+					disabled={isLoading || isStreaming || isUploading || (!message.trim() && stagedFiles.length === 0 && reattachedFiles.length === 0)}
 					class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-all hover:bg-primary/90 disabled:opacity-50 disabled:bg-muted"
 					aria-label="Send message"
 				>

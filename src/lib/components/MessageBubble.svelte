@@ -1,16 +1,15 @@
 <!-- src/lib/components/MessageBubble.svelte -->
-
 <script lang="ts">
 	import { Bot, User } from 'svelte-lucide';
 	import { marked } from 'marked';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import type { Message, ProgressInfo, Attachment } from '$lib/types';
 	import { getPresignedUrl } from '$lib/services/files';
+	import { chatStore } from '$lib/stores/chatStore'; // Import the store
 	import AttachmentPreview from './AttachmentPreview.svelte';
 
 	// --- Props ---
 	export let message: Message;
-	export let isStreaming: boolean = false;
 	export let progress: ProgressInfo | null = null;
 	export let userName: string = 'You';
 
@@ -18,35 +17,42 @@
 
 	// --- Component State ---
 	let attachmentUrls: Record<string, string> = {};
+	let isCurrentlyStreaming = false;
 
 	// --- Reactive Logic ($:) ---
 	$: isUser = message?.role === 'user';
 	$: displayName = isUser ? userName : message?.agent?.name || 'Assistant';
-	$: showCursor = isStreaming && message.content && message.content.length > 0;
+
+	// ✅ NEW: Subscribe to the chatStore to know if *this specific* message is streaming.
+	// This replaces the old `isStreaming` prop.
+	chatStore.subscribe(store => {
+		isCurrentlyStreaming = store.activeStreams.has(message.id);
+	});
+
+	$: showCursor = isCurrentlyStreaming && message.content && message.content.length > 0;
 	
 	// ✅ NEW: Calculate progress percentage for the loading ring
 	$: progressPercent = progress ? (progress.progress / progress.total) * 100 : 0;
 	
-	// ✅ NEW: Determine if the progress indicator should be active
-	// It's active if we have progress data, and the message content hasn't started yet,
-	// OR if the content has started but the progress isn't complete.
-	$: isProgressActive = progress && (message.content.length === 0 || progressPercent < 100);
+	// ✅ NEW: Determine if the progress indicator should be active.
+	// It should only show for the assistant's message that is currently being generated.
+	$: isProgressActive = !isUser && isCurrentlyStreaming && progress;
 
+	// This reactive block handles fetching URLs for attachments as they arrive.
 	$: {
 		const loadUrls = async () => {
 			if (message?.attachments) {
 				const urlsToSet: Record<string, string> = {};
 				for (const att of message.attachments) {
+					// Use a consistent key
 					const key = att.file_id || att.s3_key;
 					if (!key) continue;
 
-					// --- THE CORE FIX for Attachments ---
-					// 1. If a URL is already present, use it. This is the most common case.
+					// If a URL is already in the attachment object from the backend, use it.
 					if (att.url) {
 						urlsToSet[key] = att.url;
 					}
-					// 2. Only fetch a URL if it's missing AND it's an ASSISTANT's message.
-					// We now trust that user message URLs will be provided by the receipt event.
+					// Otherwise, if it's an assistant message and we don't have a URL yet, fetch it.
 					else if (att.file_id && message.role === 'assistant' && !attachmentUrls[key]) {
 						try {
 							const presignedUrl = await getPresignedUrl(att.file_id);
@@ -72,11 +78,9 @@
 		const attachment = event.detail;
 		const url = attachment.url || attachmentUrls[attachment.file_id || attachment.s3_key];
 		if (url) {
-			// Using a simple link click for download is more reliable across browser policies
 			const link = document.createElement('a');
 			link.href = url;
 			link.download = attachment.filename;
-			// For S3 urls, adding target="_blank" can sometimes help bypass CORS issues on direct download
 			link.target = '_blank';
 			document.body.appendChild(link);
 			link.click();
@@ -113,7 +117,7 @@
 	>
 		<div class="px-1 text-xs font-medium text-muted-foreground">{displayName}</div>
 
-		<!-- ✅ NEW: Progress Indicator UI -->
+		<!-- ✅ NEW: Progress Indicator UI - Renders as a separate bubble -->
 		{#if isProgressActive}
 			<div class="flex items-center gap-2 rounded-lg bg-muted/60 backdrop-blur-lg p-3 text-sm text-foreground shadow-sm">
 				<div class="relative w-5 h-5 flex-shrink-0">
@@ -156,16 +160,25 @@
 			</div>
 		{/if}
 
-		<!-- Only show the message content bubble if there is content -->
-		{#if message.content}
+		<!-- Only show the message content bubble if there is content OR if it's streaming (for the placeholder) -->
+		{#if message.content || isCurrentlyStreaming}
 			<div
 				class="relative z-10 rounded-[18px] px-4 py-2.5 text-base leading-relaxed shadow-sm {isUser
 					? 'bg-user text-user-foreground'
 					: 'bg-muted/60 backdrop-blur-lg text-foreground'}"
 			>
 				<div class="prose">
-					{@html marked.parse(message.content)}
-					{#if showCursor}<span class="inline-block animate-pulse">▋</span>{/if}
+					<!-- If there's no content yet but it's streaming, show a typing indicator -->
+					{#if !message.content && isCurrentlyStreaming}
+						<div class="flex items-center gap-1.5 h-6">
+							<span class="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce"></span>
+							<span class="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0.2s]"></span>
+							<span class="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0.4s]"></span>
+						</div>
+					{:else}
+						{@html marked.parse(message.content)}
+						{#if showCursor}<span class="inline-block animate-pulse">▋</span>{/if}
+					{/if}
 				</div>
 			</div>
 		{/if}
@@ -181,7 +194,7 @@
 </div>
 
 <style>
-	/* Prose styles for markdown content */
+	/* Prose styles for markdown content (Unchanged) */
 	.prose :global(p) { margin-bottom: 0.5rem; }
 	.prose :global(p:last-child) { margin-bottom: 0; }
 	.prose :global(code) { background-color: rgba(0, 0, 0, 0.1); padding: 0.1em 0.3em; border-radius: 4px; font-size: 0.9em; }
