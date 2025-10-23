@@ -1,0 +1,50 @@
+/* src/app.css */
+
+/* 1. Import Tailwind's base, components, and utilities */
+@import 'tailwindcss';
+
+/* 2. Define your theme tokens using the @theme directive */
+@theme {
+	/* Colors */
+	--color-background: hsl(240 10% 97%);
+	--color-foreground: hsl(240 10% 20%);
+	--color-muted: hsl(240 5% 85%);
+	--color-muted-foreground: hsl(240 5% 45%);
+	--color-primary: hsl(330 80% 65%);
+	--color-primary-foreground: hsl(0 0% 100%);
+	--color-user: hsl(210 100% 70%);
+	--color-user-foreground: hsl(0 0% 100%);
+
+	/* Border Radius */
+	--radius: 1rem;
+}
+
+/* 3. Define global keyframes. These are still needed here. */
+@keyframes fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes bounce {
+	0%,
+	100% {
+		transform: translateY(-25%);
+		animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+	}
+	50% {
+		transform: translateY(0);
+		animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+	}
+}
+
+/* 4. (Optional) A nice-to-have transition for when you add theme-switching back later */
+@layer base {
+	body {
+		transition: background-color 0.3s ease, color 0.3s ease;
+	}
+}
