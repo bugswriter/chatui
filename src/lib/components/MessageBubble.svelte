@@ -14,6 +14,7 @@
 	export let progress: ProgressInfo | null = null;
 	export let userName: string = 'You';
 
+	// ✅ MODIFIED: Dispatcher to forward the event
 	const dispatch = createEventDispatcher();
 
 	// --- Component State ---
@@ -161,6 +162,7 @@
 						url={attachment.url || (key ? attachmentUrls[key] : undefined)}
 						on:reattach={handleReattach}
 						on:download={handleDownload}
+						on:contentLoaded={() => dispatch('contentLoaded')}
 					/>
 				{/each}
 			</div>

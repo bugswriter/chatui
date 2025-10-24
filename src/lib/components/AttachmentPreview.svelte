@@ -33,32 +33,38 @@
 	<!-- Case 1: Previews are ENABLED and we have a URL -->
 	{#if $settingsStore.showFilePreviews && url}
 		{#if isImage}
-			<div class="group relative rounded-lg overflow-hidden border border-border shadow-sm">
-				<img src={url} alt={attachment.filename} class="w-full h-auto object-cover" />
+			<!-- ✅ MODIFIED: Wrapped image in a button to open the lightbox -->
+			<button
+				on:click={() => dispatch('viewImage', { url })}
+				class="group relative block w-full cursor-zoom-in rounded-lg overflow-hidden border border-border shadow-sm text-left"
+				aria-label="View image {attachment.filename} in fullscreen"
+			>
+				<img
+					src={url}
+					alt={attachment.filename}
+					class="w-full h-auto object-cover"
+					on:load={() => dispatch('contentLoaded')}
+				/>
 				<div
-					class="absolute bottom-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+					class="absolute bottom-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
 				>
-					<button
-						on:click={handleReattach}
+					<span
 						class="flex h-8 w-8 items-center justify-center rounded-full bg-background/70 text-foreground backdrop-blur-sm transition hover:bg-background"
-						aria-label="Re-attach file"><Reply class="w-4 h-4" /></button
+						><Reply class="w-4 h-4" /></span
 					>
-					<button
-						on:click={() => dispatch('download', attachment)}
+					<span
 						class="flex h-8 w-8 items-center justify-center rounded-full bg-background/70 text-foreground backdrop-blur-sm transition hover:bg-background"
-						aria-label="Download file"><Download class="w-4 h-4" /></button
+						><Download class="w-4 h-4" /></span
 					>
 				</div>
-			</div>
+			</button>
 		{:else if isVideo}
 			<video {src} controls class="w-full rounded-lg border border-border" />
 		{:else if isAudio}
 			<audio {src} controls class="w-full" />
 		{:else}
 			<!-- Generic file preview for when URL is available but not image/video -->
-			<div
-				class="flex items-center gap-3 rounded-lg border bg-muted/50 border-border p-2.5 text-sm"
-			>
+			<div class="flex items-center gap-3 rounded-lg border bg-muted/50 border-border p-2.5 text-sm">
 				<FileText class="w-5 h-5 flex-shrink-0 text-primary" />
 				<div class="flex-1 min-w-0">
 					<p class="truncate font-medium text-foreground">{attachment.filename}</p>
@@ -78,9 +84,7 @@
 		{/if}
 	<!-- Case 2: Previews are DISABLED or URL is not yet available -->
 	{:else}
-		<div
-			class="flex items-center gap-3 rounded-lg border bg-muted/50 border-border p-2.5 text-sm"
-		>
+		<div class="flex items-center gap-3 rounded-lg border bg-muted/50 border-border p-2.5 text-sm">
 			{#if isImage}<FileText class="w-5 h-5 flex-shrink-0 text-primary" />{:else if isVideo}<Film class="w-5 h-5 flex-shrink-0 text-primary" />{:else if isAudio}<Music class="w-5 h-5 flex-shrink-0 text-primary" />{:else}<FileText class="w-5 h-5 flex-shrink-0 text-primary" />{/if}
 			<div class="flex-1 min-w-0">
 				<p class="truncate font-medium text-foreground">{attachment.filename}</p>

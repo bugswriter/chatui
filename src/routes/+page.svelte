@@ -8,14 +8,17 @@
 	import ChatInput from '$lib/components/ChatInput.svelte';
 	import LoginModal from '$lib/components/LoginModal.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
+	import ImageLightbox from '$lib/components/ImageLightbox.svelte'; // ✅ IMPORT the new component
 	import type { Attachment } from '$lib/types';
 
 	let isLoginOpen = false;
 	let isSettingsOpen = false;
 	let reattachedFiles: Attachment[] = [];
 
+	// ✅ ADDED: State for the lightbox
+	let fullscreenImageUrl: string | null = null;
+
 	onMount(() => {
-		// Initialize authentication, which checks for an existing session.
 		authStore.initialize();
 	});
 
@@ -44,6 +47,11 @@
 		);
 	}
 
+	// ✅ ADDED: Handler to open the lightbox
+	function handleViewImage(event: CustomEvent<{ url: string }>) {
+		fullscreenImageUrl = event.detail.url;
+	}
+
 	$: isStreaming = $chatStore.activeStreams.size > 0;
 </script>
 
@@ -59,8 +67,7 @@
 {:else if $authStore.isAuthenticated && $authStore.user}
 	<main class="flex h-screen flex-col bg-background text-foreground">
 		<Navbar on:settingsClick={() => (isSettingsOpen = true)} />
-		<!-- MODIFIED: Changed from 'flex flex-col overflow-hidden' to 'relative bg-transparent' -->
-		<div class="flex-1 pt-14 relative bg-transparent"> 
+		<div class="flex-1 pt-14 relative bg-transparent">
 			<ChatHistory
 				className="absolute inset-0 pb-[150px] md:pb-[130px]"
 				messages={$chatStore.messages}
@@ -68,8 +75,8 @@
 				isLoading={$chatStore.isLoading}
 				userName={$authStore.user.name}
 				on:reattach={handleReattach}
+				on:viewImage={handleViewImage}
 			/>
-			<!-- NEW: Wrapper to float ChatInput at the bottom over the ChatHistory -->
 			<div class="absolute bottom-0 left-0 w-full z-10">
 				<ChatInput
 					isLoading={$chatStore.isLoading}
@@ -107,3 +114,11 @@
 <!-- Modals -->
 <LoginModal isOpen={isLoginOpen} on:close={() => (isLoginOpen = false)} />
 <SettingsModal isOpen={isSettingsOpen} on:close={() => (isSettingsOpen = false)} />
+
+<!-- ✅ ADDED: Conditionally render the lightbox -->
+{#if fullscreenImageUrl}
+	<ImageLightbox
+		imageUrl={fullscreenImageUrl}
+		on:close={() => (fullscreenImageUrl = null)}
+	/>
+{/if}
