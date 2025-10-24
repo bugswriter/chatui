@@ -33,7 +33,6 @@
 	<!-- Case 1: Previews are ENABLED and we have a URL -->
 	{#if $settingsStore.showFilePreviews && url}
 		{#if isImage}
-			<!-- ✅ MODIFIED: Wrapped image in a button to open the lightbox -->
 			<button
 				on:click={() => dispatch('viewImage', { url })}
 				class="group relative block w-full cursor-zoom-in rounded-lg overflow-hidden border border-border shadow-sm text-left"
@@ -57,11 +56,14 @@
 						><Download class="w-4 h-4" /></span
 					>
 				</div>
-			</button>
+			</button
+			>
+		<!-- ✅ FIX: Changed {src} to src={url} -->
 		{:else if isVideo}
-			<video {src} controls class="w-full rounded-lg border border-border" />
+			<video src={url} controls class="w-full rounded-lg border border-border" />
+		<!-- ✅ FIX: Changed {src} to src={url} -->
 		{:else if isAudio}
-			<audio {src} controls class="w-full" />
+			<audio src={url} controls class="w-full" />
 		{:else}
 			<!-- Generic file preview for when URL is available but not image/video -->
 			<div class="flex items-center gap-3 rounded-lg border bg-muted/50 border-border p-2.5 text-sm">
