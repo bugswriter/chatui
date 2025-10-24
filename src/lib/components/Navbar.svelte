@@ -18,7 +18,7 @@
   - border-b border-border adds a subtle separator line.
 -->
 <header
-	class="fixed top-0 left-0 w-full z-20 h-14 bg-background/80 backdrop-blur-lg border-border"
+	class="fixed top-0 left-0 w-full z-20 h-14 bg-background/50 backdrop-blur-sm border-border"
 >
 	<div class="max-w-[1920px] mx-auto px-5 h-full flex items-center justify-between">
 		<!-- App Title -->

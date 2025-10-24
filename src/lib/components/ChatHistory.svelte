@@ -35,7 +35,7 @@
 <div
 	bind:this={scrollContainer}
 	on:scroll={handleScroll}
-	class="overflow-y-auto bg-gradient-to-b from-background/95 via-background/90 to-background/95 px-4 py-6 {className}">
+	class="overflow-y-auto bg-gradient-to-b from-background/95 via-background/90 to-background/95 px-4 py-6 pt-18 {className}">
 	<div class="mx-auto max-w-3xl">
 		{#if messages.length === 0}
 			<!-- Welcome Screen -->
