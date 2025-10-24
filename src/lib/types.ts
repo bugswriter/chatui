@@ -18,16 +18,17 @@ export interface Agent {
 	mcp_server_url: string;
 }
 
-// ✅ CHANGE: Added an optional `progress` property.
 export interface Message {
 	id: string;
+	// ✅ FIX: Add a stable `clientId` that never changes, solving the re-render key issue.
+	clientId?: string;
 	role: 'user' | 'assistant' | 'system';
 	content: string;
 	attachments?: Attachment[];
 	timestamp: Date;
 	agent?: Partial<Agent> | null;
 	isPending?: boolean;
-	progress?: ProgressInfo | null; // This will hold progress info for this specific message.
+	progress?: ProgressInfo | null;
 }
 
 export interface ProgressInfo {

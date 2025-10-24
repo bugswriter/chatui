@@ -5,8 +5,6 @@
 	import LoadingMessage from './LoadingMessage.svelte';
 
 	export let messages: Message[] = [];
-	// ✅ REMOVED: No longer need to pass global progress down.
-	// export let progress: ProgressInfo | null = null;
 	export let isLoading: boolean = false;
 	export let userName: string = 'You';
 	export let className: string = '';
@@ -42,7 +40,6 @@
 >
 	<div class="mx-auto max-w-3xl">
 		{#if messages.length === 0}
-			<!-- Welcome Screen -->
 			<div class="flex flex-col items-center justify-center text-center py-24">
 				<img
 					src="https://i.pinimg.com/originals/31/38/c2/3138c2666fe9ffc47d4c56982c918a31.jpg"
@@ -55,9 +52,9 @@
 				</p>
 			</div>
 		{:else}
-			<!-- Message List -->
 			<div class="flex flex-col gap-4">
-				{#each messages as message (message.id)}
+				<!-- ✅ FIX: Use the stable `clientId` for user messages, and `id` for all others. -->
+				{#each messages as message (message.clientId || message.id)}
 					<MessageBubble
 						{message}
 						{userName}
@@ -67,7 +64,6 @@
 					/>
 				{/each}
 
-				<!-- Initial loading bubble -->
 				{#if isLoading}
 					<div class="flex justify-start mt-4">
 						<LoadingMessage />

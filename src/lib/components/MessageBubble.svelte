@@ -1,5 +1,6 @@
+
 <script lang="ts">
-	import { Bot, User, Info, Copy, Check } from 'lucide-svelte';
+	import { Bot, User, Info } from 'lucide-svelte';
 	import { marked } from 'marked';
 	import { markedHighlight } from 'marked-highlight';
 	import hljs from 'highlight.js/lib/core';
@@ -16,14 +17,12 @@
 	import AttachmentPreview from './AttachmentPreview.svelte';
 	import AgentPopover from './AgentPopover.svelte';
 
-	// --- Register languages for highlight.js ---
 	hljs.registerLanguage('javascript', javascript);
 	hljs.registerLanguage('python', python);
 	hljs.registerLanguage('bash', bash);
 	hljs.registerLanguage('typescript', typescript);
 	hljs.registerLanguage('json', json);
 
-	// --- Configure Marked to use the highlighter ---
 	marked.use(
 		markedHighlight({
 			langPrefix: 'hljs language-',
@@ -34,23 +33,19 @@
 		})
 	);
 
-	// --- Props ---
 	export let message: Message;
 	export let userName: string = 'You';
 
 	const dispatch = createEventDispatcher();
 	let bubbleElement: HTMLDivElement;
 
-	// --- Component State ---
 	let attachmentUrls: Record<string, string> = {};
 	let isCurrentlyStreaming = false;
 	let parsedContent: string = '';
 
-	// --- Agent Popover State ---
 	let hoveredAgent: Agent | undefined = undefined;
 	let hoveredAgentElement: HTMLElement | null = null;
 
-	// --- Reactive Logic ($:) ---
 	$: isUser = message?.role === 'user';
 	$: isSystem = message?.role === 'system';
 	$: displayName = isUser ? userName : message?.agent?.name || 'Assistant';
@@ -62,14 +57,16 @@
 	$: showCursor = isCurrentlyStreaming && message.content && message.content.length > 0;
 
 	$: {
-		const baseHtml = marked.parse(message.content || '', { breaks: true });
-		parsedContent = baseHtml.replace(/@(\w+)/g, (match, agentName) => {
-			const agent = agentStore.findByName(agentName);
-			if (agent) {
-				return `<span class="agent-tag" data-agent-name="${agentName}">${match}</span>`;
-			}
-			return match;
-		});
+		(async () => {
+			const baseHtml = await marked.parse(message.content || '', { breaks: true, async: false });
+			parsedContent = (baseHtml as string).replace(/@(\w+)/g, (match: string, agentName: string) => {
+				const agent = agentStore.findByName(agentName);
+				if (agent) {
+					return `<span class="agent-tag" data-agent-name="${agentName}">${match}</span>`;
+				}
+				return match;
+			});
+		})();
 	}
 
 	$: {
@@ -92,12 +89,11 @@
 		loadUrls();
 	}
 
-	// ✅ ADDED: Function to add "Copy" buttons to code blocks after rendering
 	afterUpdate(() => {
 		if (bubbleElement) {
 			const codeBlocks = bubbleElement.querySelectorAll('pre');
 			codeBlocks.forEach((block) => {
-				if (block.querySelector('.copy-button')) return; // Already has a button
+				if (block.querySelector('.copy-button')) return;
 
 				const button = document.createElement('button');
 				button.className = 'copy-button';
@@ -118,7 +114,6 @@
 		}
 	});
 
-	// --- Event Handlers ---
 	function handleReattach(event: CustomEvent<Attachment>) {
 		dispatch('reattach', event.detail);
 	}
@@ -168,8 +163,9 @@
 		<div class="h-px w-full flex-1 bg-border" />
 	</div>
 {:else}
+	<!-- ✅ FIX: Removed the `animate-[fade-in...]` class to prevent re-animation on update -->
 	<div
-		class="flex animate-[fade-in_0.5s_ease-out] mb-4 gap-3"
+		class="flex mb-4 gap-3"
 		class:justify-end={isUser}
 		class:justify-start={!isUser}
 	>
@@ -225,11 +221,9 @@
 						{#if message.progress}
 							<div class="w-64 text-sm">
 								<p class="font-semibold text-foreground/90">{message.progress.agent_name}</p>
-								<!-- ✅ MODIFIED: Removed truncate to allow wrapping -->
 								<p class="text-xs text-muted-foreground/80 mb-2">
 									{message.progress.message}
 								</p>
-								<!-- ✅ MODIFIED: Added 'animated-progress' class -->
 								<div class="w-full bg-border rounded-full h-1.5 overflow-hidden">
 									<div
 										class="animated-progress h-1.5 rounded-full bg-primary transition-all duration-300"
@@ -267,14 +261,11 @@
 {/if}
 
 <style>
-	/* ✅ ADDED: Keyframes for progress bar shimmer */
 	@keyframes shimmer {
 		100% {
 			transform: translateX(100%);
 		}
 	}
-
-	/* ✅ ADDED: Styles for animated progress bar */
 	.animated-progress {
 		position: relative;
 	}
@@ -295,12 +286,10 @@
 		);
 		animation: shimmer 2s infinite;
 	}
-
-	/* ✅ MODIFIED: Prose styles to handle code blocks and prevent conflicts */
 	.prose {
 		color: inherit;
 		max-width: none;
-		word-break: break-word; /* For normal text */
+		word-break: break-word;
 	}
 	.prose :global(p) {
 		margin-top: 0;
@@ -309,7 +298,6 @@
 	.prose :global(p:last-child) {
 		margin-bottom: 0;
 	}
-
 	.prose :global(pre) {
 		position: relative;
 		font-family: var(--font-mono);
@@ -317,27 +305,23 @@
 		color: hsl(var(--foreground));
 		border-radius: var(--radius-md);
 		padding: 1rem;
-		padding-top: 2.5rem; /* Make space for the button */
+		padding-top: 2.5rem;
 		margin: 0.5rem 0;
-		white-space: pre; /* Important for horizontal scrolling */
-		overflow-x: auto; /* The magic for long lines */
-		max-width: 100%; /* Ensure it doesn't overflow parent */
+		white-space: pre;
+		overflow-x: auto;
+		max-width: 100%;
 	}
-
 	.prose :global(code:not(pre > code)) {
 		background-color: hsl(var(--muted) / 0.5);
 		padding: 0.1em 0.3em;
 		border-radius: var(--radius-sm);
 		font-size: 85%;
 	}
-
 	.prose :global(pre code) {
 		background-color: transparent;
 		padding: 0;
 		font-size: 0.9em;
 	}
-
-	/* ✅ ADDED: Styles for the copy button */
 	:global(.copy-button) {
 		position: absolute;
 		top: 0.5rem;
@@ -355,17 +339,13 @@
 		opacity: 0.5;
 		transition: all 0.2s ease;
 	}
-
 	:global(pre:hover .copy-button) {
 		opacity: 1;
 	}
-
 	:global(.copy-button:hover) {
 		background-color: hsl(var(--muted));
 		color: hsl(var(--foreground));
 	}
-
-	/* Agent Tag Styling */
 	.prose :global(.agent-tag) {
 		font-weight: 600;
 		background-color: hsl(var(--primary) / 0.15);

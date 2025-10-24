@@ -7,15 +7,12 @@ function createChatStore() {
 	const { subscribe, set, update } = writable<{
 		messages: Message[];
 		activeStreams: Set<string>;
-		// ✅ REMOVED: Global progress is no longer needed.
-		// progress: ProgressInfo | null;
 		isLoading: boolean;
 		sessionId: string | null;
 		activeAgent: Partial<Agent> | null;
 	}>({
 		messages: [],
 		activeStreams: new Set(),
-		// progress: null, // ✅ REMOVED
 		isLoading: false,
 		sessionId: null,
 		activeAgent: null
@@ -28,24 +25,30 @@ function createChatStore() {
 					return { ...state, sessionId: event.session_id || state.sessionId };
 
 				case 'user_message_receipt':
-					const messagesWithReceipt = [...state.messages];
-					const optimisticIndex = messagesWithReceipt.findIndex((m) => m.id.startsWith('client_'));
-					if (optimisticIndex !== -1 && event.message) {
-						messagesWithReceipt[optimisticIndex] = {
-							...event.message,
-							timestamp: new Date()
-						};
-					}
+					// This logic updates only the necessary properties of the optimistic message
+					// instead of replacing the entire object. This maintains object reference
+					// stability for Svelte's keyed loop, preventing the re-render "flash".
+					const messagesWithReceipt = state.messages.map((m) => {
+						// We find the optimistic message by its temporary client ID
+						if (m.id.startsWith('client_') && event.message) {
+							return {
+								...m, // Keep everything from the optimistic message...
+								id: event.message.id // ...and just update its ID to the real one from the server.
+							};
+						}
+						return m;
+					});
 					return { ...state, messages: messagesWithReceipt };
 
+				// ✅ FIX: No longer directly mutating state.
 				case 'stream_start':
-					state.activeStreams.add(event.message_id!);
-					// ✅ REMOVED: No longer clearing global progress here.
-					return state;
+					const newActiveStreams = new Set(state.activeStreams);
+					newActiveStreams.add(event.message_id!);
+					return { ...state, activeStreams: newActiveStreams };
 
 				case 'assistant_message_start':
 					if (event.message?.id && !state.messages.some((m) => m.id === event.message.id)) {
-						const newMessages = [...state.messages];
+						const updatedMessages = [...state.messages];
 						const newAgent = event.message.agent;
 
 						if (state.activeAgent && newAgent && state.activeAgent.id !== newAgent.id) {
@@ -55,21 +58,24 @@ function createChatStore() {
 								content: `${state.activeAgent.name} has left. ${newAgent.name} has joined.`,
 								timestamp: new Date()
 							};
-							newMessages.push(systemMessage);
+							updatedMessages.push(systemMessage);
 						}
 
 						const newMessage: Message = {
-							...event.message,
+							id: event.message.id,
+							role: 'assistant',
+							agent: newAgent,
 							content: '',
+							attachments: event.message.attachments || [],
 							timestamp: new Date(),
-							progress: null // ✅ ADDED: Initialize progress for this message.
+							progress: null
 						};
-						newMessages.push(newMessage);
+						updatedMessages.push(newMessage);
 
 						return {
 							...state,
 							isLoading: false,
-							messages: newMessages,
+							messages: updatedMessages,
 							activeAgent: newAgent || state.activeAgent
 						};
 					}
@@ -79,7 +85,6 @@ function createChatStore() {
 					const messagesWithChunk = state.messages.map((m) => {
 						if (m.id === event.message_id) {
 							const newContent = m.isPending ? event.chunk || '' : m.content + (event.chunk || '');
-							// ✅ ADDED: Clear progress once content starts streaming in.
 							return { ...m, content: newContent, isPending: false, progress: null };
 						}
 						return m;
@@ -97,7 +102,6 @@ function createChatStore() {
 					});
 					return { ...state, messages: messagesWithAttachment };
 
-				// ✅ MODIFIED: This case now updates the specific message.
 				case 'progress':
 					const messagesWithProgress = state.messages.map((m) => {
 						if (m.id === event.message_id) {
@@ -113,20 +117,21 @@ function createChatStore() {
 					});
 					return { ...state, messages: messagesWithProgress };
 
+				// ✅ FIX: No longer directly mutating state.
 				case 'stream_end':
-					state.activeStreams.delete(event.message_id!);
-					// ✅ ADDED: Clear progress from the completed message.
+					const finishedStreams = new Set(state.activeStreams);
+					finishedStreams.delete(event.message_id!);
+
 					const finalMessages = state.messages.map((m) => {
 						if (m.id === event.message_id) {
 							return { ...m, progress: null };
 						}
 						return m;
 					});
-					return { ...state, messages: finalMessages };
+					return { ...state, messages: finalMessages, activeStreams: finishedStreams };
 
 				case 'error':
 					console.error('Stream Error Event:', event.error);
-					// ✅ REMOVED: Global progress state is gone.
 					return {
 						...state,
 						isLoading: false,
@@ -139,8 +144,10 @@ function createChatStore() {
 
 	const sendMessage = (content: string, attachments: Attachment[]) => {
 		const clientSideId = `client_${crypto.randomUUID()}`;
+		// ✅ FIX: Add the stable `clientId` to the message object.
 		const userMessage: Message = {
-			id: clientSideId,
+			id: clientSideId, // This will be updated by `user_message_receipt`
+			clientId: clientSideId, // This will NEVER change
 			role: 'user',
 			content: content,
 			attachments: attachments,
@@ -151,7 +158,6 @@ function createChatStore() {
 			...state,
 			messages: [...state.messages, userMessage],
 			isLoading: true
-			// ✅ REMOVED: progress: null
 		}));
 	};
 
@@ -161,7 +167,6 @@ function createChatStore() {
 			...state,
 			isLoading: false,
 			activeStreams: new Set()
-			// ✅ REMOVED: progress: null
 		}));
 	};
 
@@ -169,7 +174,6 @@ function createChatStore() {
 		set({
 			messages: [],
 			activeStreams: new Set(),
-			// ✅ REMOVED: progress: null
 			isLoading: false,
 			sessionId: null,
 			activeAgent: null
