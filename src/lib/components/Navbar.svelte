@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Settings, Coins } from 'lucide-svelte';
+	import { Settings, CircleDollarSign } from 'lucide-svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { authStore } from '$lib/stores/authStore';
 
@@ -18,7 +18,7 @@
   - border-b border-border adds a subtle separator line.
 -->
 <header
-	class="fixed top-0 left-0 w-full z-20 h-14 bg-background/50 backdrop-blur-sm border-border"
+	class="fixed top-0 left-0 w-full z-20 h-14 bg-background/70 backdrop-blur-sm border-border"
 >
 	<div class="max-w-[1920px] mx-auto px-5 h-full flex items-center justify-between">
 		<!-- App Title -->
@@ -29,7 +29,7 @@
 			<div class="flex items-center gap-4">
 				<!-- Coin Balance -->
 				<div class="flex items-center gap-2 text-sm font-semibold text-foreground">
-					<Coins class="w-5 h-5 text-primary" />
+					<CircleDollarSign class="w-5 h-5 text-orange-300" />
 					<span>{formatCoins($authStore.user.coins)}</span>
 				</div>
 
