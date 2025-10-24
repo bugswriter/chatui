@@ -8,6 +8,7 @@
 	export let progress: ProgressInfo | null = null;
 	export let isLoading: boolean = false; // Global loading state before the first AI message
 	export let userName: string = 'You';
+	export let className: string = ''; // <--- ADDED: New prop for external classes
 
 	let scrollContainer: HTMLDivElement;
 	let shouldAutoScroll = true;
@@ -34,8 +35,7 @@
 <div
 	bind:this={scrollContainer}
 	on:scroll={handleScroll}
-	class="flex-1 overflow-y-auto bg-gradient-to-b from-background/95 via-background/90 to-background/95 px-4 py-6"
->
+	class="overflow-y-auto bg-gradient-to-b from-background/95 via-background/90 to-background/95 px-4 py-6 {className}">
 	<div class="mx-auto max-w-3xl">
 		{#if messages.length === 0}
 			<!-- Welcome Screen -->

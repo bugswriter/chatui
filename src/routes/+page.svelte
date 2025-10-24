@@ -59,21 +59,26 @@
 {:else if $authStore.isAuthenticated && $authStore.user}
 	<main class="flex h-screen flex-col bg-background text-foreground">
 		<Navbar on:settingsClick={() => (isSettingsOpen = true)} />
-		<div class="flex-1 pt-14 flex flex-col overflow-hidden">
+		<!-- MODIFIED: Changed from 'flex flex-col overflow-hidden' to 'relative bg-transparent' -->
+		<div class="flex-1 pt-14 relative bg-transparent"> 
 			<ChatHistory
+				className="absolute inset-0 pb-[150px] md:pb-[130px]"
 				messages={$chatStore.messages}
 				progress={$chatStore.progress}
 				isLoading={$chatStore.isLoading}
 				userName={$authStore.user.name}
 				on:reattach={handleReattach}
 			/>
-			<ChatInput
-				isLoading={$chatStore.isLoading}
-				{isStreaming}
-				{reattachedFiles}
-				on:send={handleSendMessage}
-				on:removeReattached={handleRemoveReattached}
-			/>
+			<!-- NEW: Wrapper to float ChatInput at the bottom over the ChatHistory -->
+			<div class="absolute bottom-0 left-0 w-full z-10">
+				<ChatInput
+					isLoading={$chatStore.isLoading}
+					{isStreaming}
+					{reattachedFiles}
+					on:send={handleSendMessage}
+					on:removeReattached={handleRemoveReattached}
+				/>
+			</div>
 		</div>
 	</main>
 

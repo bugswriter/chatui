@@ -186,8 +186,8 @@
 	}
 </script>
 
-<div class="w-full bg-transparent px-4 py-3">
-	<div class="max-w-4xl mx-auto relative">
+<div class="w-full bg-muted/20 px-4 py-3">
+	<div class="max-w-4xl bg-transparent mx-auto relative">
 		<!-- Agent Suggestion Popup -->
 		{#if showSuggestions}
 			<div
@@ -279,7 +279,7 @@
 
 		<!-- Main Input Container -->
 		<div
-			class="relative flex w-full items-end rounded-2xl bg-muted border border-border shadow-md transition-all focus-within:ring-2 focus-within:ring-primary/40"
+			class="relative flex w-full items-end rounded-2xl backdrop-blur-lg bg-muted/20 border border-border shadow-md transition-all focus-within:ring-2 focus-within:ring-primary/40"
 		>
 			<input bind:this={fileInputElement} type="file" multiple hidden on:change={handleFileSelect} />
 			<div class="flex-shrink-0 p-2">
