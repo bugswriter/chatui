@@ -1,3 +1,5 @@
+// src/lib/types.ts
+
 export interface Attachment {
 	file_id: string;
 	s3_key: string;
@@ -16,15 +18,16 @@ export interface Agent {
 	mcp_server_url: string;
 }
 
+// ✅ CHANGE: Added an optional `progress` property.
 export interface Message {
 	id: string;
-	// ✅ MODIFIED: Added 'system' to the role type
 	role: 'user' | 'assistant' | 'system';
 	content: string;
 	attachments?: Attachment[];
 	timestamp: Date;
 	agent?: Partial<Agent> | null;
 	isPending?: boolean;
+	progress?: ProgressInfo | null; // This will hold progress info for this specific message.
 }
 
 export interface ProgressInfo {

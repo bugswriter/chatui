@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { afterUpdate, tick } from 'svelte';
-	import type { Message, ProgressInfo } from '$lib/types';
+	import type { Message } from '$lib/types';
 	import MessageBubble from './MessageBubble.svelte';
 	import LoadingMessage from './LoadingMessage.svelte';
 
 	export let messages: Message[] = [];
-	export let progress: ProgressInfo | null = null;
+	// ✅ REMOVED: No longer need to pass global progress down.
+	// export let progress: ProgressInfo | null = null;
 	export let isLoading: boolean = false;
 	export let userName: string = 'You';
 	export let className: string = '';
@@ -13,13 +14,8 @@
 	let scrollContainer: HTMLDivElement;
 	let shouldAutoScroll = true;
 
-	/**
-	 * ✅ MODIFIED: Reusable scroll function with a 'force' option.
-	 * When force is true, we scroll even if shouldAutoScroll is false.
-	 * This is crucial for when new content (like a loaded image) changes the height.
-	 */
 	async function scrollToBottom(force = false) {
-		await tick(); // Wait for DOM to update
+		await tick();
 		if ((shouldAutoScroll || force) && scrollContainer) {
 			scrollContainer.scrollTo({
 				top: scrollContainer.scrollHeight,
@@ -28,13 +24,11 @@
 		}
 	}
 
-	// afterUpdate handles scrolling for new text messages.
 	afterUpdate(() => scrollToBottom());
 
 	function handleScroll() {
 		if (!scrollContainer) return;
 		const threshold = 50;
-		// Update shouldAutoScroll based on user's scroll position.
 		shouldAutoScroll =
 			scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight <
 			threshold;
@@ -66,7 +60,6 @@
 				{#each messages as message (message.id)}
 					<MessageBubble
 						{message}
-						{progress}
 						{userName}
 						on:reattach
 						on:contentLoaded={() => scrollToBottom(true)}
