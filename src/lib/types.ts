@@ -18,7 +18,8 @@ export interface Agent {
 
 export interface Message {
 	id: string;
-	role: 'user' | 'assistant';
+	// ✅ MODIFIED: Added 'system' to the role type
+	role: 'user' | 'assistant' | 'system';
 	content: string;
 	attachments?: Attachment[];
 	timestamp: Date;

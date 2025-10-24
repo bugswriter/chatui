@@ -1,78 +1,90 @@
 // src/lib/stores/chatStore.ts
 
 import { writable } from 'svelte/store';
-import type { Message, ProgressInfo, StreamEvent, Attachment } from '$lib/types';
+import type { Message, ProgressInfo, StreamEvent, Attachment, Agent } from '$lib/types';
 
 function createChatStore() {
 	const { subscribe, set, update } = writable<{
 		messages: Message[];
-		// REPLACED streamingMessageId with a more robust system
 		activeStreams: Set<string>;
 		progress: ProgressInfo | null;
-		isLoading: boolean; // True when waiting for the first response chunk
+		isLoading: boolean;
 		sessionId: string | null;
+		activeAgent: Partial<Agent> | null; // ✅ ADDED: Track the current agent
 	}>({
 		messages: [],
 		activeStreams: new Set(),
 		progress: null,
 		isLoading: false,
 		sessionId: null,
+		activeAgent: null // ✅ ADDED: Initialize as null
 	});
 
 	const handleStreamEvent = (event: StreamEvent) => {
-		update(state => {
+		update((state) => {
 			switch (event.type) {
 				case 'session_id':
 					return { ...state, sessionId: event.session_id || state.sessionId };
 
 				case 'user_message_receipt':
-					// Find the optimistic message and replace it with the confirmed one from the backend.
-					// This preserves the chat order and gives us the permanent ID.
 					const messagesWithReceipt = [...state.messages];
-					const optimisticIndex = messagesWithReceipt.findIndex(m => m.id.startsWith('client_'));
+					const optimisticIndex = messagesWithReceipt.findIndex((m) => m.id.startsWith('client_'));
 					if (optimisticIndex !== -1 && event.message) {
 						messagesWithReceipt[optimisticIndex] = {
 							...event.message,
-							timestamp: new Date() // Use client time for consistency
+							timestamp: new Date()
 						};
 					}
 					return { ...state, messages: messagesWithReceipt };
 
-				// --- NEW LIFECYCLE MANAGEMENT ---
 				case 'stream_start':
 					state.activeStreams.add(event.message_id!);
-					// No need to set isLoading here; sendMessage already did.
-					// Clear progress from any previous turn.
 					return { ...state, progress: null };
 
 				case 'assistant_message_start':
-					if (event.message?.id && !state.messages.some(m => m.id === event.message.id)) {
+					if (event.message?.id && !state.messages.some((m) => m.id === event.message.id)) {
+						const newMessages = [...state.messages];
+						const newAgent = event.message.agent;
+
+						// ✅ ADDED: Logic to detect and announce agent change
+						if (state.activeAgent && newAgent && state.activeAgent.id !== newAgent.id) {
+							const systemMessage: Message = {
+								id: `system_${event.message.id}`,
+								role: 'system',
+								content: `${state.activeAgent.name} has left. ${newAgent.name} has joined.`,
+								timestamp: new Date()
+							};
+							newMessages.push(systemMessage);
+						}
+
 						const newMessage: Message = {
 							...event.message,
-							content: '', // Start with empty content
+							content: '',
 							timestamp: new Date()
 						};
+						newMessages.push(newMessage);
+
 						return {
 							...state,
-							isLoading: false, // The placeholder is now visible, so the main loader can go.
-							messages: [...state.messages, newMessage],
+							isLoading: false,
+							messages: newMessages,
+							activeAgent: newAgent || state.activeAgent // Update the active agent
 						};
 					}
 					return state;
 
 				case 'content_chunk':
-					const messagesWithChunk = state.messages.map(m => {
+					const messagesWithChunk = state.messages.map((m) => {
 						if (m.id === event.message_id) {
-							// Ensure the "typing..." indicator is removed on the first chunk.
 							const newContent = m.isPending ? event.chunk || '' : m.content + (event.chunk || '');
 							return { ...m, content: newContent, isPending: false };
 						}
 						return m;
 					});
 					return { ...state, messages: messagesWithChunk };
-				
+
 				case 'assistant_attachment':
-					const messagesWithAttachment = state.messages.map(m => {
+					const messagesWithAttachment = state.messages.map((m) => {
 						if (m.id === event.message_id) {
 							const existingAttachments = m.attachments || [];
 							const newAttachments = event.attachments || [];
@@ -81,28 +93,24 @@ function createChatStore() {
 						return m;
 					});
 					return { ...state, messages: messagesWithAttachment };
-				
+
 				case 'progress':
-					// Progress is a self-contained event.
 					return { ...state, progress: event as ProgressInfo };
 
-				// --- NEW LIFECYCLE MANAGEMENT ---
 				case 'stream_end':
 					state.activeStreams.delete(event.message_id!);
-					// If this was the last active stream, the turn is officially over.
 					if (state.activeStreams.size === 0) {
 						return { ...state, progress: null };
 					}
-					return state; // Otherwise, just update the set.
-				
+					return state;
+
 				case 'error':
-					console.error("Stream Error Event:", event.error);
-					// On any error, kill all loading states.
+					console.error('Stream Error Event:', event.error);
 					return {
 						...state,
 						isLoading: false,
 						activeStreams: new Set(),
-						progress: null,
+						progress: null
 					};
 			}
 			return state;
@@ -110,36 +118,33 @@ function createChatStore() {
 	};
 
 	const sendMessage = (content: string, attachments: Attachment[]) => {
-		// 1. Create an optimistic message with a temporary client-side ID.
 		const clientSideId = `client_${crypto.randomUUID()}`;
 		const userMessage: Message = {
 			id: clientSideId,
 			role: 'user',
 			content: content,
 			attachments: attachments,
-			timestamp: new Date(),
+			timestamp: new Date()
 		};
 
-		// 2. Update the UI immediately.
-		update(state => ({
+		update((state) => ({
 			...state,
 			messages: [...state.messages, userMessage],
-			isLoading: true, // Start the global loading indicator.
-			progress: null,  // Clear any old progress bars.
+			isLoading: true,
+			progress: null
 		}));
 	};
 
-	// A new handler for when the entire fetch/stream process fails.
 	const handleStreamFailure = (error: string) => {
-		console.error("Fatal stream error:", error);
-		update(state => ({
+		console.error('Fatal stream error:', error);
+		update((state) => ({
 			...state,
 			isLoading: false,
 			activeStreams: new Set(),
-			progress: null,
+			progress: null
 		}));
 	};
-	
+
 	const reset = () => {
 		set({
 			messages: [],
@@ -147,15 +152,16 @@ function createChatStore() {
 			progress: null,
 			isLoading: false,
 			sessionId: null,
+			activeAgent: null // ✅ ADDED: Reset the agent on logout
 		});
 	};
 
-	return { 
-		subscribe, 
-		sendMessage, 
-		handleStreamEvent, 
-		handleStreamFailure, 
-		reset 
+	return {
+		subscribe,
+		sendMessage,
+		handleStreamEvent,
+		handleStreamFailure,
+		reset
 	};
 }
 
