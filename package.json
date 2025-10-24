@@ -27,6 +27,7 @@
 		"marked": "^16.4.1",
 		"marked-highlight": "^2.2.2",
 		"svelte-lucide": "^3.0.0",
-		"tailwindcss": "^4.1.16"
+		"tailwindcss": "^4.1.16",
+		"wavesurfer.js": "^7.11.0"
 	}
 }
