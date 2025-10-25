@@ -8,14 +8,13 @@
 	import ChatInput from '$lib/components/ChatInput.svelte';
 	import LoginModal from '$lib/components/LoginModal.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
-	import ImageLightbox from '$lib/components/ImageLightbox.svelte'; // ✅ IMPORT the new component
+	import ImageLightbox from '$lib/components/ImageLightbox.svelte';
 	import type { Attachment } from '$lib/types';
 
 	let isLoginOpen = false;
 	let isSettingsOpen = false;
 	let reattachedFiles: Attachment[] = [];
 
-	// ✅ ADDED: State for the lightbox
 	let fullscreenImageUrl: string | null = null;
 
 	onMount(() => {
@@ -47,7 +46,6 @@
 		);
 	}
 
-	// ✅ ADDED: Handler to open the lightbox
 	function handleViewImage(event: CustomEvent<{ url: string }>) {
 		fullscreenImageUrl = event.detail.url;
 	}
@@ -71,9 +69,9 @@
 			<ChatHistory
 				className="absolute inset-0 pb-[150px] md:pb-[130px]"
 				messages={$chatStore.messages}
-				progress={$chatStore.progress}
 				isLoading={$chatStore.isLoading}
 				userName={$authStore.user.name}
+				userAvatarUrl={$authStore.user.avatar}
 				on:reattach={handleReattach}
 				on:viewImage={handleViewImage}
 			/>
@@ -115,7 +113,6 @@
 <LoginModal isOpen={isLoginOpen} on:close={() => (isLoginOpen = false)} />
 <SettingsModal isOpen={isSettingsOpen} on:close={() => (isSettingsOpen = false)} />
 
-<!-- ✅ ADDED: Conditionally render the lightbox -->
 {#if fullscreenImageUrl}
 	<ImageLightbox
 		imageUrl={fullscreenImageUrl}

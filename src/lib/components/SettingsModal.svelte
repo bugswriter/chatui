@@ -1,11 +1,16 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { LogOut } from 'lucide-svelte';
+	import { LogOut, UserCircle } from 'lucide-svelte';
 	import { settingsStore } from '$lib/stores/settingsStore';
 	import { authStore } from '$lib/stores/authStore';
 
 	export let isOpen: boolean = false;
+
+	// --- NEW: State for avatar upload ---
+	let fileInput: HTMLInputElement;
+	let isUploading = false;
+	let uploadError: string | null = null;
 
 	const dispatch = createEventDispatcher();
 	function closeModal() {
@@ -18,6 +23,24 @@
 	function handleKeydown(event: KeyboardEvent) {
 		if (isOpen && event.key === 'Escape') {
 			closeModal();
+		}
+	}
+
+	// --- NEW: Handler for file selection ---
+	async function handleFileSelect(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+
+		if (file) {
+			isUploading = true;
+			uploadError = null;
+			try {
+				await authStore.updateAvatar(file);
+			} catch (error) {
+				uploadError = error instanceof Error ? error.message : 'Upload failed.';
+			} finally {
+				isUploading = false;
+			}
 		}
 	}
 </script>
@@ -47,6 +70,53 @@
 
 			<!-- Settings Sections -->
 			<div class="flex flex-col gap-6 pt-2">
+				<!-- ✅ NEW: Account Section for Profile Picture -->
+				<div class="flex flex-col gap-3">
+					<h3 class="text-sm font-semibold text-foreground/80">Account</h3>
+					<div class="flex items-center gap-4 rounded-lg border border-border bg-background p-3">
+						<!-- Avatar Display -->
+						<div
+							class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+						>
+							{#if $authStore.user?.avatar}
+								<img
+									src={$authStore.user.avatar}
+									alt="User avatar"
+									class="h-full w-full rounded-full object-cover"
+								/>
+							{:else}
+								<UserCircle class="h-10 w-10" />
+							{/if}
+						</div>
+						<!-- Upload Controls -->
+						<div class="flex-1">
+							<p class="font-medium text-foreground">Profile Picture</p>
+							<p class="text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB.</p>
+							<input
+								bind:this={fileInput}
+								on:change={handleFileSelect}
+								type="file"
+								accept="image/png, image/jpeg, image/gif"
+								hidden
+							/>
+							<button
+								on:click={() => fileInput.click()}
+								disabled={isUploading}
+								class="mt-2 text-sm font-semibold text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								{#if isUploading}
+									Uploading...
+								{:else}
+									Change
+								{/if}
+							</button>
+						</div>
+					</div>
+					{#if uploadError}
+						<p class="text-xs text-center text-danger">{uploadError}</p>
+					{/if}
+				</div>
+
 				<!-- Display Section -->
 				<div class="flex flex-col gap-2">
 					<h3 class="text-sm font-semibold text-foreground/80">Display</h3>
@@ -65,9 +135,8 @@
 					</label>
 				</div>
 
-				<!-- Account Section -->
+				<!-- Logout Section -->
 				<div class="flex flex-col gap-4 border-t border-border pt-6">
-					<h3 class="text-sm font-semibold text-foreground/80">Account</h3>
 					<button
 						on:click={handleLogout}
 						class="flex w-full items-center justify-center gap-2 rounded-md bg-danger/10 py-2 font-semibold text-danger transition-colors hover:bg-danger/20"

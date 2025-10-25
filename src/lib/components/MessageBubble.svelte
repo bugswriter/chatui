@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import { Bot, User, Info } from 'lucide-svelte';
 	import { marked } from 'marked';
@@ -35,14 +34,13 @@
 
 	export let message: Message;
 	export let userName: string = 'You';
+	export let userAvatarUrl: string | null | undefined = undefined;
 
 	const dispatch = createEventDispatcher();
 	let bubbleElement: HTMLDivElement;
-
 	let attachmentUrls: Record<string, string> = {};
 	let isCurrentlyStreaming = false;
 	let parsedContent: string = '';
-
 	let hoveredAgent: Agent | undefined = undefined;
 	let hoveredAgentElement: HTMLElement | null = null;
 
@@ -94,12 +92,10 @@
 			const codeBlocks = bubbleElement.querySelectorAll('pre');
 			codeBlocks.forEach((block) => {
 				if (block.querySelector('.copy-button')) return;
-
 				const button = document.createElement('button');
 				button.className = 'copy-button';
 				button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 				block.prepend(button);
-
 				button.addEventListener('click', () => {
 					const code = block.querySelector('code');
 					if (code) {
@@ -163,12 +159,8 @@
 		<div class="h-px w-full flex-1 bg-border" />
 	</div>
 {:else}
-	<!-- ✅ FIX: Removed the `animate-[fade-in...]` class to prevent re-animation on update -->
-	<div
-		class="flex mb-4 gap-3"
-		class:justify-end={isUser}
-		class:justify-start={!isUser}
-	>
+	<div class="flex mb-4 gap-3" class:justify-end={isUser} class:justify-start={!isUser}>
+		<!-- ✅ FIX: Assistant (AI) avatar now shows here on the left -->
 		{#if !isUser}
 			<div class="flex h-10 w-10 flex-shrink-0 self-end rounded-full bg-muted shadow-md">
 				{#if message.agent?.avatar}
@@ -250,11 +242,24 @@
 			{/if}
 		</div>
 
+		<!-- ✅ FIX: User avatar now shows here on the right -->
 		{#if isUser}
 			<div
-				class="flex h-10 w-10 flex-shrink-0 items-center justify-center self-end rounded-full bg-user text-user-foreground shadow-md"
+				class="flex h-10 w-10 flex-shrink-0 items-center justify-center self-end rounded-full bg-user shadow-md"
 			>
-				<User class="h-5 w-5" />
+				{#if userAvatarUrl}
+					<img
+						src={userAvatarUrl}
+						alt={userName}
+						class="h-full w-full rounded-full object-cover"
+					/>
+				{:else}
+					<div
+						class="flex h-full w-full items-center justify-center rounded-full text-user-foreground"
+					>
+						<User class="h-5 w-5" />
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</div>

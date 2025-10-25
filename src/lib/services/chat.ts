@@ -1,6 +1,7 @@
 // src/lib/services/chat.ts
 
 import { API_CONFIG, getAuthToken } from '$lib/services/api';
+import { authStore } from '$lib/stores/authStore'; // ✅ IMPORT the authStore
 import type { Attachment, StreamEvent } from '$lib/types';
 
 interface ChatRequestPayload {
@@ -8,7 +9,7 @@ interface ChatRequestPayload {
 	session_id: string | null;
 	attachments: Array<{
 		file_id: string;
-		s3_key: string; // ✅ FIX: Corrected typo from s_key to s3_key
+		s3_key: string;
 		filename: string;
 		content_type?: string;
 	}>;
@@ -16,7 +17,6 @@ interface ChatRequestPayload {
 
 /**
  * Initiates a streaming chat connection to the backend.
- * (The rest of the file remains unchanged)
  */
 export const streamChat = async (
 	message: string,
@@ -68,7 +68,7 @@ export const streamChat = async (
 		while (true) {
 			const { done, value } = await reader.read();
 			if (done) {
-				break;
+				break; // Exit the loop when the stream is finished
 			}
 
 			buffer += decoder.decode(value, { stream: true });
@@ -90,6 +90,11 @@ export const streamChat = async (
 				}
 			}
 		}
+
+		// --- ✅ NEW: Refresh user details after a successful stream ---
+		// This is the perfect time to update the coin balance.
+		console.log('Chat stream finished successfully. Refreshing user details...');
+		authStore.refreshUserDetails();
 	} catch (error) {
 		console.error('Chat stream error:', error);
 		onError(error instanceof Error ? error.message : 'A network error occurred.');

@@ -7,6 +7,7 @@
 	export let messages: Message[] = [];
 	export let isLoading: boolean = false;
 	export let userName: string = 'You';
+	export let userAvatarUrl: string | null | undefined = undefined; // ✅ ACCEPT THE PROP HERE
 	export let className: string = '';
 
 	let scrollContainer: HTMLDivElement;
@@ -53,11 +54,11 @@
 			</div>
 		{:else}
 			<div class="flex flex-col gap-4">
-				<!-- ✅ FIX: Use the stable `clientId` for user messages, and `id` for all others. -->
 				{#each messages as message (message.clientId || message.id)}
 					<MessageBubble
 						{message}
 						{userName}
+						{userAvatarUrl}
 						on:reattach
 						on:contentLoaded={() => scrollToBottom(true)}
 						on:viewImage
