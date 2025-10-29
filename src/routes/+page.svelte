@@ -1,7 +1,9 @@
+<!-- src/routes/+page.svelte -->
 <script lang="ts">
     import { onMount } from "svelte";
     import { authStore } from "$lib/stores/authStore";
     import { chatStore } from "$lib/stores/chatStore";
+    import { historyStore } from "$lib/stores/historyStore";
     import { streamChat } from "$lib/services/chat";
     import Navbar from "$lib/components/Navbar.svelte";
     import ChatHistory from "$lib/components/ChatHistory.svelte";
@@ -42,6 +44,8 @@
         event: CustomEvent<{ message: string; attachments: Attachment[] }>,
     ) {
         const { message, attachments } = event.detail;
+        const isNewSession = !$chatStore.sessionId;
+
         chatStore.sendMessage(message, attachments);
         reattachedFiles = [];
 
@@ -53,8 +57,10 @@
             chatStore.handleStreamFailure,
         );
 
-        // ✅ ADD THIS LINE: After the chat is done, silently refresh the user details.
-        // This will fetch the new coin balance and trigger the animation in the Navbar.
+        if (isNewSession) {
+            historyStore.refreshSessionList();
+        }
+
         authStore.refreshUserDetails();
     }
 
@@ -73,11 +79,11 @@
         ></div>
     </div>
 
-    <!-- Main Chat App (Authenticated) -->
+    <!-- Main Chat App (Authenticated) - SIMPLIFIED LAYOUT -->
 {:else if $authStore.isAuthenticated && $authStore.user}
-    <main class="flex h-screen flex-col bg-background text-foreground">
+    <div class="h-screen bg-background text-foreground">
         <Navbar on:settingsClick={() => (isSettingsOpen = true)} />
-        <div class="flex-1 pt-14 relative bg-transparent">
+        <main class="relative h-full pt-14">
             <ChatHistory
                 className="absolute inset-0 pb-[150px] md:pb-[130px]"
                 messages={$chatStore.messages}
@@ -87,17 +93,39 @@
                 on:reattach={handleReattach}
                 on:viewImage={handleViewImage}
             />
-            <div class="absolute bottom-0 left-0 w-full z-10">
-                <ChatInput
-                    isLoading={$chatStore.isLoading}
-                    {isStreaming}
-                    {reattachedFiles}
-                    on:send={handleSendMessage}
-                    on:removeReattached={handleRemoveReattached}
-                />
+            <div class="absolute bottom-0 left-0 z-10 w-full">
+                {#if $historyStore.selectedSessionId === null}
+                    <!-- Active Chat Input -->
+                    <ChatInput
+                        isLoading={$chatStore.isLoading}
+                        {isStreaming}
+                        {reattachedFiles}
+                        on:send={handleSendMessage}
+                        on:removeReattached={handleRemoveReattached}
+                    />
+                {:else}
+                    <!-- Read-Only Notice for Past Chats -->
+                    <div
+                        class="border-t border-border bg-background/80 p-4 backdrop-blur-sm"
+                    >
+                        <div
+                            class="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center text-sm"
+                        >
+                            <p class="font-medium text-muted-foreground">
+                                This is a read-only view of a past conversation.
+                            </p>
+                            <button
+                                on:click={() => historyStore.createNewSession()}
+                                class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                            >
+                                Start a New Chat
+                            </button>
+                        </div>
+                    </div>
+                {/if}
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <!-- Logged-out Landing Page -->
 {:else}
@@ -105,7 +133,7 @@
         class="flex h-screen w-full flex-col items-center justify-center bg-background p-4 text-center"
     >
         <h1
-            class="text-6xl font-bold tracking-tighter bg-gradient-to-br from-primary via-user to-primary bg-clip-text text-transparent"
+            class="bg-gradient-to-br from-primary via-user to-primary bg-clip-text text-6xl font-bold tracking-tighter text-transparent"
         >
             munni.ai
         </h1>

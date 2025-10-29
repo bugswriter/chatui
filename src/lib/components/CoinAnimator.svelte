@@ -1,55 +1,102 @@
 <!-- src/lib/components/CoinAnimator.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+    import { tweened } from "svelte/motion";
+    import { cubicOut } from "svelte/easing";
+    import { onMount } from "svelte";
 
-	// The value to display, e.g., "-4" or "+1000"
-	export let value: string = '';
-	// 'danger' for spending, 'success' for gaining
-	export let type: 'danger' | 'success' = 'danger';
+    // The reactive coin value from the parent store.
+    export let coins: number = 0;
 
-	// This is a self-destructing component. It will remove itself
-	// from the DOM after the animation completes to keep things clean.
-	export let onComplete: () => void;
+    // A "tweened" store smoothly animates the number from its old value to the new one.
+    const displayedCoins = tweened(coins, {
+        duration: 600, // Animation duration in milliseconds
+        easing: cubicOut,
+    });
 
-	// CSS classes based on the type prop
-	$: colorClass = type === 'danger' ? 'text-danger' : 'text-green-500';
+    // A key block re-triggers its content and animations whenever the 'coins' prop changes.
+    // This is perfect for our pulse effect.
+    let pulseClass = "";
 
-	// The animation lasts 2 seconds (2000ms). After that, we call the
-	// onComplete function passed from the parent.
-	onMount(() => {
-		const timer = setTimeout(() => {
-			onComplete();
-		}, 2000);
-
-		// Cleanup function to prevent memory leaks if the component
-		// is destroyed before the timer finishes.
-		return () => clearTimeout(timer);
-	});
+    // A reactive statement that updates the tweened store whenever the 'coins' prop changes.
+    $: {
+        // Svelte's reactivity will trigger this block when `coins` updates.
+        if (typeof $displayedCoins === "number" && coins !== $displayedCoins) {
+            // Determine the pulse color based on whether coins increased or decreased.
+            pulseClass = coins > $displayedCoins ? "pulse-green" : "pulse-red";
+        }
+        // Set the new target value for the tweened animation.
+        displayedCoins.set(coins);
+    }
 </script>
 
-<div
-	class="coin-animation absolute bottom-full left-1/2 -translate-x-1/2 whitespace-nowrap px-2 py-1 text-sm font-bold {colorClass}"
->
-	{value}
-</div>
+{#key coins}
+    <div class="coin-display {pulseClass}">
+        <!-- Coin Icon -->
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-circle-dollar-sign text-amber-400"
+            ><circle cx="12" cy="12" r="10" /><path
+                d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"
+            /><path d="M12 18V6" /></svg
+        >
+        <!-- The animated number. We round it to prevent showing decimals during the animation. -->
+        <span class="font-semibold text-foreground"
+            >{Math.round($displayedCoins)}</span
+        >
+    </div>
+{/key}
 
 <style>
-	@keyframes soul-leaving {
-		0% {
-			transform: translateY(0) scale(1);
-			opacity: 1;
-		}
-		100% {
-			/* Move 50px upwards, scale down slightly, and fade out */
-			transform: translateY(-50px) scale(0.8);
-			opacity: 0;
-		}
-	}
+    .coin-display {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
 
-	.coin-animation {
-		/* Apply the animation */
-		animation: soul-leaving 2s ease-out forwards;
-		/* Prevent user from interacting with the animated element */
-		pointer-events: none;
-	}
+    @keyframes pulse-green {
+        0% {
+            transform: scale(1);
+            color: #22c55e; /* green-500 */
+        }
+        50% {
+            transform: scale(1.2);
+            color: #22c55e;
+        }
+        100% {
+            transform: scale(1);
+            color: inherit;
+        }
+    }
+
+    @keyframes pulse-red {
+        0% {
+            transform: scale(1);
+            color: #ef4444; /* red-500 */
+        }
+        50% {
+            transform: scale(1.2);
+            color: #ef4444;
+        }
+        100% {
+            transform: scale(1);
+            color: inherit;
+        }
+    }
+
+    /* We apply the animation only to the number span inside the display */
+    .pulse-green span {
+        animation: pulse-green 0.5s ease-out;
+    }
+
+    .pulse-red span {
+        animation: pulse-red 0.5s ease-out;
+    }
 </style>
