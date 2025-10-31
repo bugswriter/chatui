@@ -8,21 +8,21 @@
     import Navbar from "$lib/components/Navbar.svelte";
     import ChatHistory from "$lib/components/ChatHistory.svelte";
     import ChatInput from "$lib/components/ChatInput.svelte";
-    import LoginModal from "$lib/components/LoginModal.svelte";
     import SettingsModal from "$lib/components/SettingsModal.svelte";
     import ImageLightbox from "$lib/components/ImageLightbox.svelte";
     import type { Attachment } from "$lib/types";
 
-    let isLoginOpen = false;
+    // REMOVED: isLoginOpen state
     let isSettingsOpen = false;
     let reattachedFiles: Attachment[] = [];
-
     let fullscreenImageUrl: string | null = null;
 
     onMount(() => {
+        // This now handles everything on page load
         authStore.initialize();
     });
 
+    // --- All handler functions (handleReattach, handleSendMessage, etc.) remain unchanged ---
     function handleReattach(event: CustomEvent<Attachment>) {
         const newAttachment = event.detail;
         if (
@@ -60,8 +60,6 @@
         if (isNewSession) {
             historyStore.refreshSessionList();
         }
-
-        authStore.refreshUserDetails();
     }
 
     function handleViewImage(event: CustomEvent<{ url: string }>) {
@@ -79,7 +77,7 @@
         ></div>
     </div>
 
-    <!-- Main Chat App (Authenticated) - SIMPLIFIED LAYOUT -->
+    <!-- Main Chat App (Authenticated) -->
 {:else if $authStore.isAuthenticated && $authStore.user}
     <div class="h-screen bg-background text-foreground">
         <Navbar on:settingsClick={() => (isSettingsOpen = true)} />
@@ -127,7 +125,7 @@
         </main>
     </div>
 
-    <!-- Logged-out Landing Page -->
+    <!-- ✅ NEW: Logged-out Landing Page -->
 {:else}
     <div
         class="flex h-screen w-full flex-col items-center justify-center bg-background p-4 text-center"
@@ -140,17 +138,17 @@
         <p class="mt-4 max-w-md text-lg text-muted-foreground">
             Your intelligent AI assistant, reimagined.
         </p>
-        <button
-            on:click={() => (isLoginOpen = true)}
+        <!-- ✅ CHANGED: This is now a standard link, not a button opening a modal -->
+        <a
+            href="/login"
             class="mt-8 rounded-full bg-primary py-3 px-8 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:scale-105"
         >
             Login to Continue
-        </button>
+        </a>
     </div>
 {/if}
 
-<!-- Modals -->
-<LoginModal isOpen={isLoginOpen} on:close={() => (isLoginOpen = false)} />
+<!-- Modals (LoginModal is removed) -->
 <SettingsModal
     isOpen={isSettingsOpen}
     on:close={() => (isSettingsOpen = false)}

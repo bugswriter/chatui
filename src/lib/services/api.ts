@@ -1,31 +1,19 @@
 // src/lib/services/api.ts
+import { get } from "svelte/store";
+import { authToken } from "$lib/stores/tokenStore";
 
 export const API_CONFIG = {
-	authBaseUrl: 'https://bugswriter.ai',
-	apiBaseUrl: 'https://sys.bugswriter.ai'
+  // The FastAPI/Jinja app is the primary entry point
+  authBaseUrl: "https://bugswriter.ai",
+  // The FastAPI API for chat services
+  apiBaseUrl: "https://sys.bugswriter.ai",
 };
 
-const AUTH_TOKEN_KEY = 'authToken';
-
-// Safely get the token from localStorage
+/**
+ * Gets the current auth token from the in-memory store.
+ * This is the single source of truth for the token on the client-side.
+ * @returns The JWT string or null if not authenticated.
+ */
 export const getAuthToken = (): string | null => {
-	// Check if we are in the browser environment
-	if (typeof window !== 'undefined' && window.localStorage) {
-		return localStorage.getItem(AUTH_TOKEN_KEY);
-	}
-	return null;
-};
-
-// Safely set the token in localStorage
-export const setAuthToken = (token: string) => {
-	if (typeof window !== 'undefined' && window.localStorage) {
-		localStorage.setItem(AUTH_TOKEN_KEY, token);
-	}
-};
-
-// Safely clear the token from localStorage
-export const clearAuthToken = () => {
-	if (typeof window !== 'undefined' && window.localStorage) {
-		localStorage.removeItem(AUTH_TOKEN_KEY);
-	}
+  return get(authToken);
 };

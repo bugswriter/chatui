@@ -2,7 +2,6 @@
 <script lang="ts">
     import { createEventDispatcher, onMount, onDestroy } from "svelte";
     import { authStore } from "$lib/stores/authStore";
-    import { historyStore } from "$lib/stores/historyStore";
     import CoinAnimator from "$lib/components/CoinAnimator.svelte";
     import HistoryPopover from "$lib/components/HistoryPopover.svelte";
 
@@ -15,9 +14,7 @@
         dispatch("settingsClick");
     }
 
-    function handleLogout() {
-        authStore.logout();
-    }
+    // REMOVED: handleLogout function
 
     function handleClickOutside(event: MouseEvent) {
         if (
@@ -40,22 +37,21 @@
 <header
     class="fixed top-0 left-0 z-20 flex h-14 w-full items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm"
 >
-    <!-- Left Side: New Chat Button -->
+    <!-- Left Side -->
     <div class="flex items-center gap-4">
         <h1 class="hidden text-lg font-bold tracking-tight sm:block">
             munni.ai
         </h1>
     </div>
 
-    <!-- Right Side: History, User Menu, and Coins -->
-    {#if $authStore.user}
+    <!-- Right Side: Shows only if the user is authenticated -->
+    {#if $authStore.isAuthenticated && $authStore.user}
         <div class="flex items-center gap-4">
-            <!-- ✅ UPDATED: The CoinAnimator now handles everything. -->
             <div class="rounded-full bg-muted px-3 py-1 text-sm">
                 <CoinAnimator coins={$authStore.user.coins} />
             </div>
 
-            <!-- History Popover Button & Container -->
+            <!-- History Popover -->
             <div class="relative" bind:this={historyContainer}>
                 <button
                     on:click={() => (isHistoryOpen = !isHistoryOpen)}
@@ -86,7 +82,7 @@
                 />
             </div>
 
-            <!-- User Avatar & Dropdown Menu -->
+            <!-- User Avatar & Dropdown -->
             <div class="group relative">
                 <button class="h-8 w-8 rounded-full">
                     <img
@@ -109,12 +105,13 @@
                     >
                         <span>Settings</span>
                     </button>
-                    <button
-                        on:click={handleLogout}
+                    <!-- ✅ CHANGED: This is now a standard link to the logout endpoint -->
+                    <a
+                        href="/logout"
                         class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-destructive transition-colors hover:bg-destructive/10"
                     >
                         <span>Logout</span>
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
