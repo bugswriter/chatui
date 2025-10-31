@@ -40,7 +40,7 @@ export const getUserDetails = async (): Promise<UserDetails> => {
     throw new Error("No authentication token available.");
   }
 
-  const response = await fetch(`${API_CONFIG.apiBaseUrl}/api/v1/users/me`, {
+  const response = await fetch(`${API_CONFIG.authBaseUrl}/api/v1/users/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
