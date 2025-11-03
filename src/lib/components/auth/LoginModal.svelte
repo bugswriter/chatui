@@ -48,6 +48,10 @@
         dispatch("switchToRegister");
     }
 
+    function handleSwitchToForgotPassword() {
+        dispatch("switchToForgotPassword");
+    }
+
     async function handleSubmit() {
         isLoading = true;
         error = null;
@@ -216,7 +220,7 @@
                             placeholder="you@example.com"
                             required
                             disabled={isLoading || isOAuthRedirecting}
-                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-gray-400 disabled:opacity-50"
+                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 disabled:opacity-50"
                         />
                     </div>
                     <div>
@@ -233,7 +237,7 @@
                             placeholder="••••••••"
                             required
                             disabled={isLoading || isOAuthRedirecting}
-                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-gray-400 disabled:opacity-50"
+                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 disabled:opacity-50"
                         />
                     </div>
 
@@ -251,7 +255,7 @@
                     <!-- PRIMARY BUTTON: UNIFIED DESIGN - Blue -->
                     <button
                         type="submit"
-                        class="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white font-semibold text-sm shadow-md transition-all hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:opacity-50"
+                        class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-white font-semibold text-sm shadow-md transition-all hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:opacity-50"
                         disabled={isLoading || isOAuthRedirecting}
                     >
                         {#if isLoading || isOAuthRedirecting}
@@ -269,6 +273,16 @@
                         {/if}
                     </button>
                 </form>
+                <!-- FORGOT PASSWORD LINK SECTION -->
+                <div class="flex justify-end pt-1">
+                    <button
+                        on:click={handleSwitchToForgotPassword}
+                        class="text-sm font-semibold text-blue-600 hover:underline focus:outline-none"
+                        disabled={isLoading || isOAuthRedirecting}
+                    >
+                        Forgot Password?
+                    </button>
+                </div>
             </div>
 
             <!-- FOOTER -->
@@ -279,7 +293,7 @@
                 <!-- LINK: UNIFIED DESIGN - Standard blue link color -->
                 <button
                     on:click={handleSwitchToRegister}
-                    class="ml-1 font-semibold text-primary hover:underline focus:outline-none"
+                    class="ml-1 font-semibold text-blue-600 hover:underline focus:outline-none"
                     disabled={isLoading || isOAuthRedirecting}
                 >
                     Sign up

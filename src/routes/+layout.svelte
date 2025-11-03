@@ -9,10 +9,12 @@
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
     import LoginModal from "$lib/components/auth/LoginModal.svelte";
+    import ForgotPassword from "$lib/components/auth/ForgotPassword.svelte";
     import RegisterModal from "$lib/components/auth/RegisterModal.svelte";
 
     let isLoginModalOpen = false;
     let isRegisterModalOpen = false;
+    let isForgotPasswordOpen = false;
 
     onMount(() => {
         authStore.initialize();
@@ -73,6 +75,10 @@
             isLoginModalOpen = false;
             isRegisterModalOpen = true;
         }}
+        on:switchToForgotPassword={() => {
+            isLoginModalOpen = false;
+            isForgotPasswordOpen = true; // Correct state variable
+        }}
     />
 
     <RegisterModal
@@ -81,6 +87,20 @@
         on:switchToLogin={() => {
             isRegisterModalOpen = false;
             isLoginModalOpen = true;
+        }}
+    />
+
+    <!-- ADD THE NEW FORGOT PASSWORD MODAL -->
+    <ForgotPassword
+        bind:isOpen={isForgotPasswordOpen}
+        on:switchToLogin={() => {
+            isForgotPasswordOpen = false;
+            isLoginModalOpen = true;
+        }}
+        on:success={() => {
+            // Close the forgot password modal after successful submission
+            isForgotPasswordOpen = false;
+            // You might optionally show a success toast here
         }}
     />
 {/if}
