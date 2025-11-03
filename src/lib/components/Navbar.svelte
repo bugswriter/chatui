@@ -5,6 +5,9 @@
     import { LayoutDashboard, LogOut, Archive } from "lucide-svelte";
     import CoinDisplay from "./CoinDisplay.svelte"; // Using the standardized coin display
     import HistoryPopover from "$lib/components/HistoryPopover.svelte";
+    import { page } from "$app/stores";
+
+    $: isActivePage = $page.url.pathname === "/";
 
     const dispatch = createEventDispatcher();
 
@@ -127,27 +130,30 @@
                                     <LayoutDashboard class="h-4 w-4" />
                                     <span>Dashboard</span>
                                 </a>
-                                <!-- History Popover -->
-                                <div
-                                    class="relative"
-                                    bind:this={historyContainer}
-                                >
-                                    <button
-                                        on:click={() =>
-                                            (isHistoryOpen = !isHistoryOpen)}
-                                        class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                        class:bg-muted={isHistoryOpen}
-                                        aria-haspopup="true"
-                                        aria-expanded={isHistoryOpen}
+                                {#if isActivePage}
+                                    <!-- History Popover -->
+                                    <div
+                                        class="relative"
+                                        bind:this={historyContainer}
                                     >
-                                        <Archive class="h-5 w-5" />
-                                        <span>Archive</span>
-                                    </button>
-                                    <HistoryPopover
-                                        isOpen={isHistoryOpen}
-                                        on:close={() => (isHistoryOpen = false)}
-                                    />
-                                </div>
+                                        <button
+                                            on:click={() =>
+                                                (isHistoryOpen =
+                                                    !isHistoryOpen)}
+                                            class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                            class:bg-muted={isHistoryOpen}
+                                            aria-haspopup="true"
+                                            aria-expanded={isHistoryOpen}
+                                        >
+                                            <Archive class="h-5 w-5" />
+                                            <span>Archive</span>
+                                        </button>
+                                        <HistoryPopover
+                                            isOpen={isHistoryOpen}
+                                            on:close={() =>
+                                                (isHistoryOpen = false)}
+                                        />
+                                    </div>{/if}
                                 <!-- Logout: UNIFIED DESIGN - Standard red/danger style -->
                                 <button
                                     on:click={handleLogout}
