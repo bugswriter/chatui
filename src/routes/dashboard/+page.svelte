@@ -26,6 +26,10 @@
     let isLoadingTransactions = true;
     let error: string | null = null;
     let actionInProgress: "billing" | "cancel" | "reactivate" | null = null;
+    // --- NEW: State for avatar upload ---
+    let fileInput: HTMLInputElement;
+    let isUploading = false;
+    let uploadError: string | null = null;
 
     authStore.subscribe((state) => {
         if (
@@ -40,6 +44,25 @@
     onMount(async () => {
         if ($authStore.isAuthenticated) await fetchTransactions();
     });
+
+    // --- NEW: Handler for file selection ---
+    async function handleFileSelect(event: Event) {
+        const target = event.target as HTMLInputElement;
+        const file = target.files?.[0];
+
+        if (file) {
+            isUploading = true;
+            uploadError = null;
+            try {
+                await authStore.updateAvatar(file);
+            } catch (error) {
+                uploadError =
+                    error instanceof Error ? error.message : "Upload failed.";
+            } finally {
+                isUploading = false;
+            }
+        }
+    }
 
     async function fetchTransactions() {
         isLoadingTransactions = true;
@@ -190,20 +213,45 @@
                                     Account
                                 </h2>
                             </div>
-                            <div class="p-6 flex items-center gap-4">
-                                <img
-                                    src={$authStore.user.avatar ||
-                                        `https://api.dicebear.com/8.x/bottts/svg?seed=${$authStore.user.email}`}
-                                    alt="Avatar"
-                                    class="h-16 w-16 rounded-full object-cover border border-gray-200"
-                                />
-                                <div>
-                                    <p class="font-semibold text-gray-800">
-                                        {$authStore.user.name}
-                                    </p>
-                                    <p class="text-sm text-gray-500">
-                                        {$authStore.user.email}
-                                    </p>
+                            <div class="p-2 flex flex-col items-center gap-2">
+                                <div
+                                    class="w-full px-3 py-2 gap-4 flex flex-row"
+                                >
+                                    <div>
+                                        <img
+                                            src={$authStore.user.avatar ||
+                                                `https://api.dicebear.com/8.x/bottts/svg?seed=${$authStore.user.email}`}
+                                            alt="Avatar"
+                                            class="h-12 w-12 rounded-full object-cover border border-gray-200"
+                                        />
+                                        <input
+                                            bind:this={fileInput}
+                                            on:change={handleFileSelect}
+                                            type="file"
+                                            accept="image/png, image/jpeg, image/gif"
+                                            hidden
+                                        />
+                                        <button
+                                            on:click={() => fileInput.click()}
+                                            disabled={isUploading}
+                                            class="mt-2 text-sm font-semibold text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {#if isUploading}
+                                                Uploading...
+                                            {:else}
+                                                Change
+                                            {/if}
+                                        </button>
+                                    </div>
+                                    <!-- Upload Controls -->
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-gray-800">
+                                            {$authStore.user.name}
+                                        </p>
+                                        <p class="text-sm text-gray-500">
+                                            {$authStore.user.email}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
