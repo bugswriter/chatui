@@ -94,26 +94,27 @@
     }
 </script>
 
+<!-- UNIFIED DESIGN: Use standard light background, clean colors, and primary blue -->
 <div
-    class="min-h-screen bg-gradient-to-b from-[#faf9ff] via-[#f7f6fb] to-[#f5f3f8]"
+    class="min-h-screen bg-gray-50"
 >
     <main class="container mx-auto px-4 py-24 sm:py-32 text-center">
-        <h1 class="text-4xl font-extrabold text-[#1a1a1a] sm:text-6xl">
+        <h1 class="text-4xl font-extrabold text-gray-900 sm:text-6xl">
             Pricing Plans
         </h1>
-        <p class="mt-4 text-lg text-[#666]">
+        <p class="mt-4 text-lg text-gray-600">
             Choose the perfect plan — whether you need recurring access or a
             one-time boost.
         </p>
 
-        <!-- Tabs -->
+        <!-- Tabs: UNIFIED DESIGN - Standardized button colors with primary blue -->
         <div class="mt-12 flex justify-center gap-3">
             <button
                 on:click={() => (activeTab = "subscription")}
                 class={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     activeTab === "subscription"
-                        ? "bg-[#6b5ce7] text-white shadow-md"
-                        : "bg-white text-[#6b5ce7] hover:bg-[#f1f0ff] border border-[#dcd8f9]"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-white text-blue-600 hover:bg-blue-50 border border-blue-200"
                 }`}
             >
                 Subscription
@@ -122,8 +123,8 @@
                 on:click={() => (activeTab = "one_time")}
                 class={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     activeTab === "one_time"
-                        ? "bg-[#6b5ce7] text-white shadow-md"
-                        : "bg-white text-[#6b5ce7] hover:bg-[#f1f0ff] border border-[#dcd8f9]"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-white text-blue-600 hover:bg-blue-50 border border-blue-200"
                 }`}
             >
                 Boosters
@@ -133,7 +134,7 @@
         <!-- Loader / Error -->
         {#if isLoading}
             <div class="mt-16 flex justify-center">
-                <Loader2 class="h-10 w-10 animate-spin text-[#6b5ce7]" />
+                <Loader2 class="h-10 w-10 animate-spin text-blue-600" />
             </div>
         {:else if error}
             <div
@@ -149,23 +150,25 @@
                     class="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3"
                 >
                     {#each subscriptionPlans as plan}
+                        <!-- Card: UNIFIED DESIGN - Standard light card look -->
                         <div
-                            class="group flex flex-col rounded-2xl border border-[#e6e4df] bg-white/70 p-8 shadow-sm ring-1 ring-[#eae8e3] backdrop-blur-sm transition hover:shadow-lg hover:-translate-y-1"
+                            class="group flex flex-col rounded-2xl border border-gray-200 bg-white p-8 shadow-lg ring-1 ring-gray-100 transition hover:shadow-xl hover:-translate-y-1"
                         >
-                            <h3 class="text-lg font-semibold text-[#2e2e2e]">
+                            <h3 class="text-lg font-semibold text-gray-900">
                                 {plan.name}
                             </h3>
-                            <p class="mt-2 text-sm text-[#6b6b6b]">
+                            <p class="mt-2 text-sm text-gray-600">
                                 {plan.description || " "}
                             </p>
                             <p class="mt-6">
-                                <span class="text-4xl font-bold text-[#1a1a1a]">
+                                <span class="text-4xl font-bold text-gray-900">
                                     {formatPrice(plan.price)}
                                 </span>
-                                <span class="text-sm text-[#9b9b9b]"
+                                <span class="text-sm text-gray-500"
                                     >/month</span
                                 >
                             </p>
+                            <!-- PRIMARY BUTTON: UNIFIED DESIGN - Standard blue -->
                             <button
                                 on:click={() =>
                                     handleCheckout(
@@ -173,7 +176,7 @@
                                         "subscription",
                                     )}
                                 disabled={!!redirectingPriceId}
-                                class="mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-[#6b5ce7] text-white text-sm font-semibold transition hover:bg-[#5a4dd0] disabled:opacity-50"
+                                class="mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-semibold transition hover:bg-blue-700 disabled:opacity-50"
                             >
                                 {#if redirectingPriceId === plan.price_id}
                                     <Loader2
@@ -184,11 +187,11 @@
                                 {/if}
                             </button>
                             <ul
-                                class="mt-8 space-y-3 text-sm text-[#6b6b6b] text-left"
+                                class="mt-8 space-y-3 text-sm text-gray-600 text-left"
                             >
                                 <li class="flex items-start gap-x-3">
                                     <CheckCircle
-                                        class="h-5 w-5 text-[#6b5ce7]"
+                                        class="h-5 w-5 text-blue-600"
                                     />
                                     <span
                                         ><strong>{plan.coins}</strong> coins monthly</span
@@ -196,13 +199,13 @@
                                 </li>
                                 <li class="flex items-start gap-x-3">
                                     <CheckCircle
-                                        class="h-5 w-5 text-[#6b5ce7]"
+                                        class="h-5 w-5 text-blue-600"
                                     />
                                     <span>Priority feature access</span>
                                 </li>
                                 <li class="flex items-start gap-x-3">
                                     <CheckCircle
-                                        class="h-5 w-5 text-[#6b5ce7]"
+                                        class="h-5 w-5 text-blue-600"
                                     />
                                     <span>Support continued development</span>
                                 </li>
@@ -216,23 +219,25 @@
                     class="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3"
                 >
                     {#each oneTimePacks as pack}
+                        <!-- Card: UNIFIED DESIGN - Standard light card look -->
                         <div
-                            class="group flex flex-col items-center rounded-2xl border border-[#e6e4df] bg-white/80 p-8 text-center shadow-sm ring-1 ring-[#eae8e3] backdrop-blur-sm transition hover:shadow-lg hover:-translate-y-1"
+                            class="group flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-lg ring-1 ring-gray-100 transition hover:shadow-xl hover:-translate-y-1"
                         >
-                            <h3 class="text-lg font-semibold text-[#2e2e2e]">
+                            <h3 class="text-lg font-semibold text-gray-900">
                                 {pack.name}
                             </h3>
-                            <p class="mt-4 text-3xl font-bold text-[#1a1a1a]">
+                            <p class="mt-4 text-3xl font-bold text-gray-900">
                                 {formatPrice(pack.price)}
                             </p>
-                            <p class="mt-2 text-sm text-[#6b6b6b]">
+                            <p class="mt-2 text-sm text-gray-600">
                                 Get <strong>{pack.coins} coins</strong> instantly
                             </p>
+                            <!-- SECONDARY BUTTON: UNIFIED DESIGN - Standard light blue/gray -->
                             <button
                                 on:click={() =>
                                     handleCheckout(pack.price_id, "payment")}
                                 disabled={!!redirectingPriceId}
-                                class="mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#e5e1fb] text-[#3b2f9d] text-sm font-semibold transition hover:bg-[#d8d3fa] disabled:opacity-50"
+                                class="mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold transition hover:bg-blue-100 disabled:opacity-50"
                             >
                                 {#if redirectingPriceId === pack.price_id}
                                     <Loader2 class="h-4 w-4 animate-spin" />

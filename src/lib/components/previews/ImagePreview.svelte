@@ -8,16 +8,15 @@
 
 	const dispatch = createEventDispatcher();
 
-	// A helper function to forward events from the child (ActionBar)
-	// up to the parent component (AttachmentPreview).
 	function forward(event: CustomEvent) {
 		dispatch(event.type, event.detail);
 	}
 </script>
 
+<!-- UNIFIED DESIGN: Standard border/shadow -->
 <button
 	on:click={() => dispatch('viewImage', { url })}
-	class="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-border text-left shadow-sm"
+	class="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-gray-200 text-left shadow-sm"
 	aria-label="View image {attachment.filename} in fullscreen"
 >
 	<img
@@ -27,6 +26,5 @@
 		on:load={() => dispatch('contentLoaded')}
 	/>
 
-	<!-- The action bar is now neatly included -->
 	<ActionBar {attachment} {url} on:reattach={forward} on:download={forward} />
 </button>

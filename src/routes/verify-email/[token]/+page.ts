@@ -26,11 +26,9 @@ export const load = async ({ params, fetch }) => {
       },
     );
 
-    const data = await response
-      .json()
-      .catch(() => ({
-        detail: "Server did not return a valid JSON response.",
-      }));
+    const data = await response.json().catch(() => ({
+      detail: "Server did not return a valid JSON response.",
+    }));
 
     // 4. Return status and message to the Svelte component
     if (response.ok) {

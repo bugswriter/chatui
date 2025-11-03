@@ -20,10 +20,6 @@ export interface UserDetails {
 
 // --- Service Functions ---
 
-// ✅ FIX: The incorrect fetchTokenFromSession function has been REMOVED.
-// The logic to retrieve the token is now correctly handled by the authStore
-// reading from the persistent tokenStore.
-
 export const getUserDetails = async (): Promise<UserDetails> => {
   const token = getAuthToken();
   if (!token) {

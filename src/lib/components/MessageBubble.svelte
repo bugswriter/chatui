@@ -60,6 +60,7 @@
 			parsedContent = (baseHtml as string).replace(/@(\w+)/g, (match: string, agentName: string) => {
 				const agent = agentStore.findByName(agentName);
 				if (agent) {
+					// UNIFIED DESIGN: Use standard primary blue classes for agent tag
 					return `<span class="agent-tag" data-agent-name="${agentName}">${match}</span>`;
 				}
 				return match;
@@ -150,19 +151,20 @@
 <AgentPopover agent={hoveredAgent} targetElement={hoveredAgentElement} />
 
 {#if isSystem}
-	<div class="my-3 flex items-center justify-center gap-3 text-sm text-muted-foreground">
-		<div class="h-px w-full flex-1 bg-border" />
+	<!-- UNIFIED DESIGN: Standard muted text/border for system messages -->
+	<div class="my-3 flex items-center justify-center gap-3 text-sm text-gray-500">
+		<div class="h-px w-full flex-1 bg-gray-200" />
 		<div class="flex items-center gap-2">
 			<Info class="h-4 w-4" />
 			<span>{message.content}</span>
 		</div>
-		<div class="h-px w-full flex-1 bg-border" />
+		<div class="h-px w-full flex-1 bg-gray-200" />
 	</div>
 {:else}
 	<div class="flex mb-4 gap-3" class:justify-end={isUser} class:justify-start={!isUser}>
-		<!-- ✅ FIX: Assistant (AI) avatar now shows here on the left -->
+		<!-- Assistant (AI) avatar on the left -->
 		{#if !isUser}
-			<div class="flex h-10 w-10 flex-shrink-0 self-end rounded-full bg-muted shadow-md">
+			<div class="flex h-10 w-10 flex-shrink-0 self-end rounded-full bg-gray-100 shadow-md">
 				{#if message.agent?.avatar}
 					<img
 						src={message.agent.avatar}
@@ -171,7 +173,7 @@
 					/>
 				{:else}
 					<div class="flex items-center justify-center w-full h-full">
-						<Bot class="h-5 w-5 text-muted-foreground" />
+						<Bot class="h-5 w-5 text-gray-500" />
 					</div>
 				{/if}
 			</div>
@@ -183,7 +185,7 @@
 			class:items-start={!isUser}
 			bind:this={bubbleElement}
 		>
-			<div class="px-1 text-xs font-medium text-muted-foreground">{displayName}</div>
+			<div class="px-1 text-xs font-medium text-gray-500">{displayName}</div>
 
 			{#if message.attachments && message.attachments.length > 0}
 				<div class="flex w-full max-w-sm flex-col gap-2">
@@ -202,28 +204,31 @@
 			{/if}
 
 			{#if message.content || isCurrentlyStreaming || message.progress}
+				<!-- UNIFIED DESIGN: Simplified color classes to bg-blue-600 (user) and bg-gray-100 (assistant) -->
 				<div
-					class="relative z-10 rounded-xl px-4 py-2.5 text-base leading-relaxed shadow-sm {isUser
-						? 'bg-user text-user-foreground'
-						: 'bg-muted text-foreground'}"
+					class="relative z-10 rounded-xl px-4 py-2.5 text-base leading-relaxed shadow-md {isUser
+						? 'bg-blue-600 text-white'
+						: 'bg-gray-100 text-gray-900'}"
 					on:mouseover={handleMouseOver}
 					on:mouseout={handleMouseOut}
 				>
 					<div class="prose">
 						{#if message.progress}
 							<div class="w-64 text-sm">
-								<p class="font-semibold text-foreground/90">{message.progress.agent_name}</p>
-								<p class="text-xs text-muted-foreground/80 mb-2">
+								<p class="font-semibold text-gray-900/90">{message.progress.agent_name}</p>
+								<p class="text-xs text-gray-600/80 mb-2">
 									{message.progress.message}
 								</p>
-								<div class="w-full bg-border rounded-full h-1.5 overflow-hidden">
+								<!-- UNIFIED DESIGN: Standard progress bar colors -->
+								<div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
 									<div
-										class="animated-progress h-1.5 rounded-full bg-primary transition-all duration-300"
+										class="animated-progress h-1.5 rounded-full bg-blue-600 transition-all duration-300"
 										style="width: {progressPercentage}%"
 									></div>
 								</div>
 							</div>
 						{:else if !message.content && isCurrentlyStreaming}
+							<!-- Typing indicator color adapts to bubble color -->
 							<div class="flex items-center gap-1.5">
 								<span class="h-2 w-2 rounded-full bg-current/60 animate-bounce"></span>
 								<span
@@ -242,10 +247,10 @@
 			{/if}
 		</div>
 
-		<!-- ✅ FIX: User avatar now shows here on the right -->
+		<!-- User avatar on the right -->
 		{#if isUser}
 			<div
-				class="flex h-10 w-10 flex-shrink-0 items-center justify-center self-end rounded-full bg-user shadow-md"
+				class="flex h-10 w-10 flex-shrink-0 items-center justify-center self-end rounded-full bg-blue-600 shadow-md"
 			>
 				{#if userAvatarUrl}
 					<img
@@ -255,7 +260,7 @@
 					/>
 				{:else}
 					<div
-						class="flex h-full w-full items-center justify-center rounded-full text-user-foreground"
+						class="flex h-full w-full items-center justify-center rounded-full text-white"
 					>
 						<User class="h-5 w-5" />
 					</div>
@@ -266,31 +271,9 @@
 {/if}
 
 <style>
-	@keyframes shimmer {
-		100% {
-			transform: translateX(100%);
-		}
-	}
-	.animated-progress {
-		position: relative;
-	}
-	.animated-progress::after {
-		content: '';
-		position: absolute;
-		top: 0;
-		right: 0;
-		bottom: 0;
-		left: 0;
-		transform: translateX(-100%);
-		background-image: linear-gradient(
-			90deg,
-			hsla(var(--primary-foreground) / 0) 0,
-			hsla(var(--primary-foreground) / 0.2) 20%,
-			hsla(var(--primary-foreground) / 0.5) 60%,
-			hsla(var(--primary-foreground) / 0)
-		);
-		animation: shimmer 2s infinite;
-	}
+	/* All styles standardized to use light mode colors and standard Tailwind variables */
+
+	/* Code Block Overrides */
 	.prose {
 		color: inherit;
 		max-width: none;
@@ -303,12 +286,14 @@
 	.prose :global(p:last-child) {
 		margin-bottom: 0;
 	}
+	/* Code Block Container (pre) */
 	.prose :global(pre) {
 		position: relative;
-		font-family: var(--font-mono);
-		background-color: hsl(var(--muted) / 0.5);
-		color: hsl(var(--foreground));
-		border-radius: var(--radius-md);
+		font-family: monospace;
+		/* Light Mode Colors */
+		background-color: hsl(0 0% 95%); /* bg-gray-100 */
+		color: hsl(222.2 47.4% 11.2%); /* text-gray-900 */
+		border-radius: 0.5rem;
 		padding: 1rem;
 		padding-top: 2.5rem;
 		margin: 0.5rem 0;
@@ -316,10 +301,11 @@
 		overflow-x: auto;
 		max-width: 100%;
 	}
+	/* Inline Code */
 	.prose :global(code:not(pre > code)) {
-		background-color: hsl(var(--muted) / 0.5);
+		background-color: hsl(0 0% 90%); /* bg-gray-200/50 */
 		padding: 0.1em 0.3em;
-		border-radius: var(--radius-sm);
+		border-radius: 0.25rem;
 		font-size: 85%;
 	}
 	.prose :global(pre code) {
@@ -327,6 +313,8 @@
 		padding: 0;
 		font-size: 0.9em;
 	}
+
+	/* Copy Button */
 	:global(.copy-button) {
 		position: absolute;
 		top: 0.5rem;
@@ -336,10 +324,10 @@
 		justify-content: center;
 		width: 32px;
 		height: 32px;
-		border-radius: var(--radius-md);
-		background-color: hsl(var(--muted) / 0.8);
-		color: hsl(var(--muted-foreground));
-		border: 1px solid hsl(var(--border));
+		border-radius: 0.5rem;
+		background-color: hsl(0 0% 100% / 0.8); /* white/80 */
+		color: hsl(215 20.2% 65.1%); /* gray-500 */
+		border: 1px solid hsl(0 0% 85%); /* gray-300 */
 		cursor: pointer;
 		opacity: 0.5;
 		transition: all 0.2s ease;
@@ -348,19 +336,41 @@
 		opacity: 1;
 	}
 	:global(.copy-button:hover) {
-		background-color: hsl(var(--muted));
-		color: hsl(var(--foreground));
+		background-color: hsl(0 0% 100%); /* white */
+		color: hsl(222.2 47.4% 11.2%); /* gray-900 */
 	}
+
+	/* Agent Tag */
 	.prose :global(.agent-tag) {
 		font-weight: 600;
-		background-color: hsl(var(--primary) / 0.15);
+		/* Primary Blue Colors */
+		background-color: hsl(217 91% 65% / 0.15); /* blue-500/15 */
 		padding: 2px 5px;
-		border-radius: var(--radius-sm);
-		border-bottom: 2px solid hsl(var(--primary) / 0.3);
+		border-radius: 0.25rem;
+		border-bottom: 2px solid hsl(217 91% 65% / 0.3);
 		cursor: pointer;
 		transition: background-color 0.2s;
 	}
 	.prose :global(.agent-tag:hover) {
-		background-color: hsl(var(--primary) / 0.25);
+		background-color: hsl(217 91% 65% / 0.25); /* blue-500/25 */
+	}
+
+	/* Animation for progress bar shimmer */
+	@keyframes shimmer {
+		100% {
+			transform: translateX(100%);
+		}
+	}
+	.animated-progress::after {
+		/* ... shimmer logic remains ... */
+		/* Ensure gradient is white for light mode */
+		background-image: linear-gradient(
+			90deg,
+			hsla(0 0% 100% / 0) 0,
+			hsla(0 0% 100% / 0.2) 20%,
+			hsla(0 0% 100% / 0.5) 60%,
+			hsla(0 0% 100% / 0)
+		);
+		animation: shimmer 2s infinite;
 	}
 </style>

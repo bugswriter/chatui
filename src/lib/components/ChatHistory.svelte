@@ -7,7 +7,7 @@
 	export let messages: Message[] = [];
 	export let isLoading: boolean = false;
 	export let userName: string = 'You';
-	export let userAvatarUrl: string | null | undefined = undefined; // ✅ ACCEPT THE PROP HERE
+	export let userAvatarUrl: string | null | undefined = undefined;
 	export let className: string = '';
 
 	let scrollContainer: HTMLDivElement;
@@ -34,21 +34,23 @@
 	}
 </script>
 
+<!-- UNIFIED DESIGN: Background gradient is subtle and light -->
 <div
 	bind:this={scrollContainer}
 	on:scroll={handleScroll}
-	class="overflow-y-auto bg-gradient-to-b from-background/95 via-background/90 to-background/95 px-4 py-6 pt-18 {className}"
+	class="overflow-y-auto bg-gradient-to-b from-white/95 via-white/90 to-white/95 px-4 py-6 pt-18 {className}"
 >
 	<div class="mx-auto max-w-3xl">
 		{#if messages.length === 0}
+			<!-- UNIFIED DESIGN: Standardized text and icon colors -->
 			<div class="flex flex-col items-center justify-center text-center py-24">
 				<img
 					src="https://i.pinimg.com/originals/31/38/c2/3138c2666fe9ffc47d4c56982c918a31.jpg"
 					alt="hannah"
-					class="h-32 w-32 rounded-full object-cover shadow-2xl shadow-primary/10 border-4 border-primary/50"
+					class="h-32 w-32 rounded-full object-cover shadow-2xl shadow-blue-500/10 border-4 border-blue-500/50"
 				/>
-				<h1 class="mt-8 text-4xl font-bold text-foreground">Ready to Assist</h1>
-				<p class="mt-3 max-w-md text-base text-muted-foreground leading-relaxed">
+				<h1 class="mt-8 text-4xl font-bold text-gray-900">Ready to Assist</h1>
+				<p class="mt-3 max-w-md text-base text-gray-600 leading-relaxed">
 					Start a conversation or upload files to begin. I'm here to help with anything you need.
 				</p>
 			</div>

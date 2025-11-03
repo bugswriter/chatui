@@ -1,12 +1,11 @@
 <!-- src/routes/about/+page.svelte -->
 <script lang="ts">
-    import Navbar from "$lib/components/Navbar.svelte";
     import { BrainCircuit, Bot, Zap, Lock } from "lucide-svelte";
+    // Navbar is now in the layout, so we remove the local import if it existed
 </script>
 
-<div class="min-h-screen bg-gray-50 text-gray-900">
-    <Navbar />
-
+<!-- UNIFIED DESIGN: Consistent use of light background and standard colors -->
+<div class="min-h-screen bg-white text-gray-900">
     <main class="container mx-auto px-4 py-24 sm:py-32">
         <div class="mx-auto max-w-3xl">
             <!-- Header -->
@@ -28,6 +27,7 @@
                 <dl
                     class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-2"
                 >
+                    <!-- Feature Card 1 -->
                     <div class="flex flex-col">
                         <dt
                             class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
@@ -50,6 +50,7 @@
                         </dd>
                     </div>
 
+                    <!-- Feature Card 2 -->
                     <div class="flex flex-col">
                         <dt
                             class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
@@ -70,6 +71,7 @@
                         </dd>
                     </div>
 
+                    <!-- Feature Card 3 -->
                     <div class="flex flex-col">
                         <dt
                             class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
@@ -90,6 +92,7 @@
                         </dd>
                     </div>
 
+                    <!-- Feature Card 4 -->
                     <div class="flex flex-col">
                         <dt
                             class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"

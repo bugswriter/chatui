@@ -144,7 +144,7 @@
     $: statusInfo = ((status: string | null | undefined) => {
         switch (status) {
             case "active":
-                return { text: "Active", color: "text-emerald-600" };
+                return { text: "Active", color: "text-green-600" };
             case "canceled":
                 return { text: "Canceled", color: "text-amber-600" };
             case "past_due":
@@ -155,7 +155,7 @@
     })($authStore.user?.subscription_status);
 </script>
 
-<!-- MacBook style clean white UI -->
+<!-- UNIFIED DESIGN: Clean white background, standard shadow/border cards -->
 <div class="min-h-screen bg-white text-gray-800">
     <main class="container mx-auto px-6 py-24 sm:py-32">
         {#if $authStore.isAuthenticated && $authStore.user}
@@ -178,12 +178,12 @@
                 <div class="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
                     <!-- Left Column -->
                     <div class="lg:col-span-1 space-y-8">
-                        <!-- Account Card -->
+                        <!-- Account Card: UNIFIED DESIGN - Standardized card look -->
                         <div
-                            class="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+                            class="rounded-2xl border border-gray-200 bg-white shadow-xl transition-shadow"
                         >
                             <div
-                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50"
+                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50 rounded-t-2xl"
                             >
                                 <UserCircle class="h-5 w-5 text-gray-500" />
                                 <h2 class="font-semibold text-gray-900">
@@ -208,12 +208,12 @@
                             </div>
                         </div>
 
-                        <!-- Subscription -->
+                        <!-- Subscription: UNIFIED DESIGN - Standardized card look -->
                         <div
-                            class="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+                            class="rounded-2xl border border-gray-200 bg-white shadow-xl transition-shadow"
                         >
                             <div
-                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50"
+                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50 rounded-t-2xl"
                             >
                                 <CreditCard class="h-5 w-5 text-gray-500" />
                                 <h2 class="font-semibold text-gray-900">
@@ -246,12 +246,13 @@
                                 <div
                                     class="border-t border-gray-100 pt-4 space-y-3"
                                 >
+                                    <!-- Manage Billing: PRIMARY BUTTON - Standard blue -->
                                     <button
                                         on:click={handleManageBilling}
                                         disabled={!$authStore.user
                                             .stripe_customer_id ||
                                             !!actionInProgress}
-                                        class="inline-flex h-10 w-full items-center justify-center rounded-md bg-gray-900 text-white font-semibold text-sm transition hover:bg-gray-800 disabled:opacity-50"
+                                        class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-white font-semibold text-sm transition hover:bg-blue-700 disabled:opacity-50"
                                     >
                                         {#if actionInProgress === "billing"}<Loader2
                                                 class="mr-2 h-4 w-4 animate-spin"
@@ -260,10 +261,11 @@
                                     </button>
 
                                     {#if $authStore.user.subscription_status === "active"}
+                                        <!-- Cancel: DANGER BUTTON - Standard red -->
                                         <button
                                             on:click={handleCancelSubscription}
                                             disabled={!!actionInProgress}
-                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-red-100 text-red-600 font-semibold text-sm hover:bg-red-200 transition disabled:opacity-50"
+                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 transition disabled:opacity-50"
                                         >
                                             {#if actionInProgress === "cancel"}<Loader2
                                                     class="h-4 w-4 animate-spin"
@@ -273,10 +275,11 @@
                                             Cancel Subscription
                                         </button>
                                     {:else if $authStore.user.subscription_status === "canceled"}
+                                        <!-- Reactivate: PRIMARY BUTTON - Standard blue -->
                                         <button
                                             on:click={handleReactivateSubscription}
                                             disabled={!!actionInProgress}
-                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
+                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
                                         >
                                             {#if actionInProgress === "reactivate"}<Loader2
                                                     class="h-4 w-4 animate-spin"
@@ -291,12 +294,12 @@
                         </div>
                     </div>
 
-                    <!-- Right Column -->
+                    <!-- Right Column (Transaction History): UNIFIED DESIGN - Standardized card look -->
                     <div
-                        class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+                        class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white shadow-xl transition-shadow"
                     >
                         <div
-                            class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50"
+                            class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50 rounded-t-2xl"
                         >
                             <History class="h-5 w-5 text-gray-500" />
                             <h2 class="font-semibold text-gray-900">

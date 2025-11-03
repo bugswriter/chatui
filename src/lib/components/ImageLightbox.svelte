@@ -20,11 +20,12 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
+<!-- UNIFIED DESIGN: Darker, slightly blurred backdrop for focus -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
 	on:click={closeModal}
 	transition:fade={{ duration: 150 }}
-	class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-md"
+	class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80 p-4 backdrop-blur-sm"
 >
 	<div
 		transition:fade={{ duration: 150, delay: 50 }}
@@ -40,13 +41,13 @@
 			/>
 		</div>
 
-		<!-- Close Button -->
+		<!-- Close Button: UNIFIED DESIGN - White text/icon on dark subtle background -->
 		<button
 			on:click={closeModal}
-			class="absolute top-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-background/50 text-foreground transition-colors hover:bg-background"
+			class="absolute top-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-gray-900/50 text-white transition-colors hover:bg-gray-800"
 			aria-label="Close image view"
 		>
 			<X class="h-6 w-6" />
 		</button>
 	</div>
-</div>
+</div>```

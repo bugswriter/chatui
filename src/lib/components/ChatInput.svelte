@@ -18,6 +18,7 @@
     let uploadError: string | null = null;
     let textareaElement: HTMLTextAreaElement;
     let fileInputElement: HTMLInputElement;
+    let showSuggestions = false;
 
     interface StagedAttachment {
         file: File;
@@ -30,6 +31,7 @@
     onDestroy(() => document.removeEventListener("click", handleClickOutside));
 
     function handleClickOutside(e: MouseEvent) {
+        // Keeping this handler simple as suggestions logic is absent
         if (!e.composedPath().includes(textareaElement))
             showSuggestions = false;
     }
@@ -54,6 +56,7 @@
         )
             return;
         if (!getAuthToken()) {
+            // Dispatch event for the layout to open the login modal
             dispatch("requestLogin");
             return;
         }
@@ -99,6 +102,7 @@
         const files = Array.from(target.files || []);
         if (!files.length) return;
         if (!getAuthToken()) {
+            // Dispatch event for the layout to open the login modal
             dispatch("requestLogin");
             return;
         }
@@ -134,12 +138,14 @@
     }
 </script>
 
-<div class="w-full px-4 py-4 bg-white">
+<!-- UNIFIED DESIGN: Use bg-white for fixed footer, consistent border/shadow -->
+<div class="w-full px-4 py-4 bg-white border-t border-gray-100 shadow-md">
     <div class="max-w-3xl mx-auto relative">
         <!-- File Previews -->
         {#if stagedFiles.length > 0}
             <div class="mb-3 flex flex-wrap gap-3">
                 {#each stagedFiles as file, i}
+                    <!-- UNIFIED DESIGN: Standard rounded-xl card look -->
                     <div
                         class="relative group flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-2 shadow-sm"
                     >
@@ -163,6 +169,7 @@
                         <button
                             on:click={() => removeStagedFile(i)}
                             class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                            aria-label="Remove file"
                         >
                             <X class="w-3 h-3" />
                         </button>
@@ -172,8 +179,9 @@
         {/if}
 
         <!-- Chat Input Box -->
+        <!-- UNIFIED DESIGN: Keeps the signature rounded-3xl, standardized shadow/border -->
         <div
-            class="flex items-end gap-2 rounded-3xl bg-white border border-gray-200 shadow-sm px-3 py-2 focus-within:ring-1 focus-within:ring-gray-300 transition-all"
+            class="flex items-end gap-2 rounded-3xl bg-white border border-gray-300 shadow-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all"
         >
             <input
                 bind:this={fileInputElement}
@@ -183,7 +191,7 @@
                 on:change={handleFileSelect}
             />
 
-            <!-- Attach -->
+            <!-- Attach Button -->
             <button
                 on:click={() => fileInputElement.click()}
                 disabled={isUploading || isStreaming}
@@ -207,13 +215,14 @@
                 rows="1"
             ></textarea>
 
-            <!-- Send -->
+            <!-- Send Button -->
+            <!-- UNIFIED DESIGN: Standardized black button with hover state -->
             <button
                 on:click={handleSubmit}
                 disabled={isUploading ||
                     isStreaming ||
                     (!message.trim() && stagedFiles.length === 0)}
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800 transition-all shadow-sm disabled:opacity-40"
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white hover:bg-gray-700 transition-all shadow-md disabled:opacity-40"
                 aria-label="Send"
             >
                 <Send class="w-5 h-5" />

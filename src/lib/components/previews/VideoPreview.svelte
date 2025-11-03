@@ -8,16 +8,14 @@
 
 	const dispatch = createEventDispatcher();
 
-	// A helper function to forward events from the child (ActionBar)
-	// up to the parent component (AttachmentPreview).
 	function forward(event: CustomEvent) {
 		dispatch(event.type, event.detail);
 	}
 </script>
 
-<div class="group relative w-full overflow-hidden rounded-lg border border-border shadow-sm">
+<!-- UNIFIED DESIGN: Standard border/shadow -->
+<div class="group relative w-full overflow-hidden rounded-lg border border-gray-200 shadow-sm">
 	<video src={url} controls class="block w-full" />
 
-	<!-- The action bar is now neatly included -->
 	<ActionBar {attachment} {url} on:reattach={forward} on:download={forward} />
 </div>

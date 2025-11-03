@@ -3,6 +3,7 @@
     import { createEventDispatcher, onMount, onDestroy } from "svelte";
     import { authStore } from "$lib/stores/authStore";
     import { LayoutDashboard, LogOut } from "lucide-svelte";
+    import CoinDisplay from './CoinDisplay.svelte'; // Using the standardized coin display
 
     const dispatch = createEventDispatcher();
 
@@ -43,20 +44,29 @@
     });
 </script>
 
-<header class="w-full bg-transparent text-gray-900">
+<!-- UNIFIED DESIGN: Standard light background, no border for 'transparent' on scroll, but clean -->
+<header class="w-full bg-white text-gray-900 border-b border-gray-100">
     <nav class="flex h-16 items-center justify-between px-6 sm:px-10">
         <div class="flex items-center gap-8">
+            <!-- Logo/Brand -->
             <a
                 href="/"
                 class="text-xl font-semibold tracking-tight hover:opacity-70 transition-opacity"
             >
                 bw.ai
             </a>
+            <!-- Nav Links: UNIFIED DESIGN - Standard gray text -->
             <a
                 href="/pricing"
                 class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
                 Pricing
+            </a>
+            <a
+                href="/about"
+                class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+                About
             </a>
         </div>
 
@@ -64,27 +74,11 @@
         <div class="flex items-center gap-4">
             {#if $authStore.isAuthenticated && $authStore.user}
                 <!-- Authenticated User View -->
+                <!-- Coin Display: UNIFIED DESIGN - Standardized with CoinDisplay component -->
                 <div
-                    class="flex items-center gap-2 rounded-full border border-gray-200 bg-white/50 px-3 py-1.5 text-sm"
+                    class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm"
                 >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="text-amber-500"
-                        ><circle cx="12" cy="12" r="10" /><path
-                            d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"
-                        /><path d="M12 18V6" /></svg
-                    >
-                    <span class="font-medium text-gray-800"
-                        >{Math.round($authStore.user.coins)}</span
-                    >
+                    <CoinDisplay coins={$authStore.user.coins} />
                 </div>
 
                 <!-- Avatar & Dropdown Container -->
@@ -108,12 +102,12 @@
                         {/if}
                     </button>
 
-                    <!-- Dropdown Menu -->
+                    <!-- Dropdown Menu: UNIFIED DESIGN - Light card look -->
                     {#if isDropdownOpen}
                         <div
-                            class="absolute top-full right-0 mt-2 w-56 origin-top-right rounded-md border border-gray-200 bg-white shadow-lg z-20"
+                            class="absolute top-full right-0 mt-2 w-56 origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg z-20"
                         >
-                            <div class="border-b border-gray-200 px-4 py-3">
+                            <div class="border-b border-gray-100 px-4 py-3">
                                 <p class="truncate text-sm font-semibold">
                                     {$authStore.user.name}
                                 </p>
@@ -128,8 +122,9 @@
                                     class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                                 >
                                     <LayoutDashboard class="h-4 w-4" />
-                                    <span>Money</span>
+                                    <span>Dashboard</span>
                                 </a>
+                                <!-- Logout: UNIFIED DESIGN - Standard red/danger style -->
                                 <button
                                     on:click={handleLogout}
                                     class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -143,15 +138,17 @@
                 </div>
             {:else}
                 <!-- Unauthenticated View -->
+                <!-- Secondary Button: UNIFIED DESIGN - Standard gray/border -->
                 <button
                     on:click={() => dispatch("openLogin")}
                     class="rounded-full border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:scale-[0.98] transition-all"
                 >
                     Login
                 </button>
+                <!-- Primary Button: UNIFIED DESIGN - Standard blue -->
                 <button
                     on:click={() => dispatch("openRegister")}
-                    class="rounded-full bg-blue-500 px-5 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-600 hover:shadow-md active:scale-[0.98]"
+                    class="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.98]"
                 >
                     Register
                 </button>

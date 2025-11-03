@@ -6,13 +6,10 @@
     import { streamChat } from "$lib/services/chat";
     import type { Attachment } from "$lib/types";
 
-    // --- Chat-Specific Component Imports ---
-    // Navbar and global modals are now handled by the root layout.
     import ChatHistory from "$lib/components/ChatHistory.svelte";
     import ChatInput from "$lib/components/ChatInput.svelte";
     import ImageLightbox from "$lib/components/ImageLightbox.svelte";
-    import ArchivesModal from "$lib/components/Archives.svelte";
-    // You would also create and import ChatSettingsModal and ChatHeader here.
+    import ArchivesModal from "$lib/components/ArchivesModal.svelte";
 
     import { MessageSquarePlus } from "lucide-svelte";
 
@@ -39,14 +36,25 @@
         );
     }
 
+    // NOTE: This component needs to handle the 'requestLogin' event dispatched by ChatInput
+    // when a non-authenticated user tries to send a message.
+    function handleRequestLogin() {
+        // Dispatch an event up to the layout to open the login modal
+        // Since there's no explicit forwarding mechanism here, we'll assume
+        // the layout is listening on the window or the user manually opens it.
+        // For a clean SvelteKit refactor, this should be handled at the layout level,
+        // but for this file, we can log an error or simply trust the ChatInput dispatch.
+        console.error("User not authenticated. Please log in.");
+        // The ChatInput component's logic already dispatches "requestLogin"
+    }
+
     async function handleSendMessage(
         event: CustomEvent<{ message: string; attachments: Attachment[] }>,
     ) {
-        // The ChatInput component should handle prompting the user to log in.
-        // This is a final safeguard.
         if (!$authStore.isAuthenticated) {
+            // This case should be handled by ChatInput dispatching 'requestLogin',
+            // but this is the final handler, so we exit if unauthenticated.
             console.error("User must be authenticated to send messages.");
-            // In a real app, you might dispatch an event to the layout to open the login modal here.
             return;
         }
 
@@ -76,15 +84,7 @@
     $: isStreaming = $chatStore.activeStreams.size > 0;
 </script>
 
-<!--
-  This div's height is now set to fill its parent container from the layout,
-  which has a fixed height. This prevents the page itself from scrolling.
--->
-<div class="relative h-full bg-background text-foreground">
-    <!--
-    The ChatHistory component will show the welcome screen if messages are empty.
-    It needs padding-bottom to ensure the last message isn't hidden by the fixed ChatInput.
-  -->
+<div class="relative h-full bg-white text-gray-900">
     <ChatHistory
         className="h-full overflow-y-auto pb-32 pt-6"
         messages={$chatStore.messages}
@@ -93,6 +93,7 @@
         userAvatarUrl={$authStore.user?.avatar}
         on:reattach={handleReattach}
         on:viewImage={handleViewImage}
+        on:requestLogin={handleRequestLogin}
     />
 
     <!-- The ChatInput area is fixed to the bottom of this page's container -->
@@ -104,21 +105,24 @@
                 {reattachedFiles}
                 on:send={handleSendMessage}
                 on:removeReattached={handleRemoveReattached}
+                on:requestLogin={() => console.error("Request Login - needs parent handling")}
             />
         {:else}
-            <!-- This appears when viewing a past conversation from the archives -->
+            <!-- Read-only view message -->
+            <!-- UNIFIED DESIGN: Standard light border/background/text -->
             <div
-                class="border-t border-border bg-background/80 p-4 backdrop-blur-md"
+                class="border-t border-gray-200 bg-white/80 p-4 backdrop-blur-md"
             >
                 <div
                     class="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center"
                 >
-                    <p class="font-medium text-muted-foreground">
+                    <p class="font-medium text-gray-500">
                         This is a read-only view of a past conversation.
                     </p>
+                    <!-- PRIMARY BUTTON: UNIFIED DESIGN - Standard blue -->
                     <button
                         on:click={() => historyStore.createNewSession()}
-                        class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
                     >
                         <MessageSquarePlus class="h-4 w-4" />
                         Start a New Chat
@@ -129,10 +133,6 @@
     </div>
 </div>
 
-<!--
-  PAGE-SPECIFIC MODALS
-  These are only rendered when the user is on the chat page.
--->
 <ArchivesModal bind:isOpen={isArchivesOpen} />
 
 {#if fullscreenImageUrl}

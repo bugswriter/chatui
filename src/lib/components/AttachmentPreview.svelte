@@ -3,7 +3,6 @@
 	import type { Attachment } from '$lib/types';
 	import { settingsStore } from '$lib/stores/settingsStore';
 
-	// ✅ IMPORT all our new specialized preview components
 	import ImagePreview from './previews/ImagePreview.svelte';
 	import VideoPreview from './previews/VideoPreview.svelte';
 	import AudioPlayer from './previews/AudioPlayer.svelte';
@@ -14,12 +13,10 @@
 
 	const dispatch = createEventDispatcher();
 
-	// A single, reusable function to forward events from children
 	function forward(event: CustomEvent) {
 		dispatch(event.type, event.detail);
 	}
 
-	// Logic to determine the file type
 	const imageExtensions = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i;
 	const videoExtensions = /\.(mp4|webm|mov|ogg|avi)$/i;
 	const audioExtensions = /\.(mp3|wav|ogg|m4a)$/i;
@@ -36,7 +33,7 @@
 </script>
 
 {#if attachment}
-	<!-- Case 1: Previews are ENABLED and we have a URL -->
+	<!-- UNIFIED DESIGN: The internal preview components enforce consistency -->
 	{#if $settingsStore.showFilePreviews && url}
 		{#if isImage}
 			<ImagePreview
@@ -54,9 +51,7 @@
 		{:else}
 			<GenericFilePreview {attachment} {url} on:reattach={forward} on:download={forward} />
 		{/if}
-	<!-- Case 2: Previews are DISABLED or URL is not yet available -->
 	{:else}
-		<!-- Use the GenericFilePreview for a consistent fallback view -->
 		<GenericFilePreview {attachment} {url} on:reattach={forward} on:download={forward} />
 	{/if}
 {/if}
