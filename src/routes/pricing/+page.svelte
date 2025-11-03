@@ -95,9 +95,7 @@
 </script>
 
 <!-- UNIFIED DESIGN: Use standard light background, clean colors, and primary blue -->
-<div
-    class="min-h-screen bg-gray-50"
->
+<div class="min-h-screen bg-gray-50">
     <main class="container mx-auto px-4 py-24 sm:py-32 text-center">
         <h1 class="text-4xl font-extrabold text-gray-900 sm:text-6xl">
             Pricing Plans
@@ -113,8 +111,8 @@
                 on:click={() => (activeTab = "subscription")}
                 class={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     activeTab === "subscription"
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "bg-white text-blue-600 hover:bg-blue-50 border border-blue-200"
+                        ? "bg-primary text-white shadow-md"
+                        : "bg-white text-accent hover:bg-blue-50 border border-border"
                 }`}
             >
                 Subscription
@@ -123,8 +121,8 @@
                 on:click={() => (activeTab = "one_time")}
                 class={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     activeTab === "one_time"
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "bg-white text-blue-600 hover:bg-blue-50 border border-blue-200"
+                        ? "bg-primary text-white shadow-md"
+                        : "bg-white text-accent-foreground hover:bg-primary/50  border border-border"
                 }`}
             >
                 Boosters
@@ -134,7 +132,7 @@
         <!-- Loader / Error -->
         {#if isLoading}
             <div class="mt-16 flex justify-center">
-                <Loader2 class="h-10 w-10 animate-spin text-blue-600" />
+                <Loader2 class="h-10 w-10 animate-spin text-accent" />
             </div>
         {:else if error}
             <div
@@ -164,8 +162,7 @@
                                 <span class="text-4xl font-bold text-gray-900">
                                     {formatPrice(plan.price)}
                                 </span>
-                                <span class="text-sm text-gray-500"
-                                    >/month</span
+                                <span class="text-sm text-gray-500">/month</span
                                 >
                             </p>
                             <!-- PRIMARY BUTTON: UNIFIED DESIGN - Standard blue -->
@@ -176,7 +173,7 @@
                                         "subscription",
                                     )}
                                 disabled={!!redirectingPriceId}
-                                class="mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-semibold transition hover:bg-blue-700 disabled:opacity-50"
+                                class="mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white text-sm font-semibold transition hover:bg-accent disabled:opacity-50"
                             >
                                 {#if redirectingPriceId === plan.price_id}
                                     <Loader2
@@ -190,23 +187,17 @@
                                 class="mt-8 space-y-3 text-sm text-gray-600 text-left"
                             >
                                 <li class="flex items-start gap-x-3">
-                                    <CheckCircle
-                                        class="h-5 w-5 text-blue-600"
-                                    />
+                                    <CheckCircle class="h-5 w-5 text-accent" />
                                     <span
                                         ><strong>{plan.coins}</strong> coins monthly</span
                                     >
                                 </li>
                                 <li class="flex items-start gap-x-3">
-                                    <CheckCircle
-                                        class="h-5 w-5 text-blue-600"
-                                    />
+                                    <CheckCircle class="h-5 w-5 text-accent" />
                                     <span>Priority feature access</span>
                                 </li>
                                 <li class="flex items-start gap-x-3">
-                                    <CheckCircle
-                                        class="h-5 w-5 text-blue-600"
-                                    />
+                                    <CheckCircle class="h-5 w-5 text-accent" />
                                     <span>Support continued development</span>
                                 </li>
                             </ul>

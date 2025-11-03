@@ -5,7 +5,7 @@
 </script>
 
 <!-- UNIFIED DESIGN: Consistent use of light background and standard colors -->
-<div class="min-h-screen bg-white text-gray-900">
+<div class="min-h-screen bg-background text-gray-900">
     <main class="container mx-auto px-4 py-24 sm:py-32">
         <div class="mx-auto max-w-3xl">
             <!-- Header -->
@@ -13,7 +13,7 @@
                 <h1
                     class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl"
                 >
-                    About <span class="text-blue-600">bugswriter.ai</span>
+                    About <span class="text-primary">bugswriter.ai</span>
                 </h1>
                 <p class="mt-6 text-lg leading-8 text-gray-600">
                     Our mission is to provide an intelligent, flexible, and
@@ -33,7 +33,7 @@
                             class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
                         >
                             <BrainCircuit
-                                class="h-5 w-5 flex-none text-blue-600"
+                                class="h-5 w-5 flex-none text-accent"
                             />
                             Intelligent & Adaptable
                         </dt>
@@ -55,7 +55,7 @@
                         <dt
                             class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
                         >
-                            <Zap class="h-5 w-5 flex-none text-blue-600" />
+                            <Zap class="h-5 w-5 flex-none text-accent" />
                             Seamless User Experience
                         </dt>
                         <dd
@@ -76,7 +76,7 @@
                         <dt
                             class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
                         >
-                            <Lock class="h-5 w-5 flex-none text-blue-600" />
+                            <Lock class="h-5 w-5 flex-none text-accent" />
                             Privacy & Security
                         </dt>
                         <dd
@@ -97,7 +97,7 @@
                         <dt
                             class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
                         >
-                            <Bot class="h-5 w-5 flex-none text-blue-600" />
+                            <Bot class="h-5 w-5 flex-none text-accent" />
                             Built for the Future
                         </dt>
                         <dd

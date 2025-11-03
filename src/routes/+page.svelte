@@ -84,7 +84,7 @@
     $: isStreaming = $chatStore.activeStreams.size > 0;
 </script>
 
-<div class="relative h-full bg-white text-gray-900">
+<div class="relative h-full bg-background text-gray-900">
     <ChatHistory
         className="h-full overflow-y-auto pb-32 pt-6"
         messages={$chatStore.messages}
@@ -105,7 +105,8 @@
                 {reattachedFiles}
                 on:send={handleSendMessage}
                 on:removeReattached={handleRemoveReattached}
-                on:requestLogin={() => console.error("Request Login - needs parent handling")}
+                on:requestLogin={() =>
+                    console.error("Request Login - needs parent handling")}
             />
         {:else}
             <!-- Read-only view message -->

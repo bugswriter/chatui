@@ -252,7 +252,7 @@
                                         disabled={!$authStore.user
                                             .stripe_customer_id ||
                                             !!actionInProgress}
-                                        class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-white font-semibold text-sm transition hover:bg-blue-700 disabled:opacity-50"
+                                        class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white font-semibold text-sm transition hover:bg-primary/80 disabled:opacity-50"
                                     >
                                         {#if actionInProgress === "billing"}<Loader2
                                                 class="mr-2 h-4 w-4 animate-spin"
@@ -279,7 +279,7 @@
                                         <button
                                             on:click={handleReactivateSubscription}
                                             disabled={!!actionInProgress}
-                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
+                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/80 transition disabled:opacity-50"
                                         >
                                             {#if actionInProgress === "reactivate"}<Loader2
                                                     class="h-4 w-4 animate-spin"

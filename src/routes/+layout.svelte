@@ -48,7 +48,7 @@
     </div>
 {:else}
     <!-- UNIFIED DESIGN: The base background is white/light gray -->
-    <div class="flex h-screen bg-gray-50 flex-col">
+    <div class="flex h-screen bg-background flex-col">
         <!-- The Navbar is a direct child and does not scroll -->
         <Navbar
             on:openLogin={() => (isLoginModalOpen = true)}
