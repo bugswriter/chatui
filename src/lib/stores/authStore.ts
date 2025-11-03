@@ -1,12 +1,9 @@
 // src/lib/stores/authStore.ts
 
-import { writable, get } from "svelte/store"; // ✅ CORRECTED: Added 'get'
+import { writable, get } from "svelte/store";
 import { authToken } from "$lib/stores/tokenStore";
-import {
-  fetchTokenFromSession,
-  getUserDetails,
-  type UserDetails,
-} from "$lib/services/auth";
+import { getUserDetails, type UserDetails } from "$lib/services/auth";
+import { API_CONFIG } from "$lib/services/api";
 import { chatStore } from "./chatStore";
 import { agentStore } from "./agentStore";
 import { historyStore } from "./historyStore";
@@ -28,7 +25,9 @@ function createAuthStore() {
 
   async function initialize() {
     update((s) => ({ ...s, isLoading: true }));
-    const token = await fetchTokenFromSession();
+
+    const token = get(authToken);
+
     if (token) {
       try {
         const user = await getUserDetails();
@@ -53,31 +52,119 @@ function createAuthStore() {
     }
   }
 
-  function clearSession() {
+  function logout() {
     authToken.set(null);
     chatStore.reset();
     historyStore.reset();
     set({ isAuthenticated: false, user: null, isLoading: false, error: null });
   }
 
-  async function refreshUserDetails() {
-    // ✅ FIX: The 'get' function is now correctly imported and will work here.
-    if (!get(authToken)) return;
+  // --- ✅ NEW: Abstracted Login Logic ---
+  async function login(email: string, password: string): Promise<void> {
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
 
+    const response = await fetch(
+      `${API_CONFIG.authBaseUrl}/api/v1/auth/token`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      // Throw a user-friendly error message
+      throw new Error(errorData?.detail || "Incorrect email or password.");
+    }
+
+    const data = await response.json();
+    authToken.set(data.access_token);
+    // Re-initialize the entire auth state to fetch user details, etc.
+    await initialize();
+  }
+
+  // --- ✅ NEW: Abstracted Register Logic ---
+  async function register(
+    name: string,
+    email: string,
+    password: string,
+  ): Promise<string> {
+    if (password.length < 8) {
+      throw new Error("Password must be at least 8 characters long.");
+    }
+
+    const response = await fetch(
+      `${API_CONFIG.authBaseUrl}/api/v1/auth/register`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name }),
+      },
+    );
+
+    if (response.status !== 201) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.detail ||
+          "Registration failed. Email may already be in use.",
+      );
+    }
+
+    // Return a success message for the UI to display
+    return "Success! Please check your email to verify your account.";
+  }
+
+  async function refreshUserDetails() {
+    if (!get(authToken)) return;
     try {
       const user = await getUserDetails();
       update((state) => ({ ...state, user }));
     } catch (error) {
-      console.error("Failed to refresh user details, clearing session:", error);
-      clearSession();
+      console.error("Failed to refresh user details, logging out:", error);
+      logout();
     }
+  }
+
+  async function updateAvatar(file: File) {
+    const token = get(authToken);
+    if (!token) throw new Error("You must be logged in to upload an avatar.");
+
+    const formData = new FormData();
+    formData.append("avatar_file", file);
+
+    const response = await fetch(
+      `${API_CONFIG.authBaseUrl}/api/v1/users/me/avatar`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to upload avatar.");
+    }
+
+    const updatedUser = await response.json();
+    update((state) => ({ ...state, user: updatedUser }));
   }
 
   return {
     subscribe,
     initialize,
-    clearSession,
+    logout,
+    login,
+    register,
     refreshUserDetails,
+    updateAvatar,
   };
 }
 

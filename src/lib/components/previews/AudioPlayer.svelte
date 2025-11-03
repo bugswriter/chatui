@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import WaveSurfer from 'wavesurfer.js';
@@ -39,8 +38,11 @@
 	onMount(() => {
 		if (!waveContainer) return;
 
-		const primaryColor = `hsl(var(--primary))`;
-		const mutedColor = `hsl(var(--muted))`;
+		// UNIFIED DESIGN: Use standard Tailwind colors for WaveSurfer
+		// In a real Svelte/Tailwind app, you'd use a CSS custom property or class binding for primary.
+		// For consistency, using hardcoded light mode colors based on the theme refactor.
+		const primaryColor = `#3b82f6`; // blue-500 or blue-600
+		const mutedColor = `#e5e7eb`; // gray-200
 
 		wavesurfer = WaveSurfer.create({
 			container: waveContainer,
@@ -77,17 +79,17 @@
 	});
 </script>
 
+<!-- UNIFIED DESIGN: Standard light card look with background changes -->
 <div
-	class="group relative flex w-full items-center gap-3 overflow-hidden rounded-lg border bg-muted/50 border-border p-2.5 text-sm shadow-sm"
+	class="group relative flex w-full items-center gap-3 overflow-hidden rounded-lg border bg-gray-50 border-gray-200 p-2.5 text-sm shadow-sm"
 >
-	<!-- Action Bar is now included -->
 	<ActionBar {attachment} {url} on:reattach={forward} on:download={forward} />
 
 	<!-- Play/Pause Button -->
 	<button
 		on:click={togglePlay}
 		disabled={!isReady || !!error}
-		class="z-20 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-background text-foreground shadow-md transition-colors hover:bg-border disabled:cursor-not-allowed disabled:opacity-50"
+		class="z-20 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white text-gray-900 shadow-md transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
 		aria-label={isPlaying ? 'Pause' : 'Play'}
 	>
 		{#if !isReady && !error}
@@ -102,11 +104,11 @@
 	<!-- Waveform & Time -->
 	<div class="flex-1 min-w-0">
 		{#if error}
-			<p class="text-xs text-danger">Could not load audio file.</p>
+			<p class="text-xs text-red-500">Could not load audio file.</p>
 		{:else}
 			<div bind:this={waveContainer} class="h-12 w-full cursor-pointer" />
 			<div
-				class="flex justify-end text-xs font-mono text-muted-foreground transition-opacity"
+				class="flex justify-end text-xs font-mono text-gray-500 transition-opacity"
 				class:opacity-0={!isReady}
 			>
 				<span>{currentTime} / {duration}</span>

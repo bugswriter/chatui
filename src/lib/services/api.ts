@@ -4,7 +4,7 @@ import { authToken } from "$lib/stores/tokenStore";
 
 export const API_CONFIG = {
   // The FastAPI/Jinja app is the primary entry point
-  authBaseUrl: "https://bugswriter.ai",
+  authBaseUrl: "https://api.bugswriter.ai",
   // The FastAPI API for chat services
   apiBaseUrl: "https://sys.bugswriter.ai",
 };

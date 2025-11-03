@@ -11,28 +11,14 @@ export interface UserDetails {
   id: string;
   coins: number;
   subscription_status: string;
+  active_plan_name: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
   avatar?: string | null;
+  verified: boolean;
 }
 
 // --- Service Functions ---
-
-export const fetchTokenFromSession = async (): Promise<string | null> => {
-  // ✅ CORRECTED PATH: Added the '/auth' prefix to match the FastAPI router.
-  const response = await fetch(
-    `${API_CONFIG.authBaseUrl}/api/v1/auth/session/token`,
-  );
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const data = await response.json();
-  const token = data.access_token;
-
-  authToken.set(token);
-
-  return token;
-};
 
 export const getUserDetails = async (): Promise<UserDetails> => {
   const token = getAuthToken();
@@ -47,6 +33,7 @@ export const getUserDetails = async (): Promise<UserDetails> => {
   });
 
   if (!response.ok) {
+    // If the token is invalid (e.g., expired), clear it from storage.
     authToken.set(null);
     throw new Error(
       "Failed to fetch user details. Your session may be invalid.",

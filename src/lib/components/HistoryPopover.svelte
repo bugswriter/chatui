@@ -36,7 +36,7 @@
 {#if isOpen}
     <div
         transition:scale={{ duration: 150, start: 0.95, easing: quintOut }}
-        class="absolute top-full right-0 mt-2 w-72 origin-top-right rounded-md border border-border bg-background-alt p-1 text-sm shadow-lg"
+        class="absolute top-full right-0 mt-2 w-72 origin-top-right rounded-md border border-border bg-background p-1 text-sm shadow-lg"
         role="menu"
         aria-orientation="vertical"
         aria-labelledby="history-menu-button"

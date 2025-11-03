@@ -1,53 +1,61 @@
-/* Import a modern, clean font suitable for a professional UI */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-/* Import base Tailwind styles */
+/* src/app.css */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
-  /* Font */
-  --font-sans: 'Inter', sans-serif;
-  --background-image-tile: url('https://mermaidgrey.neocities.org/images/misc%20pics/69.gif');
+    /* Font */
+    --font-sans: "Inter", sans-serif;
+    --background-image-tile: url("https://mermaidgrey.neocities.org/images/misc%20pics/69.gif");
 
-  /* Color Palette — Pure Kawaii Light */
-  --color-background: oklch(100% 0 0);           /* Pure white background */
-  --color-foreground: oklch(18% 0.03 30);        /* Deep neutral brown for crisp readable text */
+    /* Color Palette — Pure Kawaii Light */
+    --color-background: oklch(100% 0 0); /* Pure white background */
+    --color-foreground: oklch(
+        18% 0.03 30
+    ); /* Deep neutral brown for crisp readable text */
 
-  --color-muted: oklch(98% 0.01 80);             /* Very light cream for panels/cards */
-  --color-muted-foreground: oklch(50% 0.03 30);  /* Muted warm text for secondary info */
+    --color-muted: oklch(98% 0.01 80); /* Very light cream for panels/cards */
+    --color-muted-foreground: oklch(
+        50% 0.03 30
+    ); /* Muted warm text for secondary info */
 
-  --color-primary: oklch(78% 0.15 340);          /* Bright strawberry pink */
-  --color-primary-foreground: oklch(99% 0.01 95);/* White text for pink buttons */
+    --color-primary: oklch(78% 0.15 340); /* Bright strawberry pink */
+    --color-primary-foreground: oklch(
+        99% 0.01 95
+    ); /* White text for pink buttons */
 
-  --color-user: oklch(82% 0.14 25);              /* Peach accent (warmer tone) */
-  --color-user-foreground: oklch(99% 0.01 95);
+    --color-user: oklch(82% 0.14 25); /* Peach accent (warmer tone) */
+    --color-user-foreground: oklch(99% 0.01 95);
 
-  --color-accent: oklch(84% 0.12 310);           /* Soft lilac accent for UI hover highlights */
-  --color-accent-foreground: oklch(25% 0.03 30);
+    --color-accent: oklch(
+        84% 0.12 310
+    ); /* Soft lilac accent for UI hover highlights */
+    --color-accent-foreground: oklch(25% 0.03 30);
 
-  --color-border: oklch(90% 0.02 85);            /* Light beige-pink border */
-  --color-ring: oklch(78% 0.15 340 / 0.4);       /* Subtle pink focus ring */
+    --color-border: oklch(90% 0.02 85); /* Light beige-pink border */
+    --color-ring: oklch(78% 0.15 340 / 0.4); /* Subtle pink focus ring */
 
-  --color-danger: oklch(65% 0.18 10);            /* Gentle cherry red */
-  --color-danger-foreground: oklch(99% 0.01 95);
+    --color-danger: oklch(65% 0.18 10); /* Gentle cherry red */
+    --color-danger-foreground: oklch(99% 0.01 95);
 
-  --color-success: oklch(74% 0.14 145);          /* Fresh pastel mint green */
-  --color-success-foreground: oklch(99% 0.01 95);
+    --color-success: oklch(74% 0.14 145); /* Fresh pastel mint green */
+    --color-success-foreground: oklch(99% 0.01 95);
 
-  /* Border Radius */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.75rem;
-  --radius-3xl: 2.5rem;
-  --radius-full: 9999px;
+    /* Border Radius */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.75rem;
+    --radius-3xl: 2.5rem;
+    --radius-full: 9999px;
 }
 
 /* Base Styles */
 @layer base {
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
-  }
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-feature-settings:
+            "rlig" 1,
+            "calt" 1;
+    }
 }
