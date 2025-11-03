@@ -4,7 +4,6 @@
     import { goto } from "$app/navigation";
     import { authStore } from "$lib/stores/authStore";
     import { API_CONFIG, getAuthToken } from "$lib/services/api";
-    import Navbar from "$lib/components/Navbar.svelte";
     import {
         CreditCard,
         History,
@@ -175,8 +174,6 @@
 </script>
 
 <div class="min-h-screen bg-muted/30 text-foreground">
-    <Navbar />
-
     <main class="container mx-auto px-4 py-24 sm:py-32">
         {#if $authStore.isAuthenticated && $authStore.user}
             <div class="mx-auto max-w-5xl">

@@ -1,3 +1,4 @@
+<!-- src/routes/+layout.svelte -->
 <script lang="ts">
     import { onMount } from "svelte";
     import { authStore } from "$lib/stores/authStore";
@@ -7,8 +8,8 @@
     // These components will be present on every page of your application.
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
-    import LoginModal from "$lib/components/auth/Login.svelte";
-    import RegisterModal from "$lib/components/auth/Register.svelte";
+    import LoginModal from "$lib/components/auth/LoginModal.svelte";
+    import RegisterModal from "$lib/components/auth/RegisterModal.svelte";
 
     // --- Global Modal State ---
     // This layout is the global "stage" that owns the state for modals
