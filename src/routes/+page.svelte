@@ -1,3 +1,4 @@
+<!-- src/routes/+page.svelte -->
 <script lang="ts">
     import { authStore } from "$lib/stores/authStore";
     import { chatStore } from "$lib/stores/chatStore";
@@ -76,10 +77,10 @@
 </script>
 
 <!--
-  This div's height is calculated to be the full viewport height minus the navbar's height.
-  This ensures the page content perfectly fills the remaining space.
+  This div's height is now set to fill its parent container from the layout,
+  which has a fixed height. This prevents the page itself from scrolling.
 -->
-<div class="relative h-[calc(100vh-3.5rem)] bg-background text-foreground">
+<div class="relative h-full bg-background text-foreground">
     <!--
     The ChatHistory component will show the welcome screen if messages are empty.
     It needs padding-bottom to ensure the last message isn't hidden by the fixed ChatInput.

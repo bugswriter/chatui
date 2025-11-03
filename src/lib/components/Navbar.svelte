@@ -44,10 +44,7 @@
 </script>
 
 <header class="w-full bg-transparent text-gray-900">
-    <nav
-        class="container mx-auto flex h-16 items-center justify-between px-6 sm:px-10"
-    >
-        <!-- Left: Brand & Links -->
+    <nav class="flex h-16 items-center justify-between px-6 sm:px-10">
         <div class="flex items-center gap-8">
             <a
                 href="/"
