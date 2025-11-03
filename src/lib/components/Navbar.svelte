@@ -2,7 +2,7 @@
 <script lang="ts">
     import { createEventDispatcher, onMount, onDestroy } from "svelte";
     import { authStore } from "$lib/stores/authStore";
-    import { LayoutDashboard, LogOut } from "lucide-svelte";
+    import { LayoutDashboard, LogOut, Archive } from "lucide-svelte";
     import CoinDisplay from "./CoinDisplay.svelte"; // Using the standardized coin display
     import HistoryPopover from "$lib/components/HistoryPopover.svelte";
 
@@ -84,38 +84,6 @@
                 >
                     <CoinDisplay coins={$authStore.user.coins} />
                 </div>
-
-                <!-- History Popover -->
-                <div class="relative" bind:this={historyContainer}>
-                    <button
-                        on:click={() => (isHistoryOpen = !isHistoryOpen)}
-                        class="flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        class:bg-muted={isHistoryOpen}
-                        aria-haspopup="true"
-                        aria-expanded={isHistoryOpen}
-                    >
-                        <span>History</span>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="lucide lucide-chevron-down transition-transform duration-200"
-                            class:-rotate-180={isHistoryOpen}
-                            ><path d="m6 9 6 6 6-6" /></svg
-                        >
-                    </button>
-                    <HistoryPopover
-                        isOpen={isHistoryOpen}
-                        on:close={() => (isHistoryOpen = false)}
-                    />
-                </div>
-
                 <!-- Avatar & Dropdown Container -->
                 <div class="relative" bind:this={dropdownContainer}>
                     <button
@@ -159,6 +127,27 @@
                                     <LayoutDashboard class="h-4 w-4" />
                                     <span>Dashboard</span>
                                 </a>
+                                <!-- History Popover -->
+                                <div
+                                    class="relative"
+                                    bind:this={historyContainer}
+                                >
+                                    <button
+                                        on:click={() =>
+                                            (isHistoryOpen = !isHistoryOpen)}
+                                        class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                        class:bg-muted={isHistoryOpen}
+                                        aria-haspopup="true"
+                                        aria-expanded={isHistoryOpen}
+                                    >
+                                        <Archive class="h-5 w-5" />
+                                        <span>Archive</span>
+                                    </button>
+                                    <HistoryPopover
+                                        isOpen={isHistoryOpen}
+                                        on:close={() => (isHistoryOpen = false)}
+                                    />
+                                </div>
                                 <!-- Logout: UNIFIED DESIGN - Standard red/danger style -->
                                 <button
                                     on:click={handleLogout}
