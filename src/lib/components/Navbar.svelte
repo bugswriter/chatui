@@ -50,7 +50,7 @@
                 href="/"
                 class="text-xl font-semibold tracking-tight hover:opacity-70 transition-opacity"
             >
-                bw<span class="text-blue-500">.ai</span>
+                bw.ai
             </a>
             <a
                 href="/pricing"
