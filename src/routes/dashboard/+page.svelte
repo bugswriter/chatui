@@ -27,7 +27,6 @@
     let error: string | null = null;
     let actionInProgress: "billing" | "cancel" | "reactivate" | null = null;
 
-    // Redirect if not authenticated
     authStore.subscribe((state) => {
         if (
             typeof window !== "undefined" &&
@@ -39,33 +38,25 @@
     });
 
     onMount(async () => {
-        if ($authStore.isAuthenticated) {
-            await fetchTransactions();
-        }
+        if ($authStore.isAuthenticated) await fetchTransactions();
     });
 
     async function fetchTransactions() {
         isLoadingTransactions = true;
         error = null;
         const token = getAuthToken();
-        if (!token) {
-            isLoadingTransactions = false;
-            return;
-        }
+        if (!token) return (isLoadingTransactions = false);
         try {
-            // ✅ FIX: Changed to use authBaseUrl for the transactions endpoint
-            const response = await fetch(
+            const res = await fetch(
                 `${API_CONFIG.authBaseUrl}/api/v1/users/me/transactions`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 },
             );
-            if (!response.ok)
-                throw new Error("Failed to load transaction history.");
-            transactions = await response.json();
+            if (!res.ok) throw new Error("Failed to load transaction history.");
+            transactions = await res.json();
         } catch (e) {
-            error =
-                e instanceof Error ? e.message : "An unknown error occurred.";
+            error = e instanceof Error ? e.message : "Unknown error.";
         } finally {
             isLoadingTransactions = false;
         }
@@ -76,7 +67,7 @@
         error = null;
         const token = getAuthToken();
         try {
-            const response = await fetch(
+            const res = await fetch(
                 `${API_CONFIG.authBaseUrl}/api/v1/payments/customer-portal`,
                 {
                     method: "POST",
@@ -84,18 +75,14 @@
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${token}`,
                     },
-                    body: JSON.stringify({
-                        return_url: window.location.href,
-                    }),
+                    body: JSON.stringify({ return_url: window.location.href }),
                 },
             );
-            if (!response.ok)
-                throw new Error("Could not open the billing portal.");
-            const data = await response.json();
+            if (!res.ok) throw new Error("Could not open billing portal.");
+            const data = await res.json();
             window.location.href = data.url;
         } catch (e) {
-            error =
-                e instanceof Error ? e.message : "An unknown error occurred.";
+            error = e instanceof Error ? e.message : "Unknown error.";
             actionInProgress = null;
         }
     }
@@ -103,26 +90,24 @@
     async function handleCancelSubscription() {
         if (
             !confirm(
-                "Are you sure you want to cancel? Your plan will remain active until the end of the current billing period.",
+                "Cancel subscription? It stays active until the current period ends.",
             )
         )
             return;
         actionInProgress = "cancel";
-        error = null;
         const token = getAuthToken();
         try {
-            const response = await fetch(
+            const res = await fetch(
                 `${API_CONFIG.authBaseUrl}/api/v1/payments/subscriptions/cancel`,
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },
                 },
             );
-            if (!response.ok) throw new Error("Failed to cancel subscription.");
+            if (!res.ok) throw new Error("Failed to cancel subscription.");
             await authStore.refreshUserDetails();
         } catch (e) {
-            error =
-                e instanceof Error ? e.message : "An unknown error occurred.";
+            error = e instanceof Error ? e.message : "Unknown error.";
         } finally {
             actionInProgress = null;
         }
@@ -130,22 +115,19 @@
 
     async function handleReactivateSubscription() {
         actionInProgress = "reactivate";
-        error = null;
         const token = getAuthToken();
         try {
-            const response = await fetch(
+            const res = await fetch(
                 `${API_CONFIG.authBaseUrl}/api/v1/payments/subscriptions/reactivate`,
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },
                 },
             );
-            if (!response.ok)
-                throw new Error("Failed to reactivate subscription.");
+            if (!res.ok) throw new Error("Failed to reactivate subscription.");
             await authStore.refreshUserDetails();
         } catch (e) {
-            error =
-                e instanceof Error ? e.message : "An unknown error occurred.";
+            error = e instanceof Error ? e.message : "Unknown error.";
         } finally {
             actionInProgress = null;
         }
@@ -162,61 +144,64 @@
     $: statusInfo = ((status: string | null | undefined) => {
         switch (status) {
             case "active":
-                return { text: "Active", color: "text-green-600" };
+                return { text: "Active", color: "text-emerald-600" };
             case "canceled":
                 return { text: "Canceled", color: "text-amber-600" };
             case "past_due":
-                return { text: "Past Due", color: "text-destructive" };
+                return { text: "Past Due", color: "text-red-600" };
             default:
-                return { text: "Inactive", color: "text-muted-foreground" };
+                return { text: "Inactive", color: "text-gray-400" };
         }
     })($authStore.user?.subscription_status);
 </script>
 
-<div class="min-h-screen bg-muted/30 text-foreground">
-    <main class="container mx-auto px-4 py-24 sm:py-32">
+<!-- MacBook style clean white UI -->
+<div class="min-h-screen bg-white text-gray-800">
+    <main class="container mx-auto px-6 py-24 sm:py-32">
         {#if $authStore.isAuthenticated && $authStore.user}
-            <div class="mx-auto max-w-5xl">
-                <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
+            <div class="mx-auto max-w-6xl">
+                <h1
+                    class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-10"
+                >
                     Dashboard
                 </h1>
 
                 {#if error}
                     <div
-                        class="mt-6 flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
+                        class="mt-4 flex items-center gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700"
                     >
                         <AlertTriangle class="h-5 w-5 flex-shrink-0" />
                         <p>{error}</p>
                     </div>
                 {/if}
 
-                <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div class="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
                     <!-- Left Column -->
                     <div class="lg:col-span-1 space-y-8">
-                        <!-- Account Details -->
+                        <!-- Account Card -->
                         <div
-                            class="rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+                            class="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                         >
                             <div
-                                class="flex items-center gap-3 border-b border-border p-4"
+                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50"
                             >
-                                <UserCircle
-                                    class="h-5 w-5 text-muted-foreground"
-                                />
-                                <h2 class="font-semibold">Account Details</h2>
+                                <UserCircle class="h-5 w-5 text-gray-500" />
+                                <h2 class="font-semibold text-gray-900">
+                                    Account
+                                </h2>
                             </div>
                             <div class="p-6 flex items-center gap-4">
                                 <img
                                     src={$authStore.user.avatar ||
                                         `https://api.dicebear.com/8.x/bottts/svg?seed=${$authStore.user.email}`}
-                                    alt="User Avatar"
-                                    class="h-16 w-16 rounded-full object-cover"
+                                    alt="Avatar"
+                                    class="h-16 w-16 rounded-full object-cover border border-gray-200"
                                 />
                                 <div>
-                                    <p class="font-semibold">
+                                    <p class="font-semibold text-gray-800">
                                         {$authStore.user.name}
                                     </p>
-                                    <p class="text-sm text-muted-foreground">
+                                    <p class="text-sm text-gray-500">
                                         {$authStore.user.email}
                                     </p>
                                 </div>
@@ -225,21 +210,21 @@
 
                         <!-- Subscription -->
                         <div
-                            class="rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+                            class="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                         >
                             <div
-                                class="flex items-center gap-3 border-b border-border p-4"
+                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50"
                             >
-                                <CreditCard
-                                    class="h-5 w-5 text-muted-foreground"
-                                />
-                                <h2 class="font-semibold">Subscription</h2>
+                                <CreditCard class="h-5 w-5 text-gray-500" />
+                                <h2 class="font-semibold text-gray-900">
+                                    Subscription
+                                </h2>
                             </div>
                             <div class="p-6 space-y-4">
                                 <div
                                     class="flex justify-between items-baseline"
                                 >
-                                    <span class="text-sm text-muted-foreground"
+                                    <span class="text-sm text-gray-500"
                                         >Status</span
                                     >
                                     <span
@@ -250,34 +235,35 @@
                                 <div
                                     class="flex justify-between items-baseline"
                                 >
-                                    <span class="text-sm text-muted-foreground"
+                                    <span class="text-sm text-gray-500"
                                         >Current Plan</span
                                     >
-                                    <span class="font-semibold"
+                                    <span class="font-semibold text-gray-800"
                                         >{$authStore.user.active_plan_name ||
                                             "None"}</span
                                     >
                                 </div>
                                 <div
-                                    class="border-t border-border pt-4 space-y-3"
+                                    class="border-t border-gray-100 pt-4 space-y-3"
                                 >
                                     <button
                                         on:click={handleManageBilling}
                                         disabled={!$authStore.user
                                             .stripe_customer_id ||
                                             !!actionInProgress}
-                                        class="inline-flex h-10 w-full items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-sm transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                                        class="inline-flex h-10 w-full items-center justify-center rounded-md bg-gray-900 text-white font-semibold text-sm transition hover:bg-gray-800 disabled:opacity-50"
                                     >
                                         {#if actionInProgress === "billing"}<Loader2
                                                 class="mr-2 h-4 w-4 animate-spin"
                                             />{/if}
                                         Manage Billing
                                     </button>
+
                                     {#if $authStore.user.subscription_status === "active"}
                                         <button
                                             on:click={handleCancelSubscription}
                                             disabled={!!actionInProgress}
-                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive shadow-sm transition-colors hover:bg-destructive/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-red-100 text-red-600 font-semibold text-sm hover:bg-red-200 transition disabled:opacity-50"
                                         >
                                             {#if actionInProgress === "cancel"}<Loader2
                                                     class="h-4 w-4 animate-spin"
@@ -290,7 +276,7 @@
                                         <button
                                             on:click={handleReactivateSubscription}
                                             disabled={!!actionInProgress}
-                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
                                         >
                                             {#if actionInProgress === "reactivate"}<Loader2
                                                     class="h-4 w-4 animate-spin"
@@ -307,13 +293,15 @@
 
                     <!-- Right Column -->
                     <div
-                        class="lg:col-span-2 rounded-xl border border-border bg-card text-card-foreground shadow-sm"
+                        class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                     >
                         <div
-                            class="flex items-center gap-3 border-b border-border p-4"
+                            class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50"
                         >
-                            <History class="h-5 w-5 text-muted-foreground" />
-                            <h2 class="font-semibold">Transaction History</h2>
+                            <History class="h-5 w-5 text-gray-500" />
+                            <h2 class="font-semibold text-gray-900">
+                                Transaction History
+                            </h2>
                         </div>
                         <div class="p-2">
                             {#if isLoadingTransactions}
@@ -321,20 +309,18 @@
                                     class="flex justify-center items-center p-12"
                                 >
                                     <Loader2
-                                        class="h-6 w-6 animate-spin text-muted-foreground"
+                                        class="h-6 w-6 animate-spin text-gray-400"
                                     />
                                 </div>
                             {:else if transactions.length === 0}
-                                <p
-                                    class="p-12 text-center text-muted-foreground"
-                                >
+                                <p class="p-12 text-center text-gray-500">
                                     No transactions found.
                                 </p>
                             {:else}
                                 <div class="overflow-x-auto">
-                                    <table class="w-full text-sm">
+                                    <table class="w-full text-sm text-gray-800">
                                         <thead
-                                            class="text-left text-muted-foreground"
+                                            class="text-left text-gray-500 bg-gray-50"
                                         >
                                             <tr>
                                                 <th class="p-3 font-medium"
@@ -352,7 +338,7 @@
                                         <tbody>
                                             {#each transactions as trx}
                                                 <tr
-                                                    class="border-t border-border"
+                                                    class="border-t border-gray-100 hover:bg-gray-50 transition"
                                                 >
                                                     <td
                                                         class="p-3 whitespace-nowrap"
@@ -390,8 +376,8 @@
             <div
                 class="flex h-[50vh] flex-col items-center justify-center text-center"
             >
-                <Loader2 class="h-8 w-8 animate-spin text-primary" />
-                <p class="mt-4 text-muted-foreground">Loading user data...</p>
+                <Loader2 class="h-8 w-8 animate-spin text-gray-600" />
+                <p class="mt-4 text-gray-500">Loading user data...</p>
             </div>
         {/if}
     </main>
