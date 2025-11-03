@@ -3,11 +3,13 @@
     import { createEventDispatcher, onMount, onDestroy } from "svelte";
     import { authStore } from "$lib/stores/authStore";
     import { LayoutDashboard, LogOut } from "lucide-svelte";
-    import CoinDisplay from './CoinDisplay.svelte'; // Using the standardized coin display
+    import CoinDisplay from "./CoinDisplay.svelte"; // Using the standardized coin display
+    import HistoryPopover from "$lib/components/HistoryPopover.svelte";
 
     const dispatch = createEventDispatcher();
 
-    // --- State for the user dropdown ---
+    let isHistoryOpen = false;
+    let historyContainer: HTMLDivElement;
     let isDropdownOpen = false;
     let dropdownContainer: HTMLElement;
 
@@ -45,7 +47,9 @@
 </script>
 
 <!-- UNIFIED DESIGN: Standard light background, no border for 'transparent' on scroll, but clean -->
-<header class="w-full bg-white text-gray-900 border-b border-gray-100">
+<header
+    class="w-full z-20 bg-background/80 text-gray-900 border-b border-border backdrop-blur-sm"
+>
     <nav class="flex h-16 items-center justify-between px-6 sm:px-10">
         <div class="flex items-center gap-8">
             <!-- Logo/Brand -->
@@ -76,16 +80,47 @@
                 <!-- Authenticated User View -->
                 <!-- Coin Display: UNIFIED DESIGN - Standardized with CoinDisplay component -->
                 <div
-                    class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm"
+                    class="flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-sm"
                 >
                     <CoinDisplay coins={$authStore.user.coins} />
+                </div>
+
+                <!-- History Popover -->
+                <div class="relative" bind:this={historyContainer}>
+                    <button
+                        on:click={() => (isHistoryOpen = !isHistoryOpen)}
+                        class="flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        class:bg-muted={isHistoryOpen}
+                        aria-haspopup="true"
+                        aria-expanded={isHistoryOpen}
+                    >
+                        <span>History</span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-chevron-down transition-transform duration-200"
+                            class:-rotate-180={isHistoryOpen}
+                            ><path d="m6 9 6 6 6-6" /></svg
+                        >
+                    </button>
+                    <HistoryPopover
+                        isOpen={isHistoryOpen}
+                        on:close={() => (isHistoryOpen = false)}
+                    />
                 </div>
 
                 <!-- Avatar & Dropdown Container -->
                 <div class="relative" bind:this={dropdownContainer}>
                     <button
                         on:click={toggleDropdown}
-                        class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 ring-2 ring-offset-2 ring-transparent transition-all hover:ring-blue-500/50"
+                        class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 ring-2 ring-offset-2 ring-transparent transition-all hover:ring-border/50"
                         aria-label="Open user menu"
                     >
                         {#if $authStore.user.avatar}
@@ -105,9 +140,9 @@
                     <!-- Dropdown Menu: UNIFIED DESIGN - Light card look -->
                     {#if isDropdownOpen}
                         <div
-                            class="absolute top-full right-0 mt-2 w-56 origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg z-20"
+                            class="absolute top-full right-0 mt-2 w-56 origin-top-right rounded-xl border border-border bg-white shadow-lg z-20"
                         >
-                            <div class="border-b border-gray-100 px-4 py-3">
+                            <div class="border-b border-border px-4 py-3">
                                 <p class="truncate text-sm font-semibold">
                                     {$authStore.user.name}
                                 </p>
@@ -141,7 +176,7 @@
                 <!-- Secondary Button: UNIFIED DESIGN - Standard gray/border -->
                 <button
                     on:click={() => dispatch("openLogin")}
-                    class="rounded-full border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:scale-[0.98] transition-all"
+                    class="rounded-full border border-border px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:scale-[0.98] transition-all"
                 >
                     Login
                 </button>
