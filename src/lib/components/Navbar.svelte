@@ -183,7 +183,7 @@
                 <!-- Primary Button: UNIFIED DESIGN - Standard blue -->
                 <button
                     on:click={() => dispatch("openRegister")}
-                    class="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.98]"
+                    class="rounded-full bg-primary px-5 py-2 text-sm font-medium text-white shadow-md transition-all hover:bg-primary/80 active:scale-[0.98]"
                 >
                     Register
                 </button>
