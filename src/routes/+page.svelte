@@ -1,28 +1,26 @@
-<!-- src/routes/+page.svelte -->
 <script lang="ts">
-    import { onMount } from "svelte";
     import { authStore } from "$lib/stores/authStore";
     import { chatStore } from "$lib/stores/chatStore";
     import { historyStore } from "$lib/stores/historyStore";
     import { streamChat } from "$lib/services/chat";
-    import Navbar from "$lib/components/Navbar.svelte";
-    import ChatHistory from "$lib/components/ChatHistory.svelte";
-    import ChatInput from "$lib/components/ChatInput.svelte";
-    import SettingsModal from "$lib/components/SettingsModal.svelte";
-    import ImageLightbox from "$lib/components/ImageLightbox.svelte";
     import type { Attachment } from "$lib/types";
 
-    // REMOVED: isLoginOpen state
-    let isSettingsOpen = false;
-    let reattachedFiles: Attachment[] = [];
+    // --- Chat-Specific Component Imports ---
+    // Navbar and global modals are now handled by the root layout.
+    import ChatHistory from "$lib/components/ChatHistory.svelte";
+    import ChatInput from "$lib/components/ChatInput.svelte";
+    import ImageLightbox from "$lib/components/ImageLightbox.svelte";
+    import ArchivesModal from "$lib/components/Archives.svelte";
+    // You would also create and import ChatSettingsModal and ChatHeader here.
+
+    import { MessageSquarePlus } from "lucide-svelte";
+
+    // --- State for LOCAL modals, belonging ONLY to this page ---
+    let isArchivesOpen = false;
     let fullscreenImageUrl: string | null = null;
+    let reattachedFiles: Attachment[] = [];
 
-    onMount(() => {
-        // This now handles everything on page load
-        authStore.initialize();
-    });
-
-    // --- All handler functions (handleReattach, handleSendMessage, etc.) remain unchanged ---
+    // --- Chat App Event Handlers ---
     function handleReattach(event: CustomEvent<Attachment>) {
         const newAttachment = event.detail;
         if (
@@ -43,6 +41,14 @@
     async function handleSendMessage(
         event: CustomEvent<{ message: string; attachments: Attachment[] }>,
     ) {
+        // The ChatInput component should handle prompting the user to log in.
+        // This is a final safeguard.
+        if (!$authStore.isAuthenticated) {
+            console.error("User must be authenticated to send messages.");
+            // In a real app, you might dispatch an event to the layout to open the login modal here.
+            return;
+        }
+
         const { message, attachments } = event.detail;
         const isNewSession = !$chatStore.sessionId;
 
@@ -69,90 +75,64 @@
     $: isStreaming = $chatStore.activeStreams.size > 0;
 </script>
 
-<!-- Initial Auth Check Loading Spinner -->
-{#if $authStore.isLoading}
-    <div class="flex h-screen w-full items-center justify-center bg-background">
-        <div
-            class="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"
-        ></div>
-    </div>
+<!--
+  This div's height is calculated to be the full viewport height minus the navbar's height.
+  This ensures the page content perfectly fills the remaining space.
+-->
+<div class="relative h-[calc(100vh-3.5rem)] bg-background text-foreground">
+    <!--
+    The ChatHistory component will show the welcome screen if messages are empty.
+    It needs padding-bottom to ensure the last message isn't hidden by the fixed ChatInput.
+  -->
+    <ChatHistory
+        className="h-full overflow-y-auto pb-32 pt-6"
+        messages={$chatStore.messages}
+        isLoading={$chatStore.isLoading}
+        userName={$authStore.user?.name || "You"}
+        userAvatarUrl={$authStore.user?.avatar}
+        on:reattach={handleReattach}
+        on:viewImage={handleViewImage}
+    />
 
-    <!-- Main Chat App (Authenticated) -->
-{:else if $authStore.isAuthenticated && $authStore.user}
-    <div class="h-screen bg-background text-foreground">
-        <Navbar on:settingsClick={() => (isSettingsOpen = true)} />
-        <main class="relative h-full pt-14">
-            <ChatHistory
-                className="absolute inset-0 pb-[150px] md:pb-[130px]"
-                messages={$chatStore.messages}
+    <!-- The ChatInput area is fixed to the bottom of this page's container -->
+    <div class="absolute bottom-0 left-0 z-10 w-full">
+        {#if $historyStore.selectedSessionId === null}
+            <ChatInput
                 isLoading={$chatStore.isLoading}
-                userName={$authStore.user.name}
-                userAvatarUrl={$authStore.user.avatar}
-                on:reattach={handleReattach}
-                on:viewImage={handleViewImage}
+                {isStreaming}
+                {reattachedFiles}
+                on:send={handleSendMessage}
+                on:removeReattached={handleRemoveReattached}
             />
-            <div class="absolute bottom-0 left-0 z-10 w-full">
-                {#if $historyStore.selectedSessionId === null}
-                    <!-- Active Chat Input -->
-                    <ChatInput
-                        isLoading={$chatStore.isLoading}
-                        {isStreaming}
-                        {reattachedFiles}
-                        on:send={handleSendMessage}
-                        on:removeReattached={handleRemoveReattached}
-                    />
-                {:else}
-                    <!-- Read-Only Notice for Past Chats -->
-                    <div
-                        class="border-t border-border bg-background/80 p-4 backdrop-blur-sm"
+        {:else}
+            <!-- This appears when viewing a past conversation from the archives -->
+            <div
+                class="border-t border-border bg-background/80 p-4 backdrop-blur-md"
+            >
+                <div
+                    class="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center"
+                >
+                    <p class="font-medium text-muted-foreground">
+                        This is a read-only view of a past conversation.
+                    </p>
+                    <button
+                        on:click={() => historyStore.createNewSession()}
+                        class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                     >
-                        <div
-                            class="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center text-sm"
-                        >
-                            <p class="font-medium text-muted-foreground">
-                                This is a read-only view of a past conversation.
-                            </p>
-                            <button
-                                on:click={() => historyStore.createNewSession()}
-                                class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-                            >
-                                Start a New Chat
-                            </button>
-                        </div>
-                    </div>
-                {/if}
+                        <MessageSquarePlus class="h-4 w-4" />
+                        Start a New Chat
+                    </button>
+                </div>
             </div>
-        </main>
+        {/if}
     </div>
+</div>
 
-    <!-- ✅ NEW: Logged-out Landing Page -->
-{:else}
-    <div
-        class="flex h-screen w-full flex-col items-center justify-center bg-background p-4 text-center"
-    >
-        <h1
-            class="bg-gradient-to-br from-primary via-user to-primary bg-clip-text text-6xl font-bold tracking-tighter text-transparent"
-        >
-            munni.ai
-        </h1>
-        <p class="mt-4 max-w-md text-lg text-muted-foreground">
-            Your intelligent AI assistant, reimagined.
-        </p>
-        <!-- ✅ CHANGED: This is now a standard link, not a button opening a modal -->
-        <a
-            href="/login"
-            class="mt-8 rounded-full bg-primary py-3 px-8 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:scale-105"
-        >
-            Login to Continue
-        </a>
-    </div>
-{/if}
-
-<!-- Modals (LoginModal is removed) -->
-<SettingsModal
-    isOpen={isSettingsOpen}
-    on:close={() => (isSettingsOpen = false)}
-/>
+<!--
+  PAGE-SPECIFIC MODALS
+  These are only rendered when the user is on the chat page.
+-->
+<ArchivesModal bind:isOpen={isArchivesOpen} />
 
 {#if fullscreenImageUrl}
     <ImageLightbox

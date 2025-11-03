@@ -4,6 +4,7 @@
     import { historyStore } from "$lib/stores/historyStore";
     import { fly, scale } from "svelte/transition";
     import { quintOut } from "svelte/easing";
+    import { Plus, Loader2, MessageSquareWarning } from "lucide-svelte";
 
     export let isOpen = false;
 
@@ -22,67 +23,68 @@
     function formatTimestamp(dateString: string): string {
         const date = new Date(dateString);
         const now = new Date();
-        const diffDays = Math.floor(
-            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
-        );
+        const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        const diffDays = Math.floor(diffSeconds / 86400);
 
         if (diffDays > 30) return date.toLocaleDateString();
         if (diffDays > 1) return `${diffDays} days ago`;
         if (diffDays === 1) return "Yesterday";
-        return "Today";
+
+        const diffHours = Math.floor(diffSeconds / 3600);
+        if (diffHours >= 1) return `${diffHours}h ago`;
+
+        const diffMinutes = Math.floor(diffSeconds / 60);
+        if (diffMinutes >= 1) return `${diffMinutes}m ago`;
+
+        return "Just now";
     }
 </script>
 
 {#if isOpen}
     <div
         transition:scale={{ duration: 150, start: 0.95, easing: quintOut }}
-        class="absolute top-full right-0 mt-2 w-72 origin-top-right rounded-md border border-border bg-background-alt p-1 text-sm shadow-lg"
+        class="absolute top-full right-0 mt-2 w-80 origin-top-right rounded-lg border border-border bg-popover text-popover-foreground shadow-lg focus:outline-none"
         role="menu"
         aria-orientation="vertical"
         aria-labelledby="history-menu-button"
     >
-        <!-- Header / New Chat Button -->
-        <div class="p-1">
+        <!-- Header -->
+        <div
+            class="flex items-center justify-between border-b border-border p-3"
+        >
+            <h3 class="font-semibold">Chat History</h3>
             <button
                 on:click={handleNewChat}
-                class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 font-medium transition-colors hover:bg-muted"
+                class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 class:text-primary={$historyStore.selectedSessionId === null}
                 role="menuitem"
             >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="lucide lucide-plus"
-                    ><path d="M5 12h14" /><path d="M12 5v14" /></svg
-                >
-                <span>Start New Chat</span>
+                <Plus class="h-4 w-4" />
+                <span>New</span>
             </button>
         </div>
 
-        <div class="my-1 border-b border-border"></div>
-
         <!-- Scrollable History List -->
         <div
-            class="max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50"
+            class="max-h-[24rem] overflow-y-auto p-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50"
         >
             {#if $historyStore.isLoading && $historyStore.sessions.length === 0}
-                <div class="p-4 text-center text-xs text-muted-foreground">
-                    Loading...
+                <div
+                    class="flex flex-col items-center justify-center p-6 text-center text-sm text-muted-foreground"
+                >
+                    <Loader2 class="mb-2 h-5 w-5 animate-spin" />
+                    <p>Loading History...</p>
                 </div>
             {:else if $historyStore.error}
-                <div class="p-4 text-center text-xs text-destructive">
-                    {$historyStore.error}
+                <div
+                    class="flex flex-col items-center justify-center p-6 text-center text-sm text-destructive"
+                >
+                    <MessageSquareWarning class="mb-2 h-5 w-5" />
+                    <p>{$historyStore.error}</p>
                 </div>
             {:else if $historyStore.sessions.length === 0}
-                <div class="p-4 text-center text-xs text-muted-foreground">
-                    No history found.
+                <div class="p-6 text-center text-sm text-muted-foreground">
+                    <p>No past conversations found.</p>
                 </div>
             {:else}
                 <ul class="space-y-1 p-1">
@@ -91,8 +93,10 @@
                             <button
                                 on:click={() =>
                                     handleSelectSession(session.session_id)}
-                                class="w-full rounded-sm p-2 text-left transition-colors hover:bg-muted"
-                                class:bg-muted={$historyStore.selectedSessionId ===
+                                class="w-full rounded-md p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                class:bg-accent={$historyStore.selectedSessionId ===
+                                    session.session_id}
+                                class:hover:bg-accent={$historyStore.selectedSessionId !==
                                     session.session_id}
                                 title={session.first_message_preview}
                                 role="menuitem"
