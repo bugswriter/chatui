@@ -62,9 +62,7 @@
             <slot />
         </main>
 
-        {#if $page.route.id !== "/"}
-            <Footer />
-        {/if}
+        <Footer />
     </div>
 
     <!-- Modals are triggered globally via events from Navbar/ChatInput -->

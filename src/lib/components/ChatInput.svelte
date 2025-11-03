@@ -223,7 +223,7 @@
     }
 </script>
 
-<div class="w-full bg-muted/20 px-4 py-3">
+<div class="w-full bg-muted/20 px-4">
     <div class="max-w-4xl bg-transparent mx-auto relative">
         <!-- Agent Suggestion Popup -->
         {#if showSuggestions}
