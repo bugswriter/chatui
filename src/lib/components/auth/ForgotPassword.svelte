@@ -14,7 +14,7 @@
     let isEmailSent = false; // New state to switch views
 
     const FORGOT_PASSWORD_API =
-        "https://bugswriter.ai/api/v1/auth/password/forgot"; // Your backend endpoint
+        "https://api.bugswriter.ai/api/v1/auth/password/forgot"; // Your backend endpoint
 
     function closeModal() {
         if (!isLoading) isOpen = false;

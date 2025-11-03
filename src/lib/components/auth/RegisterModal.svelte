@@ -76,7 +76,7 @@
         providersError = null;
         try {
             const response = await fetch(
-                "https://bugswriter.ai/api/v1/auth/oauth2/providers",
+                "https://api.bugswriter.ai/api/v1/auth/oauth2/providers",
             );
 
             if (!response.ok) {

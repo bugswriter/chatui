@@ -13,7 +13,7 @@
     let successMessage: string | null = null;
 
     const RESET_CONFIRM_API =
-        "https://bugswriter.ai/api/v1/auth/password/reset-confirm"; // Your backend endpoint
+        "https://api.bugswriter.ai/api/v1/auth/password/reset-confirm"; // Your backend endpoint
 
     /**
      * Handles the submission of the new password and reset token.
