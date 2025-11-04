@@ -1,16 +1,14 @@
 <!-- src/lib/components/Navbar.svelte -->
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte"; // ✅ REMOVED: createEventDispatcher
+    import { onMount, onDestroy } from "svelte";
     import { authStore } from "$lib/stores/authStore";
-    import { uiStore } from "$lib/stores/uiStore"; // ✅ IMPORT uiStore
+    import { uiStore } from "$lib/stores/uiStore";
     import { LayoutDashboard, LogOut, Archive } from "lucide-svelte";
     import CoinDisplay from "./CoinDisplay.svelte";
     import HistoryPopover from "$lib/components/HistoryPopover.svelte";
     import { page } from "$app/stores";
 
     $: isActivePage = $page.url.pathname === "/";
-
-    // ✅ REMOVED: const dispatch = createEventDispatcher();
 
     let isHistoryOpen = false;
     let historyContainer: HTMLDivElement;
@@ -49,17 +47,18 @@
     });
 </script>
 
-<header
-    class="w-full z-20 bg-background/80 text-gray-900 border-b border-border backdrop-blur-sm"
->
-    <nav class="flex h-16 items-center justify-between px-6 sm:px-10">
-        <div class="flex items-center gap-8">
+<!-- ✅ MODIFIED: Navbar is now absolute, transparent, and smaller -->
+<header class="absolute top-0 left-0 w-full z-20 text-gray-900">
+    <nav class="flex h-14 items-center justify-between px-4 sm:px-6">
+        <div class="flex items-center gap-6">
+            <!-- Logo/Brand -->
             <a
                 href="/"
-                class="text-xl font-semibold tracking-tight hover:opacity-70 transition-opacity"
+                class="text-lg font-semibold tracking-tight hover:opacity-70 transition-opacity"
             >
                 bw.ai
             </a>
+            <!-- Nav Links -->
             <a
                 href="/pricing"
                 class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
@@ -80,17 +79,20 @@
             </a>
         </div>
 
+        <!-- Right: Auth -->
         <div class="flex items-center gap-4">
             {#if $authStore.isAuthenticated && $authStore.user}
+                <!-- Authenticated User View -->
                 <div
-                    class="flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 text-sm"
+                    class="hidden sm:flex items-center gap-2 rounded-full border border-border bg-white/50 backdrop-blur-sm px-3 py-1.5 text-sm"
                 >
                     <CoinDisplay coins={$authStore.user.coins} />
                 </div>
+                <!-- Avatar & Dropdown -->
                 <div class="relative" bind:this={dropdownContainer}>
                     <button
                         on:click={toggleDropdown}
-                        class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 ring-2 ring-offset-2 ring-transparent transition-all hover:ring-border/50"
+                        class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 ring-2 ring-offset-2 ring-transparent transition-all hover:ring-border/50"
                         aria-label="Open user menu"
                     >
                         {#if $authStore.user.avatar}
@@ -164,16 +166,16 @@
                     {/if}
                 </div>
             {:else}
-                <!-- ✅ MODIFIED: Buttons now call uiStore methods directly -->
+                <!-- Unauthenticated View -->
                 <button
                     on:click={uiStore.openLoginModal}
-                    class="rounded-full border border-border px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:scale-[0.98] transition-all"
+                    class="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 active:scale-[0.98] transition-all"
                 >
                     Login
                 </button>
                 <button
                     on:click={uiStore.openRegisterModal}
-                    class="rounded-full bg-primary px-5 py-2 text-sm font-medium text-white shadow-md transition-all hover:bg-primary/80 active:scale-[0.98]"
+                    class="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white shadow-md transition-all hover:bg-primary/80 active:scale-[0.98]"
                 >
                     Register
                 </button>

@@ -1,8 +1,9 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
     import { page } from "$app/stores";
+    import { invalidate } from "$app/navigation"; // ✅ IMPORT invalidate
     import { authStore } from "$lib/stores/authStore";
-    import { uiStore } from "$lib/stores/uiStore"; // ✅ IMPORT the uiStore
+    import { uiStore } from "$lib/stores/uiStore";
     import "../app.css";
 
     import type { PageData } from "./$types";
@@ -15,19 +16,17 @@
 
     export let data: PageData;
 
-    // ✅ REMOVED: No more local state for modals.
-    // let isLoginModalOpen = false;
-    // let isRegisterModalOpen = false;
-    // let isForgotPasswordOpen = false;
-
-    // ✅ MODIFIED: This function now closes modals via the store.
-    // The invalidate call is no longer needed here as the authStore handles it.
-    function handleLoginSuccess() {
+    // ✅ MODIFIED: This function now invalidates the layout data.
+    async function handleLoginSuccess() {
         uiStore.closeModals();
+        // This tells SvelteKit to re-run all load functions that
+        // depend on 'app:auth', which includes this layout's load function.
+        await invalidate("app:auth");
     }
 
     function handleRegisterSuccess() {
         uiStore.closeModals();
+        // You can optionally show a "please verify your email" message here.
     }
 </script>
 
@@ -39,18 +38,19 @@
     </div>
 {:else}
     <div class="flex h-screen bg-background flex-col">
-        <!-- ✅ MODIFIED: Navbar now calls store methods directly -->
         <Navbar
             on:openLogin={uiStore.openLoginModal}
             on:openRegister={uiStore.openRegisterModal}
         />
 
-        <main class="flex-1 overflow-y-auto">
+        <!-- ✅ MODIFIED: Added padding-top to prevent content from going under the new absolute navbar -->
+        <main class="flex-1 overflow-y-auto pt-14">
             <slot />
         </main>
+
+        <Footer />
     </div>
 
-    <!-- ✅ MODIFIED: Modals are now bound directly to the uiStore's state -->
     <LoginModal
         isOpen={$uiStore.isLoginModalOpen}
         on:success={handleLoginSuccess}
