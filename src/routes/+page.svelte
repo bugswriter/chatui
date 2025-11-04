@@ -8,7 +8,6 @@
 
     import ChatHistory from "$lib/components/ChatHistory.svelte";
     import ChatInput from "$lib/components/ChatInput.svelte";
-    import ImageLightbox from "$lib/components/ImageLightbox.svelte";
     import ArchivesModal from "$lib/components/ArchivesModal.svelte";
 
     import { MessageSquarePlus } from "lucide-svelte";

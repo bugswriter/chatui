@@ -1,9 +1,12 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
-    import { onMount } from "svelte";
     import { page } from "$app/stores";
+    import { invalidate } from "$app/navigation";
     import { authStore } from "$lib/stores/authStore";
     import "../app.css";
+
+    // ✅ FIX: Import the generated type for this page's data
+    import type { PageData } from "./$types";
 
     // --- Global Component Imports ---
     import Navbar from "$lib/components/Navbar.svelte";
@@ -12,52 +15,43 @@
     import ForgotPassword from "$lib/components/auth/ForgotPassword.svelte";
     import RegisterModal from "$lib/components/auth/RegisterModal.svelte";
 
+    // ✅ FIX: Apply the imported type to the `data` prop.
+    // This tells TypeScript the exact shape of the data object.
+    export let data: PageData;
+
     let isLoginModalOpen = false;
     let isRegisterModalOpen = false;
     let isForgotPasswordOpen = false;
 
-    onMount(() => {
-        authStore.initialize();
-    });
-
-    function handleLoginSuccess() {
+    async function handleLoginSuccess() {
         isLoginModalOpen = false;
         isRegisterModalOpen = false;
+
+        await invalidate("app:auth");
     }
 
     function handleRegisterSuccess() {
-        // After successful registration, usually redirect to login or show success.
-        // The service now returns a message asking to check email, so we close modal.
         isRegisterModalOpen = false;
     }
-
-    // NOTE: An event handler for 'requestLogin' from ChatInput should be added here
-    // to open the login modal when a non-authenticated user tries to send a message.
-    // However, since the ChatInput code only dispatches 'requestLogin' and the
-    // existing Navbar already dispatches 'openLogin', we'll rely on the parent
-    // component in the current structure (likely +page.svelte) to handle the ChatInput's event
-    // and forward it to here (or ChatInput should dispatch 'openLogin' directly if it's simpler).
-
-    // --- Template structure is consistent with the light theme ---
 </script>
 
-{#if $authStore.isLoading}
-    <!-- UNIFIED DESIGN: Standard light background and primary spinner color -->
+<!--
+  This `if` condition is now type-safe because TypeScript knows that
+  `data` has a boolean property named `isAuthenticated`.
+-->
+{#if $authStore.isLoading && !data.isAuthenticated}
     <div class="flex h-screen w-full items-center justify-center bg-white">
         <div
             class="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"
         />
     </div>
 {:else}
-    <!-- UNIFIED DESIGN: The base background is white/light gray -->
     <div class="flex h-screen bg-background flex-col">
-        <!-- The Navbar is a direct child and does not scroll -->
         <Navbar
             on:openLogin={() => (isLoginModalOpen = true)}
             on:openRegister={() => (isRegisterModalOpen = true)}
         />
 
-        <!-- This main element grows to fill the remaining space and is the ONLY scrollable part -->
         <main class="flex-1 overflow-y-auto">
             <slot />
         </main>
@@ -65,7 +59,7 @@
         <Footer />
     </div>
 
-    <!-- Modals are triggered globally via events from Navbar/ChatInput -->
+    <!-- Modals -->
     <LoginModal
         bind:isOpen={isLoginModalOpen}
         on:success={handleLoginSuccess}
@@ -75,7 +69,7 @@
         }}
         on:switchToForgotPassword={() => {
             isLoginModalOpen = false;
-            isForgotPasswordOpen = true; // Correct state variable
+            isForgotPasswordOpen = true;
         }}
     />
 
@@ -88,17 +82,11 @@
         }}
     />
 
-    <!-- ADD THE NEW FORGOT PASSWORD MODAL -->
     <ForgotPassword
         bind:isOpen={isForgotPasswordOpen}
         on:switchToLogin={() => {
             isForgotPasswordOpen = false;
             isLoginModalOpen = true;
-        }}
-        on:success={() => {
-            // Close the forgot password modal after successful submission
-            isForgotPasswordOpen = false;
-            // You might optionally show a success toast here
         }}
     />
 {/if}
