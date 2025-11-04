@@ -4,7 +4,6 @@
     import { fade, fly } from "svelte/transition";
     import { quintOut } from "svelte/easing";
     import { authStore } from "$lib/stores/authStore";
-    // IMPORT CHANGE: Adding ExternalLink and type definition for OAuth flow
     import {
         X,
         UserPlus,
@@ -12,17 +11,6 @@
         AlertCircle,
         ExternalLink,
     } from "lucide-svelte";
-
-    // Define the type for an OAuth provider (copied from LoginModal)
-    type OAuthProvider = {
-        name: string;
-        display_name: string;
-        state: string;
-        auth_url: string;
-        code_verifier: string;
-        code_challenge: string;
-        code_challenge_method: string;
-    };
 
     export let isOpen = false;
 
@@ -34,10 +22,10 @@
     let isLoading = false; // For email/password submission
     let error: string | null = null;
 
-    // NEW STATE FOR OAUTH PROVIDERS
-    let providers: OAuthProvider[] = [];
-    let isProvidersLoading = false;
-    let providersError: string | null = null;
+    // ✅ FIX: State simplified for a single OAuth provider (Google)
+    let googleAuthUrl: string | null = null;
+    let isGoogleUrlLoading = false;
+    let googleUrlError: string | null = null;
 
     // A flag to track if we're redirecting for OAuth
     let isOAuthRedirecting = false;
@@ -59,7 +47,6 @@
                 email,
                 password,
             );
-            // Dispatch a success event that the parent component (layout) can handle
             dispatch("success", { message: successMessage });
         } catch (e) {
             error = e instanceof Error ? e.message : "Registration failed.";
@@ -68,64 +55,61 @@
         }
     }
 
-    // NEW FUNCTION: Fetch OAuth Providers (copied from LoginModal)
-    async function fetchProviders() {
-        if (providers.length > 0 || isProvidersLoading) return;
+    // ✅ FIX: Renamed and updated function to fetch only the Google Auth URL
+    async function fetchGoogleAuthUrl() {
+        if (googleAuthUrl || isGoogleUrlLoading) return;
 
-        isProvidersLoading = true;
-        providersError = null;
+        isGoogleUrlLoading = true;
+        googleUrlError = null;
         try {
             const response = await fetch(
-                "https://api.bugswriter.ai/api/v1/auth/oauth2/providers",
+                "https://api.bugswriter.ai/api/v1/auth/oauth2/google",
             );
 
             if (!response.ok) {
-                throw new Error("Failed to fetch OAuth providers.");
+                throw new Error("Failed to get Google sign-up link.");
             }
 
             const data = await response.json();
-            providers = data.providers;
+            // ✅ FIX: Directly assign the auth_url from the response object
+            googleAuthUrl = data.auth_url;
         } catch (e) {
-            providersError =
+            googleUrlError =
                 e instanceof Error
                     ? e.message
-                    : "Could not load sign-up options."; // Changed message to 'sign-up'
-            console.error("Error fetching providers:", e);
+                    : "Could not load sign-up options.";
+            console.error("Error fetching google url:", e);
         } finally {
-            isProvidersLoading = false;
+            isGoogleUrlLoading = false;
         }
     }
 
-    // NEW FUNCTION: Handle OAuth Redirect (copied from LoginModal)
+    // NEW FUNCTION: Handle OAuth Redirect
     function handleOAuthLogin(authUrl: string) {
-        // Set state and redirect. We disable the modal close/other buttons
-        // while we wait for the redirect.
         isOAuthRedirecting = true;
-        error = null; // Clear general error
-
-        // IMPORTANT: Perform the full page redirect using the pre-generated auth_url
+        error = null;
         window.location.href = authUrl;
     }
 
     // Effect: Reactively fetch providers when the modal opens
     $: if (isOpen) {
-        // Reset local state on modal open
         name = "";
         email = "";
         password = "";
         error = null;
         isLoading = false;
-        isOAuthRedirecting = false; // Reset redirect state on open
-
-        // Fetch providers when modal opens
-        fetchProviders();
+        isOAuthRedirecting = false;
+        // ✅ FIX: Reset correct state variables and fetch the Google URL
+        googleAuthUrl = null;
+        googleUrlError = null;
+        fetchGoogleAuthUrl();
     }
 </script>
 
 <svelte:window on:keydown={(e) => e.key === "Escape" && closeModal()} />
 
 {#if isOpen}
-    <!-- BACKGROUND: UNIFIED DESIGN - Light backdrop -->
+    <!-- BACKGROUND -->
     <div
         on:click={closeModal}
         transition:fade={{ duration: 200 }}
@@ -133,7 +117,7 @@
         aria-hidden="true"
     ></div>
 
-    <!-- MODAL WINDOW: UNIFIED DESIGN - Light card aesthetic -->
+    <!-- MODAL WINDOW -->
     <div
         transition:fly={{ duration: 250, y: 20, easing: quintOut }}
         class="fixed top-1/2 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2"
@@ -144,7 +128,6 @@
         <div
             class="relative rounded-2xl border border-border bg-background text-accent-foreground shadow-2xl"
         >
-            <!-- CLOSE BUTTON -->
             <button
                 on:click={closeModal}
                 class="absolute top-3 right-3 rounded-full p-2 text-gray-500 hover:bg-gray-100 transition-colors"
@@ -154,7 +137,6 @@
                 <X class="h-5 w-5" />
             </button>
 
-            <!-- HEADER -->
             <div class="p-6 border-b border-gray-200">
                 <h2 id="register-title" class="text-xl font-semibold">
                     Create Account
@@ -164,38 +146,32 @@
                 </p>
             </div>
 
-            <!-- FORM and OAUTH -->
             <div class="p-6 space-y-5">
-                <!-- OAUTH PROVIDERS SECTION -->
-                {#if isProvidersLoading}
+                <!-- ✅ FIX: Updated OAuth section for a single provider -->
+                {#if isGoogleUrlLoading}
                     <div
                         class="flex justify-center items-center py-4 text-gray-500"
                     >
                         <Loader2 class="mr-2 h-4 w-4 animate-spin" />
                         <span>Loading sign-up options...</span>
                     </div>
-                {:else if providersError}
-                    <!-- ERROR MESSAGE for providers -->
+                {:else if googleUrlError}
                     <div
-                        transition:fade={{ duration: 150 }}
                         class="flex items-center gap-2 rounded-md bg-red-50 border border-red-300 p-2 text-sm text-red-600"
                     >
                         <AlertCircle class="h-4 w-4 flex-shrink-0" />
-                        <p>{providersError}</p>
+                        <p>{googleUrlError}</p>
                     </div>
-                {:else if providers.length > 0}
-                    <!-- Dynamic OAuth Buttons -->
-                    {#each providers as provider (provider.name)}
-                        <button
-                            on:click={() => handleOAuthLogin(provider.auth_url)}
-                            class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 font-semibold text-sm shadow-sm transition-all hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:opacity-50"
-                            disabled={isLoading || isOAuthRedirecting}
-                        >
-                            <!-- Use the display_name for the button text -->
-                            <ExternalLink class="mr-2 h-4 w-4" />
-                            <span>Sign Up with {provider.display_name}</span>
-                        </button>
-                    {/each}
+                {:else if googleAuthUrl}
+                    <!-- Single Google Sign-Up Button -->
+                    <button
+                        on:click={() => handleOAuthLogin(googleAuthUrl)}
+                        class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 font-semibold text-sm shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
+                        disabled={isLoading || isOAuthRedirecting}
+                    >
+                        <ExternalLink class="mr-2 h-4 w-4" />
+                        <span>Sign Up with Google</span>
+                    </button>
 
                     <!-- SEPARATOR -->
                     <div class="relative flex items-center">
@@ -217,7 +193,6 @@
                         >
                             Full Name
                         </label>
-                        <!-- INPUT: UNIFIED DESIGN - Light background, subtle border, blue focus ring -->
                         <input
                             bind:value={name}
                             id="reg-name"
@@ -225,7 +200,7 @@
                             placeholder="Bugs Writer"
                             required
                             disabled={isLoading || isOAuthRedirecting}
-                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-inner focus:outline-none focus:ring-2 focus:accent placeholder:text-gray-400 disabled:opacity-50"
+                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-gray-400 disabled:opacity-50"
                         />
                     </div>
 
@@ -236,7 +211,6 @@
                         >
                             Email
                         </label>
-                        <!-- INPUT: UNIFIED DESIGN - Light background, subtle border, blue focus ring -->
                         <input
                             bind:value={email}
                             id="reg-email"
@@ -255,7 +229,6 @@
                         >
                             Password
                         </label>
-                        <!-- INPUT: UNIFIED DESIGN - Light background, subtle border, blue focus ring -->
                         <input
                             bind:value={password}
                             id="reg-password"
@@ -269,9 +242,7 @@
                     </div>
 
                     {#if error}
-                        <!-- ERROR MESSAGE: UNIFIED DESIGN - Standard red/danger style -->
                         <div
-                            transition:fade={{ duration: 150 }}
                             class="flex items-center gap-2 rounded-md bg-red-50 border border-red-300 p-2 text-sm text-red-600"
                         >
                             <AlertCircle class="h-4 w-4 flex-shrink-0" />
@@ -279,10 +250,9 @@
                         </div>
                     {/if}
 
-                    <!-- PRIMARY BUTTON: UNIFIED DESIGN - Blue -->
                     <button
                         type="submit"
-                        class="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white font-semibold text-sm shadow-md transition-all hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+                        class="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white font-semibold text-sm shadow-md transition-all hover:bg-primary/80 disabled:opacity-50"
                         disabled={isLoading || isOAuthRedirecting}
                     >
                         {#if isLoading || isOAuthRedirecting}
@@ -302,12 +272,10 @@
                 </form>
             </div>
 
-            <!-- FOOTER -->
             <div
                 class="border-t border-gray-200 px-6 py-4 text-center text-sm text-gray-500"
             >
                 Already have an account?
-                <!-- LINK: UNIFIED DESIGN - Standard blue link color -->
                 <button
                     on:click={handleSwitchToLogin}
                     class="ml-1 font-semibold text-primary hover:underline focus:outline-none"
