@@ -74,7 +74,7 @@
         try {
             // Replace with your actual fetch logic (e.g., using SvelteKit's fetch or a client-side fetch)
             const response = await fetch(
-                "https://api.bugswriter.ai/api/v1/auth/oauth2/providers",
+                "https://api.bugswriter.ai/api/v1/auth/oauth2/google",
             );
 
             if (!response.ok) {
