@@ -6,7 +6,7 @@ import { getUserDetails, type UserDetails } from "$lib/services/auth";
 import { API_CONFIG } from "$lib/services/api";
 import { chatStore } from "./chatStore";
 import { historyStore } from "./historyStore";
-import { invalidate } from "$app/navigation"; // ✅ IMPORT invalidate
+import { invalidate } from "$app/navigation";
 
 type AuthState = {
   isAuthenticated: boolean;
@@ -26,18 +26,24 @@ function createAuthStore() {
   async function initialize() {
     update((s) => ({ ...s, isLoading: true }));
     const token = get(authToken);
+
     if (token) {
       try {
         const user = await getUserDetails();
         set({ isAuthenticated: true, user, isLoading: false, error: null });
         historyStore.loadSessions();
       } catch (error) {
+        // ✅ THIS IS THE CRUCIAL FIX
+        // If getting user details fails (e.g., stale token),
+        // set the state to logged out AND force the entire app to
+        // acknowledge this change by invalidating its data.
         set({
           isAuthenticated: false,
           user: null,
           isLoading: false,
           error: null,
         });
+        await invalidate("app:auth");
       }
     } else {
       set({
@@ -54,7 +60,6 @@ function createAuthStore() {
     chatStore.reset();
     historyStore.reset();
     set({ isAuthenticated: false, user: null, isLoading: false, error: null });
-    // ✅ Invalidate on logout to refresh the UI immediately
     invalidate("app:auth");
   }
 
@@ -79,13 +84,12 @@ function createAuthStore() {
 
     const data = await response.json();
     authToken.set(data.access_token);
+    // After setting the token, initialize will fetch the user.
     await initialize();
-
-    // ✅ Invalidate on login to refresh the UI immediately
+    // After initialization is complete, invalidate to ensure UI consistency.
     await invalidate("app:auth");
   }
 
-  // ... (rest of the file is unchanged)
   async function register(
     name: string,
     email: string,
