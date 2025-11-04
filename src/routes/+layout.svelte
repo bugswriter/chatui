@@ -1,7 +1,7 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
     import { page } from "$app/stores";
-    import { invalidate } from "$app/navigation"; // ✅ IMPORT invalidate
+    // ✅ REMOVED: invalidate is no longer needed here
     import { authStore } from "$lib/stores/authStore";
     import { uiStore } from "$lib/stores/uiStore";
     import "../app.css";
@@ -16,17 +16,13 @@
 
     export let data: PageData;
 
-    // ✅ MODIFIED: This function now invalidates the layout data.
-    async function handleLoginSuccess() {
+    // ✅ SIMPLIFIED: This function just closes the modal now.
+    function handleLoginSuccess() {
         uiStore.closeModals();
-        // This tells SvelteKit to re-run all load functions that
-        // depend on 'app:auth', which includes this layout's load function.
-        await invalidate("app:auth");
     }
 
     function handleRegisterSuccess() {
         uiStore.closeModals();
-        // You can optionally show a "please verify your email" message here.
     }
 </script>
 
@@ -43,7 +39,6 @@
             on:openRegister={uiStore.openRegisterModal}
         />
 
-        <!-- ✅ MODIFIED: Added padding-top to prevent content from going under the new absolute navbar -->
         <main class="flex-1 overflow-y-auto pt-14">
             <slot />
         </main>

@@ -5,8 +5,8 @@ import { authToken } from "$lib/stores/tokenStore";
 import { getUserDetails, type UserDetails } from "$lib/services/auth";
 import { API_CONFIG } from "$lib/services/api";
 import { chatStore } from "./chatStore";
-// ✅ REMOVED: agentStore is no longer initialized here.
 import { historyStore } from "./historyStore";
+import { invalidate } from "$app/navigation"; // ✅ IMPORT invalidate
 
 type AuthState = {
   isAuthenticated: boolean;
@@ -25,14 +25,11 @@ function createAuthStore() {
 
   async function initialize() {
     update((s) => ({ ...s, isLoading: true }));
-
     const token = get(authToken);
-
     if (token) {
       try {
         const user = await getUserDetails();
         set({ isAuthenticated: true, user, isLoading: false, error: null });
-        // ✅ REMOVED: agentStore.initialize() is gone.
         historyStore.loadSessions();
       } catch (error) {
         set({
@@ -57,21 +54,23 @@ function createAuthStore() {
     chatStore.reset();
     historyStore.reset();
     set({ isAuthenticated: false, user: null, isLoading: false, error: null });
+    // ✅ Invalidate on logout to refresh the UI immediately
+    invalidate("app:auth");
   }
 
-  // --- Login Logic ---
   async function login(email: string, password: string): Promise<void> {
     const formData = new URLSearchParams();
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await fetch(`${API_CONFIG.bizAPIURL}/api/v1/auth/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+    const response = await fetch(
+      `${API_CONFIG.authBaseUrl}/api/v1/auth/token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData.toString(),
       },
-      body: formData.toString(),
-    });
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
@@ -81,9 +80,12 @@ function createAuthStore() {
     const data = await response.json();
     authToken.set(data.access_token);
     await initialize();
+
+    // ✅ Invalidate on login to refresh the UI immediately
+    await invalidate("app:auth");
   }
 
-  // --- Register Logic ---
+  // ... (rest of the file is unchanged)
   async function register(
     name: string,
     email: string,
@@ -92,16 +94,14 @@ function createAuthStore() {
     if (password.length < 8) {
       throw new Error("Password must be at least 8 characters long.");
     }
-
     const response = await fetch(
-      `${API_CONFIG.bizAPIURL}/api/v1/auth/register`,
+      `${API_CONFIG.authBaseUrl}/api/v1/auth/register`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, name }),
       },
     );
-
     if (response.status !== 201) {
       const errorData = await response.json().catch(() => null);
       throw new Error(
@@ -109,7 +109,6 @@ function createAuthStore() {
           "Registration failed. Email may already be in use.",
       );
     }
-
     return "Success! Please check your email to verify your account.";
   }
 
@@ -127,26 +126,20 @@ function createAuthStore() {
   async function updateAvatar(file: File) {
     const token = get(authToken);
     if (!token) throw new Error("You must be logged in to upload an avatar.");
-
     const formData = new FormData();
     formData.append("avatar_file", file);
-
     const response = await fetch(
-      `${API_CONFIG.bizAPIURL}/api/v1/users/me/avatar`,
+      `${API_CONFIG.authBaseUrl}/api/v1/users/me/avatar`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       },
     );
-
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.detail || "Failed to upload avatar.");
     }
-
     const updatedUser = await response.json();
     update((state) => ({ ...state, user: updatedUser }));
   }
