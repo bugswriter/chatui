@@ -30,7 +30,7 @@
     onMount(async () => {
         try {
             const response = await fetch(
-                `${API_CONFIG.authBaseUrl}/api/v1/payments/products`,
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/products`,
             );
             if (!response.ok)
                 throw new Error("Unable to load pricing at this time.");
@@ -57,7 +57,7 @@
             const success_url = `${window.location.origin}/dashboard?checkout=success`;
             const cancel_url = window.location.href;
             const response = await fetch(
-                `${API_CONFIG.authBaseUrl}/api/v1/payments/checkout-session`,
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/checkout-session`,
                 {
                     method: "POST",
                     headers: {

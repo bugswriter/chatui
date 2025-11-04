@@ -35,7 +35,7 @@ export const getSessionsList = async (): Promise<SessionPreview[]> => {
   if (!token) throw new Error("Authentication token not found.");
 
   const response = await fetch(
-    `${API_CONFIG.apiBaseUrl}/api/v1/history/sessions`,
+    `${API_CONFIG.sysAPIURL}/api/v1/history/sessions`,
     {
       method: "GET",
       headers: {
@@ -65,7 +65,7 @@ export const getSessionDetails = async (
   if (!token) throw new Error("Authentication token not found.");
 
   const response = await fetch(
-    `${API_CONFIG.apiBaseUrl}/api/v1/history/sessions/${sessionId}`,
+    `${API_CONFIG.sysAPIURL}/api/v1/history/sessions/${sessionId}`,
     {
       method: "GET",
       headers: {

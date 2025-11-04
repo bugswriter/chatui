@@ -1,44 +1,36 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
     import { page } from "$app/stores";
-    import { invalidate } from "$app/navigation";
     import { authStore } from "$lib/stores/authStore";
+    import { uiStore } from "$lib/stores/uiStore"; // ✅ IMPORT the uiStore
     import "../app.css";
 
-    // ✅ FIX: Import the generated type for this page's data
     import type { PageData } from "./$types";
 
-    // --- Global Component Imports ---
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
     import LoginModal from "$lib/components/auth/LoginModal.svelte";
     import ForgotPassword from "$lib/components/auth/ForgotPassword.svelte";
     import RegisterModal from "$lib/components/auth/RegisterModal.svelte";
 
-    // ✅ FIX: Apply the imported type to the `data` prop.
-    // This tells TypeScript the exact shape of the data object.
     export let data: PageData;
 
-    let isLoginModalOpen = false;
-    let isRegisterModalOpen = false;
-    let isForgotPasswordOpen = false;
+    // ✅ REMOVED: No more local state for modals.
+    // let isLoginModalOpen = false;
+    // let isRegisterModalOpen = false;
+    // let isForgotPasswordOpen = false;
 
-    async function handleLoginSuccess() {
-        isLoginModalOpen = false;
-        isRegisterModalOpen = false;
-
-        await invalidate("app:auth");
+    // ✅ MODIFIED: This function now closes modals via the store.
+    // The invalidate call is no longer needed here as the authStore handles it.
+    function handleLoginSuccess() {
+        uiStore.closeModals();
     }
 
     function handleRegisterSuccess() {
-        isRegisterModalOpen = false;
+        uiStore.closeModals();
     }
 </script>
 
-<!--
-  This `if` condition is now type-safe because TypeScript knows that
-  `data` has a boolean property named `isAuthenticated`.
--->
 {#if $authStore.isLoading && !data.isAuthenticated}
     <div class="flex h-screen w-full items-center justify-center bg-white">
         <div
@@ -47,46 +39,36 @@
     </div>
 {:else}
     <div class="flex h-screen bg-background flex-col">
+        <!-- ✅ MODIFIED: Navbar now calls store methods directly -->
         <Navbar
-            on:openLogin={() => (isLoginModalOpen = true)}
-            on:openRegister={() => (isRegisterModalOpen = true)}
+            on:openLogin={uiStore.openLoginModal}
+            on:openRegister={uiStore.openRegisterModal}
         />
 
         <main class="flex-1 overflow-y-auto">
             <slot />
         </main>
-
-        <Footer />
     </div>
 
-    <!-- Modals -->
+    <!-- ✅ MODIFIED: Modals are now bound directly to the uiStore's state -->
     <LoginModal
-        bind:isOpen={isLoginModalOpen}
+        isOpen={$uiStore.isLoginModalOpen}
         on:success={handleLoginSuccess}
-        on:switchToRegister={() => {
-            isLoginModalOpen = false;
-            isRegisterModalOpen = true;
-        }}
-        on:switchToForgotPassword={() => {
-            isLoginModalOpen = false;
-            isForgotPasswordOpen = true;
-        }}
+        on:switchToRegister={uiStore.openRegisterModal}
+        on:switchToForgotPassword={uiStore.openForgotPasswordModal}
+        on:close={uiStore.closeModals}
     />
 
     <RegisterModal
-        bind:isOpen={isRegisterModalOpen}
+        isOpen={$uiStore.isRegisterModalOpen}
         on:success={handleRegisterSuccess}
-        on:switchToLogin={() => {
-            isRegisterModalOpen = false;
-            isLoginModalOpen = true;
-        }}
+        on:switchToLogin={uiStore.openLoginModal}
+        on:close={uiStore.closeModals}
     />
 
     <ForgotPassword
-        bind:isOpen={isForgotPasswordOpen}
-        on:switchToLogin={() => {
-            isForgotPasswordOpen = false;
-            isLoginModalOpen = true;
-        }}
+        isOpen={$uiStore.isForgotPasswordModalOpen}
+        on:switchToLogin={uiStore.openLoginModal}
+        on:close={uiStore.closeModals}
     />
 {/if}

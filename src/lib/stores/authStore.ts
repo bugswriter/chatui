@@ -5,7 +5,7 @@ import { authToken } from "$lib/stores/tokenStore";
 import { getUserDetails, type UserDetails } from "$lib/services/auth";
 import { API_CONFIG } from "$lib/services/api";
 import { chatStore } from "./chatStore";
-import { agentStore } from "./agentStore";
+// ✅ REMOVED: agentStore is no longer initialized here.
 import { historyStore } from "./historyStore";
 
 type AuthState = {
@@ -32,7 +32,7 @@ function createAuthStore() {
       try {
         const user = await getUserDetails();
         set({ isAuthenticated: true, user, isLoading: false, error: null });
-        agentStore.initialize();
+        // ✅ REMOVED: agentStore.initialize() is gone.
         historyStore.loadSessions();
       } catch (error) {
         set({
@@ -59,36 +59,31 @@ function createAuthStore() {
     set({ isAuthenticated: false, user: null, isLoading: false, error: null });
   }
 
-  // --- ✅ NEW: Abstracted Login Logic ---
+  // --- Login Logic ---
   async function login(email: string, password: string): Promise<void> {
     const formData = new URLSearchParams();
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await fetch(
-      `${API_CONFIG.authBaseUrl}/api/v1/auth/token`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: formData.toString(),
+    const response = await fetch(`${API_CONFIG.bizAPIURL}/api/v1/auth/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-    );
+      body: formData.toString(),
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      // Throw a user-friendly error message
       throw new Error(errorData?.detail || "Incorrect email or password.");
     }
 
     const data = await response.json();
     authToken.set(data.access_token);
-    // Re-initialize the entire auth state to fetch user details, etc.
     await initialize();
   }
 
-  // --- ✅ NEW: Abstracted Register Logic ---
+  // --- Register Logic ---
   async function register(
     name: string,
     email: string,
@@ -99,7 +94,7 @@ function createAuthStore() {
     }
 
     const response = await fetch(
-      `${API_CONFIG.authBaseUrl}/api/v1/auth/register`,
+      `${API_CONFIG.bizAPIURL}/api/v1/auth/register`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,7 +110,6 @@ function createAuthStore() {
       );
     }
 
-    // Return a success message for the UI to display
     return "Success! Please check your email to verify your account.";
   }
 
@@ -138,7 +132,7 @@ function createAuthStore() {
     formData.append("avatar_file", file);
 
     const response = await fetch(
-      `${API_CONFIG.authBaseUrl}/api/v1/users/me/avatar`,
+      `${API_CONFIG.bizAPIURL}/api/v1/users/me/avatar`,
       {
         method: "POST",
         headers: {

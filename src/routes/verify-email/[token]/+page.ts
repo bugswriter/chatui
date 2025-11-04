@@ -16,7 +16,7 @@ export const load = async ({ params, fetch }) => {
   try {
     // 2. Send the POST request to the verification endpoint
     const response = await fetch(
-      `${API_CONFIG.authBaseUrl}/api/v1/auth/verify-email/confirm`,
+      `${API_CONFIG.bizAPIURL}/api/v1/auth/verify-email/confirm`,
       {
         method: "POST",
         headers: {

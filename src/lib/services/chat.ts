@@ -43,7 +43,7 @@ export const streamChat = async (
   };
 
   try {
-    const response = await fetch(`${API_CONFIG.apiBaseUrl}/api/v1/chat`, {
+    const response = await fetch(`${API_CONFIG.sysAPIURL}/api/v1/chat`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

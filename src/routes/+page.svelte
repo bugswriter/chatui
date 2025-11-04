@@ -9,15 +9,15 @@
     import ChatHistory from "$lib/components/ChatHistory.svelte";
     import ChatInput from "$lib/components/ChatInput.svelte";
     import ArchivesModal from "$lib/components/ArchivesModal.svelte";
+    // ✅ Import ImageLightbox if you use it for fullscreen images
+    // import ImageLightbox from '$lib/components/ImageLightbox.svelte';
 
     import { MessageSquarePlus } from "lucide-svelte";
 
-    // --- State for LOCAL modals, belonging ONLY to this page ---
     let isArchivesOpen = false;
     let fullscreenImageUrl: string | null = null;
     let reattachedFiles: Attachment[] = [];
 
-    // --- Chat App Event Handlers ---
     function handleReattach(event: CustomEvent<Attachment>) {
         const newAttachment = event.detail;
         if (
@@ -35,25 +35,14 @@
         );
     }
 
-    // NOTE: This component needs to handle the 'requestLogin' event dispatched by ChatInput
-    // when a non-authenticated user tries to send a message.
-    function handleRequestLogin() {
-        // Dispatch an event up to the layout to open the login modal
-        // Since there's no explicit forwarding mechanism here, we'll assume
-        // the layout is listening on the window or the user manually opens it.
-        // For a clean SvelteKit refactor, this should be handled at the layout level,
-        // but for this file, we can log an error or simply trust the ChatInput dispatch.
-        console.error("User not authenticated. Please log in.");
-        // The ChatInput component's logic already dispatches "requestLogin"
-    }
+    // ✅ REMOVED: handleRequestLogin is no longer needed here.
 
     async function handleSendMessage(
         event: CustomEvent<{ message: string; attachments: Attachment[] }>,
     ) {
+        // Auth check is now inside ChatInput, but an extra check here is good for safety.
         if (!$authStore.isAuthenticated) {
-            // This case should be handled by ChatInput dispatching 'requestLogin',
-            // but this is the final handler, so we exit if unauthenticated.
-            console.error("User must be authenticated to send messages.");
+            console.error("Cannot send message. User not authenticated.");
             return;
         }
 
@@ -85,31 +74,26 @@
 
 <div class="relative h-full bg-background text-gray-900">
     <ChatHistory
-        className="h-full overflow-y-auto pb-32 pt-6"
+        className="h-full overflow-y-auto pb-48 pt-6"
         messages={$chatStore.messages}
         isLoading={$chatStore.isLoading}
         userName={$authStore.user?.name || "You"}
         userAvatarUrl={$authStore.user?.avatar}
         on:reattach={handleReattach}
         on:viewImage={handleViewImage}
-        on:requestLogin={handleRequestLogin}
     />
 
-    <!-- The ChatInput area is fixed to the bottom of this page's container -->
     <div class="absolute bottom-0 left-0 z-10 w-full">
         {#if $historyStore.selectedSessionId === null}
+            <!-- ✅ REMOVED: on:requestLogin is no longer needed -->
             <ChatInput
                 isLoading={$chatStore.isLoading}
                 {isStreaming}
                 {reattachedFiles}
                 on:send={handleSendMessage}
                 on:removeReattached={handleRemoveReattached}
-                on:requestLogin={() =>
-                    console.error("Request Login - needs parent handling")}
             />
         {:else}
-            <!-- Read-only view message -->
-            <!-- UNIFIED DESIGN: Standard light border/background/text -->
             <div
                 class="border-t border-gray-200 bg-white/80 p-4 backdrop-blur-md"
             >
@@ -119,7 +103,6 @@
                     <p class="font-medium text-gray-500">
                         This is a read-only view of a past conversation.
                     </p>
-                    <!-- PRIMARY BUTTON: UNIFIED DESIGN - Standard blue -->
                     <button
                         on:click={() => historyStore.createNewSession()}
                         class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
@@ -134,10 +117,3 @@
 </div>
 
 <ArchivesModal bind:isOpen={isArchivesOpen} />
-
-{#if fullscreenImageUrl}
-    <ImageLightbox
-        imageUrl={fullscreenImageUrl}
-        on:close={() => (fullscreenImageUrl = null)}
-    />
-{/if}

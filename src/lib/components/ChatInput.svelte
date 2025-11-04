@@ -1,10 +1,12 @@
+<!-- src/lib/components/ChatInput.svelte -->
 <script lang="ts">
     import { createEventDispatcher, onMount, onDestroy } from "svelte";
     import { fade } from "svelte/transition";
     import { Send, Paperclip, X, FileIcon, Reply } from "lucide-svelte";
     import { getUploadUrl } from "$lib/services/files";
-    import { getAuthToken } from "$lib/services/api";
     import { agentStore } from "$lib/stores/agentStore";
+    import { authStore } from "$lib/stores/authStore"; // ✅ To check auth status
+    import { uiStore } from "$lib/stores/uiStore"; // ✅ To open the modal directly
     import type { Attachment, Agent } from "$lib/types";
 
     export let isLoading: boolean = false;
@@ -57,7 +59,7 @@
     function autoresize(element: HTMLTextAreaElement) {
         function resize() {
             element.style.height = "auto";
-            const newHeight = Math.min(element.scrollHeight, 200); // Max height of 200px
+            const newHeight = Math.min(element.scrollHeight, 200);
             element.style.height = `${newHeight}px`;
         }
         element.addEventListener("input", resize);
@@ -70,6 +72,12 @@
     }
 
     async function handleSubmit() {
+        // ✅ SIMPLE AUTH CHECK: If not logged in, open modal and stop.
+        if (!$authStore.isAuthenticated) {
+            uiStore.openLoginModal();
+            return;
+        }
+
         if (
             isLoading ||
             isStreaming ||
@@ -78,6 +86,7 @@
                 reattachedFiles.length === 0)
         )
             return;
+
         isUploading = true;
         uploadError = null;
         try {
@@ -179,13 +188,19 @@
     }
 
     async function handleFileSelect(event: Event) {
+        // ✅ SIMPLE AUTH CHECK: If not logged in, open modal and stop.
+        if (!$authStore.isAuthenticated) {
+            uiStore.openLoginModal();
+            // Clear the file input so the user can try again after login
+            const target = event.target as HTMLInputElement;
+            if (target) target.value = "";
+            return;
+        }
+
         const target = event.target as HTMLInputElement;
         const files = Array.from(target.files || []);
         if (files.length === 0) return;
-        if (!getAuthToken()) {
-            dispatch("requestLogin");
-            return;
-        }
+
         isUploading = true;
         uploadError = null;
         try {
@@ -213,19 +228,21 @@
             if (fileInputElement) fileInputElement.value = "";
         }
     }
+
     function removeStagedFile(index: number) {
         const file = stagedFiles[index];
         if (file.preview) URL.revokeObjectURL(file.preview);
         stagedFiles = stagedFiles.filter((_, i) => i !== index);
     }
+
     function removeReattachedFile(index: number) {
         dispatch("removeReattached", { index });
     }
 </script>
 
-<div class="w-full bg-muted/20 px-4">
+<div class="w-full bg-muted/20 px-4 pt-4 pb-6">
     <div class="max-w-4xl bg-transparent mx-auto relative">
-        <!-- Agent Suggestion Popup -->
+        <!-- Agent Suggestion Popup is always available -->
         {#if showSuggestions}
             <div
                 transition:fade={{ duration: 100 }}
@@ -270,7 +287,7 @@
             </div>
         {/if}
 
-        <!-- Staged & Re-attached File Previews -->
+        <!-- File Previews -->
         {#if stagedFiles.length > 0 || reattachedFiles.length > 0}
             <div class="mb-3 flex flex-wrap gap-3">
                 {#each stagedFiles as file, index (file.filename + file.file.size)}
@@ -300,9 +317,8 @@
                             on:click={() => removeStagedFile(index)}
                             class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-danger-foreground"
                             aria-label="Remove file"
+                            ><X class="w-3 h-3" /></button
                         >
-                            <X class="w-3 h-3" />
-                        </button>
                     </div>
                 {/each}
                 {#each reattachedFiles as file, index (file.s3_key)}
@@ -330,17 +346,16 @@
                             on:click={() => removeReattachedFile(index)}
                             class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-danger-foreground"
                             aria-label="Remove re-attached file"
+                            ><X class="w-3 h-3" /></button
                         >
-                            <X class="w-3 h-3" />
-                        </button>
                     </div>
                 {/each}
             </div>
         {/if}
 
-        <!-- Main Input Container -->
+        <!-- Main Input Container is always visible -->
         <div
-            class="relative flex w-full items-end rounded-2xl backdrop-blur-lg bg-muted/20 border border-border shadow-md transition-all focus-within:ring-2 focus-within:ring-primary/40"
+            class="relative flex w-full items-end rounded-2xl backdrop-blur-lg bg-background border border-border shadow-md transition-all focus-within:ring-2 focus-within:ring-primary/40"
         >
             <input
                 bind:this={fileInputElement}
@@ -366,7 +381,7 @@
                 on:keydown={handleKeyDown}
                 on:input={handleInput}
                 disabled={isLoading || isStreaming || isUploading}
-                placeholder="Message munni.ai..."
+                placeholder="Message @Agent or ask anything..."
                 class="flex-1 resize-none bg-transparent py-[18px] text-base placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
                 rows="1"
             ></textarea>

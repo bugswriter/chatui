@@ -29,7 +29,7 @@ export const getUploadUrl = async (
     throw new Error("Authentication token not found. Please log in.");
   }
 
-  const response = await fetch(`${API_CONFIG.apiBaseUrl}/api/v1/files/stage`, {
+  const response = await fetch(`${API_CONFIG.sysAPIURL}/api/v1/files/stage`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -62,7 +62,7 @@ export const getPresignedUrl = async (fileId: string): Promise<string> => {
   }
 
   const response = await fetch(
-    `${API_CONFIG.apiBaseUrl}/api/v1/files/${fileId}`,
+    `${API_CONFIG.sysAPIURL}/api/v1/files/${fileId}`,
     {
       method: "GET",
       headers: {
