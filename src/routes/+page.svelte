@@ -20,7 +20,6 @@
     let chatContainer: HTMLDivElement;
 
     async function scrollToBottom() {
-        // Wait for the DOM to update before scrolling
         await tick();
         if (chatContainer) {
             chatContainer.scrollTo({
@@ -61,7 +60,6 @@
         chatStore.sendMessage(message, attachments);
         reattachedFiles = [];
 
-        // Immediately scroll to bottom to show the user's message
         scrollToBottom();
 
         await streamChat(
@@ -87,11 +85,10 @@
             console.error("No URL available for download.");
             return;
         }
-        // Create a temporary link to trigger the download
         const link = document.createElement("a");
         link.href = attachment.url;
         link.download = attachment.filename;
-        link.target = "_blank"; // Fallback for some browsers
+        link.target = "_blank";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -99,15 +96,24 @@
 
     $: isStreaming = $chatStore.activeStreams.size > 0;
 
-    // When new messages arrive, scroll to the bottom.
     $: if ($chatStore.messages) {
         scrollToBottom();
     }
 </script>
 
-<div class="flex h-full flex-col bg-background text-foreground">
-    <!-- This is the main scrolling area for chat history -->
-    <div class="flex-1 overflow-y-auto pt-16" bind:this={chatContainer}>
+<!--
+  This is the main layout container. It's relative so the fixed input
+  area is positioned correctly within it.
+-->
+<div class="relative h-full w-full bg-background text-foreground">
+    <!--
+    This is the scrolling container for chat history.
+    - `h-full`: Takes up the full height of the parent.
+    - `overflow-y-auto`: Allows vertical scrolling.
+    - `pt-16`: Padding at the top to avoid content being hidden by the fixed navbar.
+    - `pb-32`: Padding at the bottom to create a safe space for the fixed ChatInput area.
+  -->
+    <div class="h-full overflow-y-auto pt-16 pb-32" bind:this={chatContainer}>
         <ChatHistory
             messages={$chatStore.messages}
             isLoading={$chatStore.isLoading}
@@ -119,10 +125,13 @@
         />
     </div>
 
-    <!-- This container is fixed at the bottom and does not scroll -->
-    <div
-        class="w-full shrink-0 border-t border-border bg-background/95 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]"
-    >
+    <!--
+    This is the fixed container for the chat input.
+    - `fixed`: Pins it to the viewport.
+    - `bottom-0`, `left-0`, `right-0`: Locks it to the bottom of the screen.
+    - `pb-4`: Adds padding to the bottom to create a visual gap.
+  -->
+    <div class="fixed bottom-0 left-0 right-0 pb-4">
         {#if $historyStore.selectedSessionId === null}
             <ChatInput
                 isLoading={$chatStore.isLoading}
@@ -133,18 +142,22 @@
             />
         {:else}
             <div
-                class="container mx-auto flex flex-col items-center justify-center gap-y-3 px-4 py-4 text-center sm:px-6"
+                class="w-full shrink-0 border-t bg-background/95 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]"
             >
-                <p class="text-sm text-muted-foreground">
-                    This is a read-only view of a past conversation.
-                </p>
-                <button
-                    on:click={() => historyStore.createNewSession()}
-                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <div
+                    class="container mx-auto flex flex-col items-center justify-center gap-y-3 px-4 py-4 text-center sm:px-6"
                 >
-                    <MessageSquarePlus class="h-4 w-4" />
-                    <span>Start a New Chat</span>
-                </button>
+                    <p class="text-sm text-muted-foreground">
+                        This is a read-only view of a past conversation.
+                    </p>
+                    <button
+                        on:click={() => historyStore.createNewSession()}
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                        <MessageSquarePlus class="h-4 w-4" />
+                        <span>Start a New Chat</span>
+                    </button>
+                </div>
             </div>
         {/if}
     </div>

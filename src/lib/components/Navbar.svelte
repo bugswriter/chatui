@@ -52,20 +52,18 @@
 </script>
 
 <header
-    class="fixed top-0 left-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg"
+    class="fixed top-0 left-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg"
 >
-    <nav
-        class="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6"
-    >
+    <nav class="flex h-14 items-center justify-between px-4">
         <!-- Left Side: Logo & Navigation -->
         <div class="flex items-center gap-6">
             <a
                 href="/"
-                class="text-xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80"
+                class="text-lg font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80"
             >
                 bw.ai
             </a>
-            <div class="hidden items-center gap-6 md:flex">
+            <div class="hidden items-center gap-5 md:flex">
                 <a
                     href="/pricing"
                     class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -88,16 +86,16 @@
         </div>
 
         <!-- Right Side: Theme Toggle & Auth -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
             <button
                 on:click={() => dispatch("toggle")}
-                class="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label="Toggle theme"
             >
                 {#if currentTheme === "dark"}
-                    <Sun class="h-5 w-5" />
+                    <Sun class="h-4 w-4" />
                 {:else}
-                    <Moon class="h-5 w-5" />
+                    <Moon class="h-4 w-4" />
                 {/if}
             </button>
 
@@ -109,7 +107,7 @@
                 <div class="relative" bind:this={dropdownContainer}>
                     <button
                         on:click={toggleDropdown}
-                        class="flex h-9 w-9 items-center justify-center rounded-full bg-muted ring-offset-2 ring-offset-background transition-all hover:ring-2 hover:ring-ring"
+                        class="flex h-8 w-8 items-center justify-center rounded-full bg-muted ring-offset-2 ring-offset-background transition-all hover:ring-2 hover:ring-ring"
                         aria-label="Open user menu"
                     >
                         {#if $authStore.user.avatar}
@@ -193,13 +191,13 @@
                 <!-- Unauthenticated User -->
                 <button
                     on:click={uiStore.openLoginModal}
-                    class="flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                    class="flex h-8 items-center justify-center rounded-full px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                 >
                     Login
                 </button>
                 <button
                     on:click={uiStore.openRegisterModal}
-                    class="flex h-9 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    class="flex h-8 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                     Register
                 </button>

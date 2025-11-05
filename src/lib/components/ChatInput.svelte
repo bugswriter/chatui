@@ -20,10 +20,10 @@
     let textareaElement: HTMLTextAreaElement;
     let fileInputElement: HTMLInputElement;
     let suggestionsContainer: HTMLDivElement;
+    let isFocused = false;
 
     const dispatch = createEventDispatcher();
 
-    // Agent suggestions state
     let showSuggestions = false;
     let suggestions: Agent[] = [];
     let activeSuggestionIndex = -1;
@@ -43,7 +43,6 @@
 
     onMount(() => {
         document.addEventListener("click", handleClickOutside, true);
-        autoresize();
     });
 
     onDestroy(() => {
@@ -62,15 +61,9 @@
 
     function autoresize() {
         if (!textareaElement) return;
-
-        function resize() {
-            textareaElement.style.height = "auto";
-            const newHeight = Math.min(textareaElement.scrollHeight, 200); // Max height of 200px
-            textareaElement.style.height = `${newHeight}px`;
-        }
-
-        textareaElement.addEventListener("input", resize, false);
-        resize(); // Initial resize
+        textareaElement.style.height = "auto";
+        const newHeight = Math.min(textareaElement.scrollHeight, 200);
+        textareaElement.style.height = `${newHeight}px`;
     }
 
     async function handleSubmit() {
@@ -83,7 +76,6 @@
         ) {
             return;
         }
-
         if (!$authStore.isAuthenticated) {
             uiStore.openLoginModal();
             return;
@@ -93,7 +85,6 @@
         uploadError = null;
 
         try {
-            // Step 1: Upload all staged files to the presigned URL
             const uploadedAttachments: Attachment[] = await Promise.all(
                 stagedFiles.map(async (stagedFile) => {
                     const formData = new FormData();
@@ -129,21 +120,16 @@
                 }),
             );
 
-            // Step 2: Combine newly uploaded files with any re-attached files
             const allAttachments = [...uploadedAttachments, ...reattachedFiles];
 
-            // Step 3: Dispatch the send event
             dispatch("send", {
                 message: message.trim(),
                 attachments: allAttachments,
             });
 
-            // Step 4: Reset state
             message = "";
             stagedFiles = [];
-            if (textareaElement) {
-                textareaElement.style.height = "auto";
-            }
+            autoresize();
         } catch (error) {
             uploadError =
                 error instanceof Error
@@ -183,6 +169,7 @@
     }
 
     function handleInput() {
+        autoresize();
         const cursorPosition = textareaElement.selectionStart;
         const textBeforeCursor = message.substring(0, cursorPosition);
         const atMatch = textBeforeCursor.match(/@(\w*)$/);
@@ -208,7 +195,6 @@
 
         const textBefore = message.substring(0, suggestionTriggerPosition);
         const textAfter = message.substring(textareaElement.selectionStart);
-
         message = `${textBefore}@${agent.name} ${textAfter}`;
 
         showSuggestions = false;
@@ -218,6 +204,7 @@
         textareaElement.focus();
         setTimeout(() => {
             textareaElement.setSelectionRange(newCursorPos, newCursorPos);
+            autoresize();
         }, 10);
     }
 
@@ -226,7 +213,6 @@
             uiStore.openLoginModal();
             return;
         }
-
         const target = event.target as HTMLInputElement;
         if (!target.files) return;
 
@@ -240,19 +226,11 @@
                     file.name,
                     file.type || "application/octet-stream",
                 );
-
                 let preview: string | null = null;
                 if (file.type.startsWith("image/")) {
                     preview = URL.createObjectURL(file);
                 }
-
-                const stagedFile: StagedAttachment = {
-                    file,
-                    preview,
-                    filename: file.name,
-                    uploadData,
-                };
-                return stagedFile;
+                return { file, preview, filename: file.name, uploadData };
             });
 
             const newStagedFiles = await Promise.all(newStagedFilesPromises);
@@ -281,7 +259,6 @@
         dispatch("removeReattached", { index });
     }
 
-    let isFocused = false;
     $: canSend =
         !isUploading &&
         !isStreaming &&
@@ -290,8 +267,7 @@
             reattachedFiles.length > 0);
 </script>
 
-<div class="container relative mx-auto max-w-3xl px-4 py-4 sm:px-6">
-    <!-- Agent Suggestions Popover -->
+<div class="container relative mx-auto max-w-3xl px-4 pt-2 pb-1 sm:px-6">
     {#if showSuggestions}
         <div
             bind:this={suggestionsContainer}
@@ -332,7 +308,6 @@
         </div>
     {/if}
 
-    <!-- Attachment Previews -->
     {#if stagedFiles.length > 0 || reattachedFiles.length > 0}
         <div class="mb-3 flex flex-wrap gap-3">
             {#each stagedFiles as file, index (file.uploadData.s3_key)}
@@ -398,13 +373,10 @@
         <p class="mb-2 text-center text-sm text-danger">{uploadError}</p>
     {/if}
 
-    <!-- Main Input Bar -->
     <div
-        class="flex items-start gap-2 rounded-2xl border bg-background p-2 transition-all"
+        class="relative flex min-h-[3.5rem] w-full items-end gap-2 rounded-3xl border border-border/50 bg-background/80 p-2 shadow-lg backdrop-blur-lg transition-all"
         class:ring-2={isFocused}
         class:ring-ring={isFocused}
-        class:border-input={!isFocused}
-        class:border-ring={isFocused}
     >
         <input
             bind:this={fileInputElement}
@@ -414,6 +386,7 @@
             on:change={handleFileSelect}
             accept="image/*, application/pdf, .txt, .md"
         />
+
         <button
             on:click={() => fileInputElement.click()}
             disabled={isUploading || isStreaming}
@@ -422,6 +395,7 @@
         >
             <Paperclip class="h-5 w-5" />
         </button>
+
         <textarea
             bind:this={textareaElement}
             bind:value={message}
@@ -432,23 +406,22 @@
             disabled={isUploading || isStreaming}
             rows="1"
             placeholder="Type a message..."
-            class="w-full resize-none self-center border-none bg-transparent py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
+            class="w-full flex-1 resize-none self-center border-none bg-transparent py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
         />
-        <div class="flex shrink-0 self-end">
-            <button
-                on:click={handleSubmit}
-                disabled={!canSend}
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:scale-90 disabled:bg-muted disabled:text-muted-foreground"
-                aria-label="Send message"
-            >
-                {#if isUploading}
-                    <div
-                        class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
-                    />
-                {:else}
-                    <Send class="h-5 w-5" />
-                {/if}
-            </button>
-        </div>
+
+        <button
+            on:click={handleSubmit}
+            disabled={!canSend}
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:scale-90 disabled:bg-muted disabled:text-muted-foreground"
+            aria-label="Send message"
+        >
+            {#if isUploading}
+                <div
+                    class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
+                />
+            {:else}
+                <Send class="h-5 w-5" />
+            {/if}
+        </button>
     </div>
 </div>
