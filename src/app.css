@@ -7,8 +7,11 @@
     --font-sans: "Inter", sans-serif;
     --background-image-tile: url("https://mermaidgrey.neocities.org/images/misc%20pics/69.gif");
 
+    --color-text: oklch(20% 0.01 250); /* Darker cool grey for panels/cards */
+
     /* Color Palette — Pure Kawaii Light */
     --color-background: oklch(100% 0 0); /* Pure white background */
+    --color-chat: #f3f4f6;
     --color-foreground: oklch(
         18% 0.03 30
     ); /* Deep neutral brown for crisp readable text */
@@ -48,6 +51,45 @@
     --radius-2xl: 1.75rem;
     --radius-3xl: 2.5rem;
     --radius-full: 9999px;
+}
+
+/* ✅ ADDED: Dark Mode Color Palette */
+[data-theme="dark"] {
+    /* Color Palette — Midnight Strawberry Dark */
+    --color-background: #1a1a1a; /* Very dark cool grey */
+    --color-chat: #464644;
+    --color-foreground: oklch(90% 0.02 80); /* Light warm off-white */
+
+    --color-text: oklch(98% 0.01 80);
+    --color-muted: oklch(20% 0.01 250); /* Darker cool grey for panels/cards */
+    --color-muted-foreground: oklch(
+        60% 0.02 80
+    ); /* Muted light text for secondary info */
+
+    --color-primary: oklch(65% 0.15 340); /* Deeper strawberry pink */
+    --color-primary-foreground: oklch(
+        99% 0.01 95
+    ); /* White text for pink buttons */
+
+    --color-user: oklch(70% 0.14 25); /* Muted peach accent */
+    --color-user-foreground: oklch(99% 0.01 95);
+
+    --color-accent: oklch(
+        70% 0.12 310
+    ); /* Muted lilac accent for UI hover highlights */
+    --color-accent-foreground: oklch(95% 0.01 95);
+
+    --color-border: oklch(90% 0.02 80); /* Dark cool border */
+    --color-ring: oklch(65% 0.15 340 / 0.6); /* Subtle pink focus ring */
+
+    --color-danger: oklch(55% 0.18 10); /* Deeper cherry red */
+    --color-danger-foreground: oklch(99% 0.01 95);
+
+    --color-success: oklch(60% 0.14 145); /* Muted pastel mint green */
+    --color-success-foreground: oklch(99% 0.01 95);
+
+    /* Optional: Disable the background tile in dark mode */
+    --background-image-tile: none;
 }
 
 /* Base Styles */

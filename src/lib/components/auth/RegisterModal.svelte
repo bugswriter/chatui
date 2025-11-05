@@ -128,7 +128,7 @@
         aria-labelledby="register-title"
     >
         <div
-            class="relative rounded-2xl border border-border bg-background text-accent-foreground shadow-2xl"
+            class="relative rounded-2xl border border-border bg-background text-foreground shadow-2xl"
         >
             <button
                 on:click={closeModal}
@@ -139,7 +139,7 @@
                 <X class="h-5 w-5" />
             </button>
 
-            <div class="p-6 border-b border-gray-200">
+            <div class="p-6 border-b border-border/50">
                 <h2 id="register-title" class="text-xl font-semibold">
                     {#if !successMessage}
                         Create Account
@@ -147,7 +147,7 @@
                         Account Created!
                     {/if}
                 </h2>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm text-foreground/50">
                     {#if !successMessage}
                         Join us to get started.
                     {:else}
@@ -188,14 +188,14 @@
                         <!-- SEPARATOR -->
                         <div class="relative flex items-center">
                             <div
-                                class="flex-grow border-t border-gray-200"
+                                class="flex-grow border-t border-border/50"
                             ></div>
                             <span
-                                class="flex-shrink mx-4 text-xs text-gray-400 uppercase"
+                                class="flex-shrink mx-4 text-xs text-foreground/50 uppercase"
                                 >Or sign up with</span
                             >
                             <div
-                                class="flex-grow border-t border-gray-200"
+                                class="flex-grow border-t border-border/50"
                             ></div>
                         </div>
                     {/if}
@@ -208,7 +208,7 @@
                         <div>
                             <label
                                 for="reg-name"
-                                class="mb-1.5 block text-sm text-gray-700"
+                                class="mb-1.5 block text-sm text-foreground"
                             >
                                 Full Name
                             </label>
@@ -226,7 +226,7 @@
                         <div>
                             <label
                                 for="reg-email"
-                                class="mb-1.5 block text-sm text-gray-700"
+                                class="mb-1.5 block text-sm text-foreground"
                             >
                                 Email
                             </label>
@@ -244,7 +244,7 @@
                         <div>
                             <label
                                 for="reg-password"
-                                class="mb-1.5 block text-sm text-gray-700"
+                                class="mb-1.5 block text-sm text-foreground"
                             >
                                 Password
                             </label>
@@ -317,7 +317,7 @@
             <!-- ✅ WRAPPED: Footer is now conditional and doesn't show on success -->
             {#if !successMessage}
                 <div
-                    class="border-t border-gray-200 px-6 py-4 text-center text-sm text-gray-500"
+                    class="border-t border-border/50 px-6 py-4 text-center text-sm text-foreground/50"
                 >
                     Already have an account?
                     <button

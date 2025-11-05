@@ -95,12 +95,12 @@
 </script>
 
 <!-- UNIFIED DESIGN: Use standard light background, clean colors, and primary blue -->
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-background">
     <main class="container mx-auto px-4 py-24 sm:py-32 text-center">
-        <h1 class="text-4xl font-extrabold text-gray-900 sm:text-6xl">
+        <h1 class="text-4xl font-extrabold text-foreground sm:text-6xl">
             Pricing Plans
         </h1>
-        <p class="mt-4 text-lg text-gray-600">
+        <p class="mt-4 text-lg text-foreground/80">
             Choose the perfect plan — whether you need recurring access or a
             one-time boost.
         </p>
@@ -111,8 +111,8 @@
                 on:click={() => (activeTab = "subscription")}
                 class={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     activeTab === "subscription"
-                        ? "bg-primary text-white shadow-md"
-                        : "bg-white text-accent hover:bg-blue-50 border border-border"
+                        ? "bg-primary text-foreground shadow-md"
+                        : "bg-background text-accent-foreground hover:bg-foreground/20 border border-border"
                 }`}
             >
                 Subscription
@@ -121,8 +121,8 @@
                 on:click={() => (activeTab = "one_time")}
                 class={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     activeTab === "one_time"
-                        ? "bg-primary text-white shadow-md"
-                        : "bg-white text-accent-foreground hover:bg-primary/50  border border-border"
+                        ? "bg-primary text-foreground shadow-md"
+                        : "bg-background text-accent-foreground hover:bg-foreground/20  border border-border"
                 }`}
             >
                 Boosters
@@ -132,7 +132,7 @@
         <!-- Loader / Error -->
         {#if isLoading}
             <div class="mt-16 flex justify-center">
-                <Loader2 class="h-10 w-10 animate-spin text-accent" />
+                <Loader2 class="h-10 w-10 animate-spin text-foreground" />
             </div>
         {:else if error}
             <div
@@ -150,19 +150,22 @@
                     {#each subscriptionPlans as plan}
                         <!-- Card: UNIFIED DESIGN - Standard light card look -->
                         <div
-                            class="group flex flex-col rounded-2xl border border-gray-200 bg-white p-8 shadow-lg ring-1 ring-gray-100 transition hover:shadow-xl hover:-translate-y-1"
+                            class="group flex flex-col rounded-2xl border border-border bg-background p-8 shadow-lg ring-1 ring-gray-100 transition hover:shadow-xl hover:-translate-y-1"
                         >
-                            <h3 class="text-lg font-semibold text-gray-900">
+                            <h3 class="text-lg font-semibold text-foreground">
                                 {plan.name}
                             </h3>
-                            <p class="mt-2 text-sm text-gray-600">
+                            <p class="mt-2 text-sm text-foreground/80">
                                 {plan.description || " "}
                             </p>
                             <p class="mt-6">
-                                <span class="text-4xl font-bold text-gray-900">
+                                <span
+                                    class="text-4xl font-bold text-foreground"
+                                >
                                     {formatPrice(plan.price)}
                                 </span>
-                                <span class="text-sm text-gray-500">/month</span
+                                <span class="text-sm text-foreground/80"
+                                    >/month</span
                                 >
                             </p>
                             <!-- PRIMARY BUTTON: UNIFIED DESIGN - Standard blue -->
@@ -173,7 +176,7 @@
                                         "subscription",
                                     )}
                                 disabled={!!redirectingPriceId}
-                                class="mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white text-sm font-semibold transition hover:bg-accent disabled:opacity-50"
+                                class="mt-6 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-foreground text-sm font-semibold transition hover:bg-accent disabled:opacity-50"
                             >
                                 {#if redirectingPriceId === plan.price_id}
                                     <Loader2
@@ -184,7 +187,7 @@
                                 {/if}
                             </button>
                             <ul
-                                class="mt-8 space-y-3 text-sm text-gray-600 text-left"
+                                class="mt-8 space-y-3 text-sm text-foreground text-left"
                             >
                                 <li class="flex items-start gap-x-3">
                                     <CheckCircle class="h-5 w-5 text-accent" />
@@ -212,15 +215,15 @@
                     {#each oneTimePacks as pack}
                         <!-- Card: UNIFIED DESIGN - Standard light card look -->
                         <div
-                            class="group flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-lg ring-1 ring-gray-100 transition hover:shadow-xl hover:-translate-y-1"
+                            class="group flex flex-col items-center rounded-2xl border border-border bg-background p-8 text-center shadow-lg ring-1 ring-gray-100 transition hover:shadow-xl hover:-translate-y-1"
                         >
-                            <h3 class="text-lg font-semibold text-gray-900">
+                            <h3 class="text-lg font-semibold text-foreground">
                                 {pack.name}
                             </h3>
-                            <p class="mt-4 text-3xl font-bold text-gray-900">
+                            <p class="mt-4 text-3xl font-bold text-foreground">
                                 {formatPrice(pack.price)}
                             </p>
-                            <p class="mt-2 text-sm text-gray-600">
+                            <p class="mt-2 text-sm text-foreground/80">
                                 Get <strong>{pack.coins} coins</strong> instantly
                             </p>
                             <!-- SECONDARY BUTTON: UNIFIED DESIGN - Standard light blue/gray -->
@@ -228,7 +231,7 @@
                                 on:click={() =>
                                     handleCheckout(pack.price_id, "payment")}
                                 disabled={!!redirectingPriceId}
-                                class="mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold transition hover:bg-blue-100 disabled:opacity-50"
+                                class="mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-foreground text-sm font-semibold transition hover:bg-accent disabled:opacity-50"
                             >
                                 {#if redirectingPriceId === pack.price_id}
                                     <Loader2 class="h-4 w-4 animate-spin" />

@@ -18,7 +18,7 @@
             pulseClass =
                 coins > $displayedCoins
                     ? "animate-pulse-green" // Assuming a green animation for gain
-                    : "animate-pulse-red";  // Assuming a red animation for loss
+                    : "animate-pulse-red"; // Assuming a red animation for loss
         }
         displayedCoins.set(coins);
     }
@@ -42,7 +42,7 @@
                 d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"
             /><path d="M12 18V6" /></svg
         >
-        <span class="font-semibold text-gray-900 {pulseClass}"
+        <span class="font-semibold text-text {pulseClass}"
             >{Math.round($displayedCoins)}</span
         >
     </div>

@@ -10,6 +10,9 @@
     import ForgotPassword from "$lib/components/auth/ForgotPassword.svelte";
     import RegisterModal from "$lib/components/auth/RegisterModal.svelte";
 
+    import { page } from "$app/stores";
+    $: isActivePage = $page.url.pathname === "/";
+
     // ✅ SIMPLIFIED: The only job here is to close the modal.
     // The authStore now handles its own state updates and invalidation,
     // and the UI will react automatically to the store change.
@@ -20,7 +23,7 @@
 
 <!-- The logic now correctly relies only on the reactive `$authStore` -->
 {#if $authStore.isLoading}
-    <div class="flex h-screen w-full items-center justify-center bg-white">
+    <div class="flex h-screen w-full items-center justify-center bg-background">
         <div
             class="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"
         />
@@ -29,11 +32,12 @@
     <div class="flex h-screen bg-background flex-col">
         <Navbar />
 
-        <main class="flex-1 overflow-y-auto pt-14">
+        <main class="flex-1 overflow-y-auto">
             <slot />
+            {#if !isActivePage}
+                <Footer />
+            {/if}
         </main>
-
-        <Footer />
     </div>
 
     <LoginModal

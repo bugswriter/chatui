@@ -1,38 +1,51 @@
-<!-- src/routes/agents/+page.svelte -->
 <script lang="ts">
     import { onMount } from "svelte";
     import { agentStore } from "$lib/stores/agentStore";
-    import { Loader2, AlertTriangle, Users } from "lucide-svelte";
-
+    import { Loader2, AlertTriangle, Users, Briefcase, X } from "lucide-svelte"; // Added X for close icon
     // The agent store manages fetching and caching the agents list.
     // We just need to ensure it's initialized when this component mounts.
+
     onMount(() => {
         agentStore.initialize();
-    });
+    }); // Reactive state derived from the store
 
-    // Reactive state derived from the store
-    $: isLoading = !$agentStore.isInitialized && !$agentStore.error;
+    $: isLoading = !$agentStore.isInitialized && !$agentStore.error; // State for the description modal
+
+    let showDescriptionModal = false;
+    let selectedAgentDescription = "";
+    let selectedAgentName = "";
+
+    function openDescriptionModal(agent: {
+        name: string;
+        description: string;
+    }) {
+        selectedAgentName = agent.name;
+        selectedAgentDescription = agent.description;
+        showDescriptionModal = true;
+    }
+
+    function closeDescriptionModal() {
+        showDescriptionModal = false;
+        selectedAgentDescription = "";
+        selectedAgentName = "";
+    }
 </script>
 
-<!-- UNIFIED DESIGN: Use standard light background, clean colors, and primary blue -->
-<div class="min-h-screen bg-gray-50 text-gray-900">
+<div class="min-h-screen bg-background text-foreground">
     <main class="container mx-auto px-4 py-24 sm:py-32">
-        <!-- Header -->
         <div class="mx-auto max-w-4xl text-center">
             <h1 class="text-4xl font-extrabold tracking-tight sm:text-6xl">
                 Available Agents
             </h1>
-            <p class="mt-4 text-lg text-gray-600">
+            <p class="mt-4 text-lg text-muted-foreground">
                 Explore the specialized AI agents available on the platform.
                 Each agent is designed for a specific set of tasks.
             </p>
         </div>
-
-        <!-- Content Area: Card for the table -->
-        <div class="mt-16 mx-auto max-w-4xl">
+        <div class="mt-16 mx-auto max-w-6xl">
             {#if isLoading}
                 <div
-                    class="flex items-center justify-center p-12 text-gray-500"
+                    class="flex items-center justify-center p-12 text-foreground"
                 >
                     <Loader2 class="mr-3 h-8 w-8 animate-spin text-primary" />
                     <span class="text-lg">Loading agents...</span>
@@ -45,86 +58,103 @@
                     <p>{$agentStore.error}</p>
                 </div>
             {:else if $agentStore.agents.length === 0}
-                <div class="p-12 text-center text-gray-500">
-                    <Users class="mx-auto mb-4 h-10 w-10 text-gray-300" />
+                <div class="p-12 text-center text-foreground">
+                    <Users class="mx-auto mb-4 h-10 w-10 text-foreground/80" />
                     <p class="font-semibold">No Agents Found</p>
                     <p class="mt-1 text-sm">
                         There are currently no agents available to display.
                     </p>
                 </div>
             {:else}
-                <!-- Table Container with a nice card style -->
                 <div
-                    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl"
+                    class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3"
                 >
-                    <div class="overflow-x-auto">
-                        <table
-                            class="min-w-full divide-y divide-gray-200 text-sm"
+                    {#each $agentStore.agents as agent (agent.id)}
+                        <div
+                            class="rounded-md border border-border bg-card p-6 shadow-lg transition-shadow hover:shadow-xl"
                         >
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left font-medium uppercase tracking-wider text-gray-500"
+                            <div class="flex items-start gap-4">
+                                <img
+                                    src={agent.avatar}
+                                    alt="{agent.name} avatar"
+                                    class="h-14 w-14 flex-shrink-0 rounded-full object-cover border-2 border-border"
+                                />
+                                <div>
+                                    <h2
+                                        class="text-xl font-bold text-foreground"
                                     >
-                                        Avatar
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left font-medium uppercase tracking-wider text-gray-500"
+                                        {agent.name}
+                                    </h2>
+                                    <div
+                                        class="mt-1 flex items-center text-sm text-primary"
                                     >
-                                        Name
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left font-medium uppercase tracking-wider text-gray-500"
-                                    >
-                                        Role
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left font-medium uppercase tracking-wider text-gray-500"
-                                    >
-                                        Description
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 bg-white">
-                                {#each $agentStore.agents as agent (agent.id)}
-                                    <tr
-                                        class="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td class="px-6 py-4">
-                                            <img
-                                                src={agent.avatar}
-                                                alt="{agent.name} avatar"
-                                                class="h-10 w-10 rounded-full object-cover"
-                                            />
-                                        </td>
-                                        <td
-                                            class="px-6 py-4 font-medium text-gray-900"
+                                        <Briefcase class="h-4 w-4 mr-1" />
+                                        <span class="capitalize font-medium"
+                                            >{agent.role}</span
                                         >
-                                            {agent.name}
-                                        </td>
-                                        <td
-                                            class="px-6 py-4 text-gray-500 capitalize"
-                                        >
-                                            {agent.role}
-                                        </td>
-                                        <td
-                                            class="px-6 py-4 text-gray-500 max-w-sm"
-                                        >
-                                            <p class="whitespace-normal">
-                                                {agent.description}
-                                            </p>
-                                        </td>
-                                    </tr>
-                                {/each}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <p
+                                    class="text-sm text-foreground/80 line-clamp-3"
+                                >
+                                    {agent.description}
+                                </p>
+                                {#if agent.description.length > 100}
+                                    <button
+                                        class="text-primary hover:underline text-sm mt-2 block"
+                                        on:click={() =>
+                                            openDescriptionModal(agent)}
+                                    >
+                                        Read More
+                                    </button>
+                                {/if}
+                            </div>
+                        </div>
+                    {/each}
                 </div>
             {/if}
         </div>
     </main>
+
+    {#if showDescriptionModal}
+        <div
+            class="fixed inset-0 z-50 flex items-center justify-center bg-transparent bg-opacity-50 p-4"
+            on:click|self={closeDescriptionModal}
+        >
+            <div
+                class="relative bg-background w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="modal-title"
+            >
+                <button
+                    class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                    on:click={closeDescriptionModal}
+                    aria-label="Close"
+                >
+                    <X class="h-6 w-6" />
+                </button>
+                <h3
+                    id="modal-title"
+                    class="text-2xl font-bold text-foreground mb-4"
+                >
+                    {selectedAgentName} Description
+                </h3>
+                <p class="text-muted-foreground whitespace-pre-wrap">
+                    {selectedAgentDescription}
+                </p>
+            </div>
+        </div>
+    {/if}
 </div>
+
+<style global>
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>

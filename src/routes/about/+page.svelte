@@ -5,17 +5,17 @@
 </script>
 
 <!-- UNIFIED DESIGN: Consistent use of light background and standard colors -->
-<div class="min-h-screen bg-background text-gray-900">
+<div class="min-h-screen bg-background text-user-foreground">
     <main class="container mx-auto px-4 py-24 sm:py-32">
         <div class="mx-auto max-w-3xl">
             <!-- Header -->
             <div class="text-center">
                 <h1
-                    class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl"
+                    class="text-4xl font-bold tracking-tight text-foreground sm:text-6xl"
                 >
                     About <span class="text-primary">bugswriter.ai</span>
                 </h1>
-                <p class="mt-6 text-lg leading-8 text-gray-600">
+                <p class="mt-6 text-lg leading-8 text-foreground">
                     Our mission is to provide an intelligent, flexible, and
                     secure AI assistant that adapts to your workflow, enhancing
                     creativity and productivity without compromise.
@@ -30,7 +30,7 @@
                     <!-- Feature Card 1 -->
                     <div class="flex flex-col">
                         <dt
-                            class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
+                            class="flex items-center gap-x-3 text-base font-semibold leading-7 text-foreground"
                         >
                             <BrainCircuit
                                 class="h-5 w-5 flex-none text-accent"
@@ -38,7 +38,7 @@
                             Intelligent & Adaptable
                         </dt>
                         <dd
-                            class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600"
+                            class="mt-4 flex flex-auto flex-col text-base leading-7 text-foreground"
                         >
                             <p class="flex-auto">
                                 At the core of our platform is a sophisticated
@@ -53,13 +53,13 @@
                     <!-- Feature Card 2 -->
                     <div class="flex flex-col">
                         <dt
-                            class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
+                            class="flex items-center gap-x-3 text-base font-semibold leading-7 text-foreground"
                         >
                             <Zap class="h-5 w-5 flex-none text-accent" />
                             Seamless User Experience
                         </dt>
                         <dd
-                            class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600"
+                            class="mt-4 flex flex-auto flex-col text-base leading-7 text-foreground"
                         >
                             <p class="flex-auto">
                                 We believe powerful technology should be
@@ -74,13 +74,13 @@
                     <!-- Feature Card 3 -->
                     <div class="flex flex-col">
                         <dt
-                            class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
+                            class="flex items-center gap-x-3 text-base font-semibold leading-7 text-foreground"
                         >
                             <Lock class="h-5 w-5 flex-none text-accent" />
                             Privacy & Security
                         </dt>
                         <dd
-                            class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600"
+                            class="mt-4 flex flex-auto flex-col text-base leading-7 text-foreground"
                         >
                             <p class="flex-auto">
                                 Your data is yours. We are committed to robust
@@ -95,13 +95,13 @@
                     <!-- Feature Card 4 -->
                     <div class="flex flex-col">
                         <dt
-                            class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900"
+                            class="flex items-center gap-x-3 text-base font-semibold leading-7 text-foreground"
                         >
                             <Bot class="h-5 w-5 flex-none text-accent" />
                             Built for the Future
                         </dt>
                         <dd
-                            class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600"
+                            class="mt-4 flex flex-auto flex-col text-base leading-7 text-foreground"
                         >
                             <p class="flex-auto">
                                 The AI landscape is constantly evolving, and so

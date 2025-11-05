@@ -179,12 +179,12 @@
 </script>
 
 <!-- UNIFIED DESIGN: Clean white background, standard shadow/border cards -->
-<div class="min-h-screen bg-white text-gray-800">
+<div class="min-h-screen bg-background text-gray-800">
     <main class="container mx-auto px-6 py-24 sm:py-32">
         {#if $authStore.isAuthenticated && $authStore.user}
             <div class="mx-auto max-w-6xl">
                 <h1
-                    class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl mb-10"
+                    class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-10"
                 >
                     Dashboard
                 </h1>
@@ -203,13 +203,15 @@
                     <div class="lg:col-span-1 space-y-8">
                         <!-- Account Card: UNIFIED DESIGN - Standardized card look -->
                         <div
-                            class="rounded-2xl border border-gray-200 bg-white shadow-xl transition-shadow"
+                            class="rounded-2xl border border-border shadow-xl transition-shadow"
                         >
                             <div
-                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50 rounded-t-2xl"
+                                class="flex items-center gap-3 border-b border-border/80 p-4 bg-chat rounded-t-2xl"
                             >
-                                <UserCircle class="h-5 w-5 text-gray-500" />
-                                <h2 class="font-semibold text-gray-900">
+                                <UserCircle
+                                    class="h-5 w-5 text-foreground/80"
+                                />
+                                <h2 class="font-semibold text-foreground">
                                     Account
                                 </h2>
                             </div>
@@ -245,10 +247,12 @@
                                     </div>
                                     <!-- Upload Controls -->
                                     <div class="flex-1">
-                                        <p class="font-semibold text-gray-800">
+                                        <p
+                                            class="font-semibold text-foreground"
+                                        >
                                             {$authStore.user.name}
                                         </p>
-                                        <p class="text-sm text-gray-500">
+                                        <p class="text-sm text-foreground/50">
                                             {$authStore.user.email}
                                         </p>
                                     </div>
@@ -258,13 +262,15 @@
 
                         <!-- Subscription: UNIFIED DESIGN - Standardized card look -->
                         <div
-                            class="rounded-2xl border border-gray-200 bg-white shadow-xl transition-shadow"
+                            class="rounded-2xl border border-gray-200 shadow-xl transition-shadow"
                         >
                             <div
-                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50 rounded-t-2xl"
+                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-chat rounded-t-2xl"
                             >
-                                <CreditCard class="h-5 w-5 text-gray-500" />
-                                <h2 class="font-semibold text-gray-900">
+                                <CreditCard
+                                    class="h-5 w-5 text-foreground/50"
+                                />
+                                <h2 class="font-semibold text-foreground">
                                     Subscription
                                 </h2>
                             </div>
@@ -272,21 +278,21 @@
                                 <div
                                     class="flex justify-between items-baseline"
                                 >
-                                    <span class="text-sm text-gray-500"
+                                    <span class="text-sm text-foreground/80"
                                         >Status</span
                                     >
                                     <span
-                                        class="font-semibold capitalize {statusInfo.color}"
+                                        class="font-semibold capitalize text-foreground {statusInfo.color}"
                                         >{statusInfo.text}</span
                                     >
                                 </div>
                                 <div
                                     class="flex justify-between items-baseline"
                                 >
-                                    <span class="text-sm text-gray-500"
+                                    <span class="text-sm text-foreground/80"
                                         >Current Plan</span
                                     >
-                                    <span class="font-semibold text-gray-800"
+                                    <span class="font-semibold text-foreground"
                                         >{$authStore.user.active_plan_name ||
                                             "None"}</span
                                     >
@@ -344,13 +350,13 @@
 
                     <!-- Right Column (Transaction History): UNIFIED DESIGN - Standardized card look -->
                     <div
-                        class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white shadow-xl transition-shadow"
+                        class="lg:col-span-2 rounded-2xl border border-gray-200 shadow-xl transition-shadow"
                     >
                         <div
-                            class="flex items-center gap-3 border-b border-gray-100 p-4 bg-gray-50 rounded-t-2xl"
+                            class="flex items-center gap-3 border-b border-gray-100 p-4 bg-chat rounded-t-2xl"
                         >
-                            <History class="h-5 w-5 text-gray-500" />
-                            <h2 class="font-semibold text-gray-900">
+                            <History class="h-5 w-5 text-foreground/50" />
+                            <h2 class="font-semibold text-foreground">
                                 Transaction History
                             </h2>
                         </div>
@@ -360,18 +366,20 @@
                                     class="flex justify-center items-center p-12"
                                 >
                                     <Loader2
-                                        class="h-6 w-6 animate-spin text-gray-400"
+                                        class="h-6 w-6 animate-spin text-foreground/40"
                                     />
                                 </div>
                             {:else if transactions.length === 0}
-                                <p class="p-12 text-center text-gray-500">
+                                <p class="p-12 text-center text-foreground/50">
                                     No transactions found.
                                 </p>
                             {:else}
                                 <div class="overflow-x-auto">
-                                    <table class="w-full text-sm text-gray-800">
+                                    <table
+                                        class="w-full text-sm text-foreground/50"
+                                    >
                                         <thead
-                                            class="text-left text-gray-500 bg-gray-50"
+                                            class="text-left text-foreground"
                                         >
                                             <tr>
                                                 <th class="p-3 font-medium"
@@ -389,7 +397,7 @@
                                         <tbody>
                                             {#each transactions as trx}
                                                 <tr
-                                                    class="border-t border-gray-100 hover:bg-gray-50 transition"
+                                                    class="border-t border-gray-100 hover:bg-chat/50 transition"
                                                 >
                                                     <td
                                                         class="p-3 whitespace-nowrap"

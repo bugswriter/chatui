@@ -240,8 +240,10 @@
     }
 </script>
 
-<div class="w-full bg-muted/20 px-4 pt-4 pb-6">
-    <div class="max-w-4xl bg-transparent mx-auto relative">
+<div class="w-full bg-transparent px-4">
+    <div
+        class="max-w-4xl bg-background backdrop-blur-md rounded-t-4xl pb-3 mx-auto relative"
+    >
         <!-- Agent Suggestion Popup is always available -->
         {#if showSuggestions}
             <div
@@ -368,7 +370,7 @@
                 <button
                     on:click={() => fileInputElement.click()}
                     disabled={isLoading || isStreaming || isUploading}
-                    class="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-border hover:text-foreground disabled:opacity-50"
+                    class="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:opacity-50"
                     aria-label="Attach file"
                 >
                     <Paperclip class="w-5 h-5" />
@@ -382,7 +384,7 @@
                 on:input={handleInput}
                 disabled={isLoading || isStreaming || isUploading}
                 placeholder="Message @Agent or ask anything..."
-                class="flex-1 resize-none bg-transparent py-[18px] text-base placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+                class="flex-1 resize-none bg-transparent py-[16px] text-foreground placeholder:text-foreground/50 focus:outline-none disabled:opacity-50"
                 rows="1"
             ></textarea>
             <div class="flex-shrink-0 p-2">

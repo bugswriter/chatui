@@ -110,7 +110,7 @@
     <div
         on:click={closeModal}
         transition:fade={{ duration: 200 }}
-        class="fixed inset-0 z-40 bg-gray-900/40 backdrop-blur-sm"
+        class="fixed inset-0 z-40 bg-chat/20 backdrop-blur-sm"
         aria-hidden="true"
     ></div>
 
@@ -123,20 +123,20 @@
         aria-labelledby="login-title"
     >
         <div
-            class="relative rounded-2xl border border-border bg-background text-accent-foreground shadow-2xl"
+            class="relative rounded-2xl border border-border bg-background text-foreground shadow-2xl"
         >
             <button
                 on:click={closeModal}
-                class="absolute top-3 right-3 rounded-full p-2 text-gray-500 hover:bg-gray-100 transition-colors"
+                class="absolute top-3 right-3 rounded-full p-2 text-foreground/50 hover:bg-gray-100 transition-colors"
                 aria-label="Close"
                 disabled={isLoading || isOAuthRedirecting}
             >
                 <X class="h-5 w-5" />
             </button>
 
-            <div class="p-6 border-b border-gray-200">
+            <div class="p-6 border-b border-border/50">
                 <h2 id="login-title" class="text-xl font-semibold">Sign In</h2>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm text-foreground/50">
                     Access your account to continue.
                 </p>
             </div>
@@ -145,7 +145,7 @@
                 <!-- ✅ FIX: Updated OAuth section to handle a single provider -->
                 {#if isGoogleUrlLoading}
                     <div
-                        class="flex justify-center items-center py-4 text-gray-500"
+                        class="flex justify-center items-center py-4 text-foreground/50"
                     >
                         <Loader2 class="mr-2 h-4 w-4 animate-spin" />
                         <span>Loading sign-in options...</span>
@@ -170,12 +170,12 @@
 
                     <!-- SEPARATOR -->
                     <div class="relative flex items-center">
-                        <div class="flex-grow border-t border-gray-200"></div>
+                        <div class="flex-grow border-t border-border/40"></div>
                         <span
-                            class="flex-shrink mx-4 text-xs text-gray-400 uppercase"
+                            class="flex-shrink mx-4 text-xs text-foreground/60 uppercase"
                             >Or continue with</span
                         >
-                        <div class="flex-grow border-t border-gray-200"></div>
+                        <div class="flex-grow border-t border-border/40"></div>
                     </div>
                 {/if}
 
@@ -184,7 +184,7 @@
                     <div>
                         <label
                             for="login-email"
-                            class="mb-1.5 block text-sm text-gray-700"
+                            class="mb-1.5 block text-sm text-foreground"
                             >Email</label
                         >
                         <input
@@ -200,7 +200,7 @@
                     <div>
                         <label
                             for="login-password"
-                            class="mb-1.5 block text-sm text-gray-700"
+                            class="mb-1.5 block text-sm text-foreground"
                             >Password</label
                         >
                         <input
@@ -225,7 +225,7 @@
 
                     <button
                         type="submit"
-                        class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-blue-600 text-white font-semibold text-sm shadow-md transition-all hover:bg-blue-700 disabled:opacity-50"
+                        class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white font-semibold text-sm shadow-md transition-all hover:bg-primary/80 disabled:opacity-50"
                         disabled={isLoading || isOAuthRedirecting}
                     >
                         {#if isLoading || isOAuthRedirecting}
@@ -246,7 +246,7 @@
                 <div class="flex justify-end pt-1">
                     <button
                         on:click={handleSwitchToForgotPassword}
-                        class="text-sm font-semibold text-blue-600 hover:underline focus:outline-none"
+                        class="text-sm font-semibold text-primary hover:underline focus:outline-none"
                         disabled={isLoading || isOAuthRedirecting}
                     >
                         Forgot Password?
@@ -255,12 +255,12 @@
             </div>
 
             <div
-                class="border-t border-gray-200 px-6 py-4 text-center text-sm text-gray-500"
+                class="border-t border-border/50 px-6 py-4 text-center text-sm text-foreground/80"
             >
                 Don’t have an account?
                 <button
                     on:click={handleSwitchToRegister}
-                    class="ml-1 font-semibold text-blue-600 hover:underline focus:outline-none"
+                    class="ml-1 font-semibold text-primary hover:underline focus:outline-none"
                     disabled={isLoading || isOAuthRedirecting}
                 >
                     Sign up
