@@ -1,14 +1,8 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
-    import { invalidate } from "$app/navigation";
     import { authStore } from "$lib/stores/authStore";
     import { uiStore } from "$lib/stores/uiStore";
     import "../app.css";
-
-    // ✅ REMOVED: `page` store import is not used
-    // ✅ REMOVED: The `data` prop export is no longer needed here
-    // import type { PageData } from "./$types";
-    // export let data: PageData;
 
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
@@ -16,18 +10,15 @@
     import ForgotPassword from "$lib/components/auth/ForgotPassword.svelte";
     import RegisterModal from "$lib/components/auth/RegisterModal.svelte";
 
-    async function handleLoginSuccess() {
+    // ✅ SIMPLIFIED: The only job here is to close the modal.
+    // The authStore now handles its own state updates and invalidation,
+    // and the UI will react automatically to the store change.
+    function handleLoginSuccess() {
         uiStore.closeModals();
-        await invalidate("app:auth");
     }
-
-    // ✅ REMOVED: This function is no longer needed as the RegisterModal handles its own success state.
-    // function handleRegisterSuccess() {
-    //     uiStore.closeModals();
-    // }
 </script>
 
-<!-- The logic now correctly relies only on the reactive store -->
+<!-- The logic now correctly relies only on the reactive `$authStore` -->
 {#if $authStore.isLoading}
     <div class="flex h-screen w-full items-center justify-center bg-white">
         <div
@@ -36,10 +27,7 @@
     </div>
 {:else}
     <div class="flex h-screen bg-background flex-col">
-        <Navbar
-            on:openLogin={uiStore.openLoginModal}
-            on:openRegister={uiStore.openRegisterModal}
-        />
+        <Navbar />
 
         <main class="flex-1 overflow-y-auto pt-14">
             <slot />
@@ -62,7 +50,6 @@
         on:close={uiStore.closeModals}
     />
 
-    <!-- ✅ TYPO FIX: Changed to isForgotPasswordModalOpen -->
     <ForgotPassword
         isOpen={$uiStore.isForgotPasswordModalOpen}
         on:switchToLogin={uiStore.openLoginModal}
