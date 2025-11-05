@@ -4,10 +4,10 @@
     export let agentName: string | undefined = undefined;
 </script>
 
-<div class="flex items-start gap-3 animate-[fade-in_0.5s_ease-out] mb-4">
+<div class="flex items-end gap-3">
     <!-- Avatar -->
     <div
-        class="flex h-10 w-10 flex-shrink-0 items-center justify-center self-end rounded-full bg-chat shadow-md"
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
     >
         {#if agentAvatar}
             <img
@@ -16,26 +16,20 @@
                 class="h-full w-full rounded-full object-cover"
             />
         {:else}
-            <Bot class="h-5 w-5 text-foreground" />
+            <Bot class="h-5 w-5" />
         {/if}
     </div>
 
     <!-- Bubble -->
-    <!-- UNIFIED DESIGN: Standard light gray bubble with subtle blur -->
-    <div class="flex max-w-[75%] flex-col gap-1">
-        <div
-            class="rounded-xl bg-chat backdrop-blur-lg px-4 py-3 text-gray-900 shadow-sm"
-        >
-            <div class="flex items-center gap-1.5">
-                <span class="h-2 w-2 rounded-full bg-gray-500/60 animate-bounce"
-                ></span>
-                <span
-                    class="h-2 w-2 rounded-full bg-gray-500/60 animate-bounce [animation-delay:0.2s]"
-                ></span>
-                <span
-                    class="h-2 w-2 rounded-full bg-gray-500/60 animate-bounce [animation-delay:0.4s]"
-                ></span>
-            </div>
+    <div class="rounded-xl bg-muted px-4 py-3 text-foreground">
+        <div class="flex items-center gap-1.5">
+            <span class="h-2 w-2 animate-bounce rounded-full bg-current/70" />
+            <span
+                class="h-2 w-2 animate-bounce rounded-full bg-current/70 [animation-delay:0.2s]"
+            />
+            <span
+                class="h-2 w-2 animate-bounce rounded-full bg-current/70 [animation-delay:0.4s]"
+            />
         </div>
     </div>
 </div>

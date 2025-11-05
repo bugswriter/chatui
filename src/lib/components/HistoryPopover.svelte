@@ -4,6 +4,7 @@
     import { historyStore } from "$lib/stores/historyStore";
     import { fly, scale } from "svelte/transition";
     import { quintOut } from "svelte/easing";
+    import { Plus } from "lucide-svelte";
 
     export let isOpen = false;
 
@@ -29,14 +30,19 @@
         if (diffDays > 30) return date.toLocaleDateString();
         if (diffDays > 1) return `${diffDays} days ago`;
         if (diffDays === 1) return "Yesterday";
-        return "Today";
+
+        // Format as "HH:MM AM/PM"
+        return date.toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+        });
     }
 </script>
 
 {#if isOpen}
     <div
         transition:scale={{ duration: 150, start: 0.95, easing: quintOut }}
-        class="absolute top-full right-0 mt-2 w-72 origin-top-right rounded-md border border-border bg-background p-1 text-sm shadow-lg"
+        class="absolute top-full right-0 z-20 mt-2 w-72 origin-top-right rounded-xl border border-border bg-background/90 p-1.5 text-sm shadow-xl backdrop-blur-lg"
         role="menu"
         aria-orientation="vertical"
         aria-labelledby="history-menu-button"
@@ -45,28 +51,16 @@
         <div class="p-1">
             <button
                 on:click={handleNewChat}
-                class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 font-medium transition-colors hover:bg-muted"
-                class:text-primary={$historyStore.selectedSessionId === null}
+                class="flex w-full items-center gap-2 rounded-md px-2.5 py-2 font-medium text-foreground transition-colors hover:bg-muted"
+                class:bg-muted={$historyStore.selectedSessionId === null}
                 role="menuitem"
             >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="lucide lucide-plus"
-                    ><path d="M5 12h14" /><path d="M12 5v14" /></svg
-                >
+                <Plus class="h-4 w-4" />
                 <span>Start New Chat</span>
             </button>
         </div>
 
-        <div class="my-1 border-b border-border"></div>
+        <hr class="my-1 border-border" />
 
         <!-- Scrollable History List -->
         <div
@@ -74,15 +68,15 @@
         >
             {#if $historyStore.isLoading && $historyStore.sessions.length === 0}
                 <div class="p-4 text-center text-xs text-muted-foreground">
-                    Loading...
+                    Loading history...
                 </div>
             {:else if $historyStore.error}
-                <div class="p-4 text-center text-xs text-destructive">
+                <div class="p-4 text-center text-xs text-danger">
                     {$historyStore.error}
                 </div>
             {:else if $historyStore.sessions.length === 0}
                 <div class="p-4 text-center text-xs text-muted-foreground">
-                    No history found.
+                    No past conversations.
                 </div>
             {:else}
                 <ul class="space-y-1 p-1">
@@ -91,14 +85,15 @@
                             <button
                                 on:click={() =>
                                     handleSelectSession(session.session_id)}
-                                class="w-full rounded-sm p-2 text-left transition-colors hover:bg-muted"
+                                class="w-full rounded-md p-2.5 text-left transition-colors hover:bg-muted"
                                 class:bg-muted={$historyStore.selectedSessionId ===
                                     session.session_id}
                                 title={session.first_message_preview}
                                 role="menuitem"
                             >
                                 <p class="truncate font-medium text-foreground">
-                                    {session.first_message_preview}
+                                    {session.first_message_preview ||
+                                        "Untitled Chat"}
                                 </p>
                                 <p class="mt-1 text-xs text-muted-foreground">
                                     {formatTimestamp(session.created_at)}

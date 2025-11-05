@@ -3,12 +3,12 @@
     import type { Message } from "$lib/types";
     import MessageBubble from "./MessageBubble.svelte";
     import LoadingMessage from "./LoadingMessage.svelte";
+    import { MessageSquare } from "lucide-svelte";
 
     export let messages: Message[] = [];
     export let isLoading: boolean = false;
     export let userName: string = "You";
-    export let userAvatarUrl: string | null | undefined = undefined; // ✅ ACCEPT THE PROP HERE
-    export let className: string = "";
+    export let userAvatarUrl: string | null | undefined = undefined;
 
     let scrollContainer: HTMLDivElement;
     let shouldAutoScroll = true;
@@ -28,41 +28,41 @@
     function handleScroll() {
         if (!scrollContainer) return;
         const threshold = 50;
-        shouldAutoScroll =
+        const isAtBottom =
             scrollContainer.scrollHeight -
                 scrollContainer.scrollTop -
                 scrollContainer.clientHeight <
             threshold;
+        shouldAutoScroll = isAtBottom;
     }
 </script>
 
 <div
     bind:this={scrollContainer}
     on:scroll={handleScroll}
-    class="overflow-y-auto bg-gradient-to-b from-background/95 via-background/90 to-background/95 px-4 py-4 pt-18 {className}"
+    class="h-full overflow-y-auto px-4"
 >
-    <div class="mx-auto max-w-3xl">
+    <div class="container mx-auto max-w-3xl py-6">
         {#if messages.length === 0}
             <div
-                class="flex flex-col items-center justify-center text-center py-24"
+                class="flex h-full flex-col items-center justify-center py-24 text-center"
             >
-                <img
-                    src="https://i.pinimg.com/originals/31/38/c2/3138c2666fe9ffc47d4c56982c918a31.jpg"
-                    alt="hannah"
-                    class="h-32 w-32 rounded-full object-cover shadow-2xl shadow-primary/10 border-4 border-border"
+                <MessageSquare
+                    class="h-12 w-12 text-muted-foreground/50"
+                    stroke-width="1.5"
                 />
-                <h1 class="mt-8 text-4xl font-bold text-foreground">
+                <h1
+                    class="mt-6 text-2xl font-semibold tracking-tight text-foreground"
+                >
                     Ready to Assist
                 </h1>
-                <p
-                    class="mt-3 max-w-md text-base text-muted-foreground leading-relaxed"
-                >
-                    Start a conversation or upload files to begin. I'm here to
-                    help with anything you need.
+                <p class="mt-2 max-w-sm text-muted-foreground">
+                    Start a conversation by typing a message below, or upload a
+                    file to begin.
                 </p>
             </div>
         {:else}
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-y-6">
                 {#each messages as message (message.clientId || message.id)}
                     <MessageBubble
                         {message}
@@ -75,7 +75,7 @@
                 {/each}
 
                 {#if isLoading}
-                    <div class="flex justify-start mt-4">
+                    <div class="flex justify-start">
                         <LoadingMessage />
                     </div>
                 {/if}

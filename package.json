@@ -23,6 +23,7 @@
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "^4.1.16",
+		"clsx": "^2.1.1",
 		"highlight.js": "^11.11.1",
 		"lucide-svelte": "^0.546.0",
 		"marked": "^16.4.1",

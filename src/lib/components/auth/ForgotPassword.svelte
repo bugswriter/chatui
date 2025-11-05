@@ -1,9 +1,8 @@
 <!-- src/lib/components/auth/ForgotPassword.svelte -->
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import { fade, fly } from "svelte/transition";
-    import { quintOut } from "svelte/easing";
-    import { X, LogIn, Loader2, AlertCircle, Mail } from "lucide-svelte"; // Added Mail icon for success
+    import { fade, scale } from "svelte/transition";
+    import { X, Loader2, AlertCircle, Mail, ArrowLeft } from "lucide-svelte";
 
     export let isOpen = false;
     const dispatch = createEventDispatcher();
@@ -11,22 +10,21 @@
     let email = "";
     let isLoading = false;
     let error: string | null = null;
-    let isEmailSent = false; // New state to switch views
+    let isEmailSent = false;
 
+    // This should be an environment variable in a real application
     const FORGOT_PASSWORD_API =
-        "https://api.bugswriter.ai/api/v1/auth/password/forgot"; // Your backend endpoint
+        "https://api.bugswriter.ai/api/v1/auth/password/forgot";
 
     function closeModal() {
-        if (!isLoading) isOpen = false;
+        if (isLoading) return;
+        dispatch("close");
     }
 
     function handleSwitchToLogin() {
         dispatch("switchToLogin");
     }
 
-    /**
-     * Sends a request to the server to initiate the password reset process.
-     */
     async function handleRequestReset() {
         isLoading = true;
         error = null;
@@ -35,19 +33,16 @@
         try {
             const response = await fetch(FORGOT_PASSWORD_API, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email }),
             });
 
             if (!response.ok) {
-                // Read error message from response body if available
                 const errorData = await response
                     .json()
                     .catch(() => ({ message: "Failed to send reset email." }));
                 throw new Error(
-                    errorData.message || "Failed to send reset email.",
+                    errorData.message || "An unknown error occurred.",
                 );
             }
 
@@ -62,7 +57,6 @@
         }
     }
 
-    // Reset state when the modal opens
     $: if (isOpen) {
         email = "";
         error = null;
@@ -74,63 +68,84 @@
 <svelte:window on:keydown={(e) => e.key === "Escape" && closeModal()} />
 
 {#if isOpen}
-    <!-- BACKGROUND: UNIFIED DESIGN - Light backdrop -->
+    <!-- Backdrop -->
     <div
         on:click={closeModal}
-        transition:fade={{ duration: 200 }}
-        class="fixed inset-0 z-40 bg-chat/20 backdrop-blur-sm"
+        transition:fade={{ duration: 150 }}
+        class="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
         aria-hidden="true"
-    ></div>
+    />
 
-    <!-- MODAL WINDOW: UNIFIED DESIGN - Light card aesthetic -->
+    <!-- Modal -->
     <div
-        transition:fly={{ duration: 250, y: 20, easing: quintOut }}
+        transition:scale={{ duration: 150, start: 0.95 }}
         class="fixed top-1/2 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2"
         role="dialog"
         aria-modal="true"
         aria-labelledby="forgot-title"
     >
         <div
-            class="relative rounded-2xl border border-border/50 bg-background text-gray-900 shadow-2xl"
+            class="relative flex flex-col rounded-xl border border-border bg-background text-foreground shadow-2xl"
         >
-            <!-- CLOSE BUTTON -->
-            <button
-                on:click={closeModal}
-                class="absolute top-3 right-3 rounded-full p-2 text-gray-500 hover:bg-gray-100 transition-colors"
-                aria-label="Close"
-                disabled={isLoading}
+            <!-- Header -->
+            <div
+                class="flex items-start justify-between p-4 border-b border-border"
             >
-                <X class="h-5 w-5" />
-            </button>
-
-            <!-- HEADER -->
-            <div class="p-6 border-b border-border/50">
-                <h2
-                    id="forgot-title"
-                    class="text-xl text-foreground font-semibold"
+                <div>
+                    <h2 id="forgot-title" class="text-lg font-semibold">
+                        Forgot Password
+                    </h2>
+                    <p class="text-sm text-muted-foreground">
+                        {#if !isEmailSent}
+                            Enter your email to get a reset link.
+                        {:else}
+                            Instructions have been sent.
+                        {/if}
+                    </p>
+                </div>
+                <button
+                    on:click={closeModal}
+                    class="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Close"
+                    disabled={isLoading}
                 >
-                    Forgot Password
-                </h2>
-                <p class="mt-1 text-sm text-foreground/50">
-                    {#if !isEmailSent}
-                        Enter your email to receive a password reset link.
-                    {:else}
-                        Instructions sent.
-                    {/if}
-                </p>
+                    <X class="h-5 w-5" />
+                </button>
             </div>
 
-            <div class="p-6 space-y-5">
-                {#if !isEmailSent}
-                    <!-- FORM: REQUEST EMAIL -->
+            <!-- Content -->
+            <div class="p-6">
+                {#if isEmailSent}
+                    <div
+                        transition:fade={{ duration: 150 }}
+                        class="flex flex-col items-center justify-center space-y-4 rounded-lg border border-border bg-muted/50 p-6 text-center"
+                    >
+                        <Mail class="h-8 w-8 text-primary" />
+                        <p class="font-semibold text-foreground">
+                            Check your email
+                        </p>
+                        <p class="text-sm text-muted-foreground">
+                            We've sent password reset instructions to
+                            <span class="font-medium text-foreground"
+                                >{email}</span
+                            >.
+                        </p>
+                        <button
+                            on:click={closeModal}
+                            class="mt-2 inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90"
+                        >
+                            <span>Done</span>
+                        </button>
+                    </div>
+                {:else}
                     <form
                         on:submit|preventDefault={handleRequestReset}
-                        class="space-y-5"
+                        class="space-y-4"
                     >
                         <div>
                             <label
                                 for="forgot-email"
-                                class="mb-1.5 block text-sm text-foreground"
+                                class="mb-1.5 block text-sm font-medium text-foreground"
                                 >Email</label
                             >
                             <input
@@ -140,76 +155,47 @@
                                 placeholder="you@example.com"
                                 required
                                 disabled={isLoading}
-                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-primary/80 placeholder:text-gray-400 disabled:opacity-50"
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             />
                         </div>
 
                         {#if error}
-                            <!-- ERROR MESSAGE: UNIFIED DESIGN - Standard red/danger style -->
                             <div
-                                transition:fade={{ duration: 150 }}
-                                class="flex items-center gap-2 rounded-md bg-red-50 border border-red-300 p-2 text-sm text-red-600"
+                                class="flex items-center gap-2 rounded-md bg-danger/10 border border-danger/20 p-3 text-sm text-danger"
                             >
                                 <AlertCircle class="h-4 w-4 flex-shrink-0" />
                                 <p>{error}</p>
                             </div>
                         {/if}
 
-                        <!-- PRIMARY BUTTON: UNIFIED DESIGN - Blue -->
                         <button
                             type="submit"
-                            class="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white font-semibold text-sm shadow-md transition-all hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-50"
+                            class="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-primary-foreground font-medium ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
                             disabled={isLoading}
                         >
                             {#if isLoading}
                                 <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-                                <span>Sending link...</span>
+                                <span>Sending...</span>
                             {:else}
                                 <Mail class="mr-2 h-4 w-4" />
                                 <span>Send Reset Link</span>
                             {/if}
                         </button>
                     </form>
-                {:else}
-                    <!-- SUCCESS MESSAGE: CHECK EMAIL -->
-                    <div
-                        transition:fade={{ duration: 150 }}
-                        class="flex flex-col items-center justify-center space-y-4 rounded-lg border border-green-300 bg-green-50 p-6 text-green-700"
-                    >
-                        <Mail class="h-8 w-8 text-green-500" />
-                        <p class="text-center font-semibold">
-                            Password reset instructions have been sent to
-                            <span class="font-bold block text-green-800"
-                                >{email}</span
-                            >.
-                        </p>
-                        <p class="text-sm text-center">
-                            Please check your inbox (and spam folder) to
-                            continue.
-                        </p>
-                        <!-- Button to redirect to login -->
-                        <button
-                            on:click={closeModal}
-                            class="inline-flex h-10 items-center justify-center rounded-lg bg-green-600 px-4 text-white font-semibold text-sm shadow-md transition-all hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
-                        >
-                            <span>Done</span>
-                        </button>
-                    </div>
                 {/if}
             </div>
 
-            <!-- FOOTER -->
+            <!-- Footer -->
             <div
-                class="border-t border-border/50 px-6 py-4 text-center text-sm text-foreground"
+                class="border-t border-border bg-muted/50 p-4 text-center text-sm"
             >
-                Remember your password?
-                <!-- LINK: UNIFIED DESIGN - Standard blue link color -->
                 <button
                     on:click={handleSwitchToLogin}
-                    class="ml-1 font-semibold text-primary hover:underline focus:outline-none"
+                    class="flex items-center justify-center w-full gap-2 font-semibold text-primary hover:underline focus:outline-none"
                     disabled={isLoading}
                 >
-                    Sign in
+                    <ArrowLeft class="h-4 w-4" />
+                    <span>Back to Sign In</span>
                 </button>
             </div>
         </div>

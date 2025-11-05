@@ -1,51 +1,37 @@
 <!-- src/routes/dashboard/+page.svelte -->
 <script lang="ts">
     import { onMount } from "svelte";
-    import { goto } from "$app/navigation";
     import { authStore } from "$lib/stores/authStore";
-    import { API_CONFIG, getAuthToken } from "$lib/services/api";
     import {
+        AlertTriangle,
         CreditCard,
         History,
-        UserCircle,
-        AlertTriangle,
         Loader2,
         ShieldCheck,
         ShieldX,
+        UserCircle,
+        ExternalLink,
     } from "lucide-svelte";
+    import { fade } from "svelte/transition";
 
     interface Transaction {
         id: string;
-        type: string;
         amount: number;
-        description: string;
+        currency: string;
+        status: "paid" | "open" | "failed" | "uncollectible";
         created: string;
+        invoice_pdf: string;
     }
 
     let transactions: Transaction[] = [];
-    let isLoadingTransactions = true;
+    let isLoadingTransactions = false;
     let error: string | null = null;
     let actionInProgress: "billing" | "cancel" | "reactivate" | null = null;
-    // --- NEW: State for avatar upload ---
+
     let fileInput: HTMLInputElement;
     let isUploading = false;
     let uploadError: string | null = null;
 
-    authStore.subscribe((state) => {
-        if (
-            typeof window !== "undefined" &&
-            !state.isLoading &&
-            !state.isAuthenticated
-        ) {
-            goto("/");
-        }
-    });
-
-    onMount(async () => {
-        if ($authStore.isAuthenticated) await fetchTransactions();
-    });
-
-    // --- NEW: Handler for file selection ---
     async function handleFileSelect(event: Event) {
         const target = event.target as HTMLInputElement;
         const file = target.files?.[0];
@@ -55,9 +41,9 @@
             uploadError = null;
             try {
                 await authStore.updateAvatar(file);
-            } catch (error) {
+            } catch (err) {
                 uploadError =
-                    error instanceof Error ? error.message : "Upload failed.";
+                    err instanceof Error ? err.message : "Upload failed.";
             } finally {
                 isUploading = false;
             }
@@ -67,19 +53,29 @@
     async function fetchTransactions() {
         isLoadingTransactions = true;
         error = null;
-        const token = getAuthToken();
-        if (!token) return (isLoadingTransactions = false);
         try {
+            const token = $authStore.token;
+            if (!token) throw new Error("Authentication token not found.");
+
             const res = await fetch(
-                `${API_CONFIG.bizAPIURL}/api/v1/users/me/transactions`,
+                "https://api.bugswriter.ai/api/v1/users/transactions",
                 {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 },
             );
-            if (!res.ok) throw new Error("Failed to load transaction history.");
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(
+                    errorData.detail || "Failed to fetch transactions.",
+                );
+            }
             transactions = await res.json();
         } catch (e) {
-            error = e instanceof Error ? e.message : "Unknown error.";
+            error =
+                e instanceof Error ? e.message : "An unknown error occurred.";
         } finally {
             isLoadingTransactions = false;
         }
@@ -88,24 +84,37 @@
     async function handleManageBilling() {
         actionInProgress = "billing";
         error = null;
-        const token = getAuthToken();
         try {
+            const token = $authStore.token;
+            if (!token) throw new Error("Authentication token not found.");
+
             const res = await fetch(
-                `${API_CONFIG.bizAPIURL}/api/v1/payments/customer-portal`,
+                "https://api.bugswriter.ai/api/v1/users/create-portal-session",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${token}`,
                     },
-                    body: JSON.stringify({ return_url: window.location.href }),
+                    body: JSON.stringify({
+                        return_url: window.location.href,
+                    }),
                 },
             );
-            if (!res.ok) throw new Error("Could not open billing portal.");
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(
+                    errorData.detail || "Could not open billing portal.",
+                );
+            }
+
             const data = await res.json();
             window.location.href = data.url;
         } catch (e) {
-            error = e instanceof Error ? e.message : "Unknown error.";
+            error =
+                e instanceof Error ? e.message : "An unknown error occurred.";
+        } finally {
             actionInProgress = null;
         }
     }
@@ -113,24 +122,36 @@
     async function handleCancelSubscription() {
         if (
             !confirm(
-                "Cancel subscription? It stays active until the current period ends.",
+                "Are you sure you want to cancel? Your subscription will remain active until the end of the current billing period.",
             )
         )
             return;
+
         actionInProgress = "cancel";
-        const token = getAuthToken();
+        error = null;
         try {
+            const token = $authStore.token;
+            if (!token) throw new Error("Authentication token not found.");
+
             const res = await fetch(
-                `${API_CONFIG.bizAPIURL}/api/v1/payments/subscriptions/cancel`,
+                "https://api.bugswriter.ai/api/v1/users/cancel-subscription",
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },
                 },
             );
-            if (!res.ok) throw new Error("Failed to cancel subscription.");
-            await authStore.refreshUserDetails();
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(
+                    errorData.detail || "Failed to cancel subscription.",
+                );
+            }
+
+            await authStore.refreshUser(); // Refresh user to get updated subscription status
         } catch (e) {
-            error = e instanceof Error ? e.message : "Unknown error.";
+            error =
+                e instanceof Error ? e.message : "An unknown error occurred.";
         } finally {
             actionInProgress = null;
         }
@@ -138,209 +159,285 @@
 
     async function handleReactivateSubscription() {
         actionInProgress = "reactivate";
-        const token = getAuthToken();
+        error = null;
         try {
+            const token = $authStore.token;
+            if (!token) throw new Error("Authentication token not found.");
+
             const res = await fetch(
-                `${API_CONFIG.bizAPIURL}/api/v1/payments/subscriptions/reactivate`,
+                "https://api.bugswriter.ai/api/v1/users/reactivate-subscription",
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },
                 },
             );
-            if (!res.ok) throw new Error("Failed to reactivate subscription.");
-            await authStore.refreshUserDetails();
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(
+                    errorData.detail || "Failed to reactivate subscription.",
+                );
+            }
+            await authStore.refreshUser(); // Refresh user to get updated subscription status
         } catch (e) {
-            error = e instanceof Error ? e.message : "Unknown error.";
+            error =
+                e instanceof Error ? e.message : "An unknown error occurred.";
         } finally {
             actionInProgress = null;
         }
     }
 
     function formatDate(dateString: string) {
-        return new Date(dateString).toLocaleDateString("en-US", {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
             year: "numeric",
-            month: "long",
+            month: "short",
             day: "numeric",
         });
     }
 
-    $: statusInfo = ((status: string | null | undefined) => {
+    $: statusInfo = (status: string) => {
         switch (status) {
-            case "active":
-                return { text: "Active", color: "text-green-600" };
-            case "canceled":
-                return { text: "Canceled", color: "text-amber-600" };
-            case "past_due":
-                return { text: "Past Due", color: "text-red-600" };
+            case "paid":
+                return {
+                    text: "Paid",
+                    color: "bg-green-500/20 text-green-400 border-green-500/30",
+                };
+            case "open":
+                return {
+                    text: "Open",
+                    color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+                };
+            case "failed":
+                return {
+                    text: "Failed",
+                    color: "bg-red-500/20 text-red-400 border-red-500/30",
+                };
+            case "uncollectible":
+                return {
+                    text: "Uncollectible",
+                    color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+                };
             default:
-                return { text: "Inactive", color: "text-gray-400" };
+                return {
+                    text: status.charAt(0).toUpperCase() + status.slice(1),
+                    color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+                };
         }
-    })($authStore.user?.subscription_status);
+    };
+
+    onMount(() => {
+        if ($authStore.isAuthenticated) {
+            fetchTransactions();
+        }
+    });
+
+    $: if (!$authStore.isAuthenticated && !$authStore.isLoading) {
+        // Handle case where user logs out on this page
+        // Or if they land here without being authenticated
+    }
 </script>
 
-<!-- UNIFIED DESIGN: Clean white background, standard shadow/border cards -->
-<div class="min-h-screen bg-background text-gray-800">
-    <main class="container mx-auto px-6 py-24 sm:py-32">
+<div class="min-h-screen bg-background text-foreground pt-16">
+    <main class="container mx-auto px-4 py-12 sm:py-24">
         {#if $authStore.isAuthenticated && $authStore.user}
-            <div class="mx-auto max-w-6xl">
-                <h1
-                    class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-10"
-                >
-                    Dashboard
-                </h1>
+            <div class="mx-auto max-w-7xl">
+                <header class="mb-12">
+                    <h1
+                        class="text-4xl font-bold tracking-tight text-foreground"
+                    >
+                        Dashboard
+                    </h1>
+                    <p class="mt-2 text-lg text-muted-foreground">
+                        Manage your account, subscription, and view transaction
+                        history.
+                    </p>
+                </header>
 
                 {#if error}
                     <div
-                        class="mt-4 flex items-center gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700"
+                        transition:fade
+                        class="mb-8 flex items-center gap-3 rounded-lg border border-danger/50 bg-danger/10 p-4 text-sm text-danger"
                     >
                         <AlertTriangle class="h-5 w-5 flex-shrink-0" />
                         <p>{error}</p>
                     </div>
                 {/if}
 
-                <div class="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
-                    <!-- Left Column -->
+                <div class="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-12">
+                    <!-- Left Column: Profile & Subscription -->
                     <div class="lg:col-span-1 space-y-8">
-                        <!-- Account Card: UNIFIED DESIGN - Standardized card look -->
+                        <!-- Profile Card -->
                         <div
-                            class="rounded-2xl border border-border shadow-xl transition-shadow"
+                            class="rounded-xl border border-border bg-background shadow-sm"
                         >
-                            <div
-                                class="flex items-center gap-3 border-b border-border/80 p-4 bg-chat rounded-t-2xl"
-                            >
-                                <UserCircle
-                                    class="h-5 w-5 text-foreground/80"
-                                />
+                            <div class="border-b border-border p-4">
                                 <h2 class="font-semibold text-foreground">
-                                    Account
+                                    Profile
                                 </h2>
                             </div>
-                            <div class="p-2 flex flex-col items-center gap-2">
-                                <div
-                                    class="w-full px-3 py-2 gap-4 flex flex-row"
-                                >
-                                    <div>
-                                        <img
-                                            src={$authStore.user.avatar ||
-                                                `https://api.dicebear.com/8.x/bottts/svg?seed=${$authStore.user.email}`}
-                                            alt="Avatar"
-                                            class="h-12 w-12 rounded-full object-cover border border-gray-200"
-                                        />
+                            <div class="p-6">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="relative h-16 w-16 flex-shrink-0"
+                                    >
+                                        {#if $authStore.user.avatar}
+                                            <img
+                                                src={$authStore.user.avatar}
+                                                alt="User avatar"
+                                                class="h-full w-full rounded-full object-cover"
+                                            />
+                                        {:else}
+                                            <div
+                                                class="flex h-full w-full items-center justify-center rounded-full bg-muted"
+                                            >
+                                                <UserCircle
+                                                    class="h-10 w-10 text-muted-foreground"
+                                                />
+                                            </div>
+                                        {/if}
                                         <input
                                             bind:this={fileInput}
                                             on:change={handleFileSelect}
                                             type="file"
-                                            accept="image/png, image/jpeg, image/gif"
+                                            accept="image/*"
                                             hidden
                                         />
                                         <button
                                             on:click={() => fileInput.click()}
                                             disabled={isUploading}
-                                            class="mt-2 text-sm font-semibold text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                                            class="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:opacity-100 focus:opacity-100"
+                                            aria-label="Change profile picture"
                                         >
                                             {#if isUploading}
-                                                Uploading...
+                                                <Loader2
+                                                    class="h-5 w-5 animate-spin"
+                                                />
                                             {:else}
-                                                Change
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="20"
+                                                    height="20"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    ><path
+                                                        d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"
+                                                    ></path><circle
+                                                        cx="12"
+                                                        cy="13"
+                                                        r="3"
+                                                    ></circle></svg
+                                                >
                                             {/if}
                                         </button>
                                     </div>
-                                    <!-- Upload Controls -->
-                                    <div class="flex-1">
+                                    <div class="min-w-0 flex-1">
                                         <p
-                                            class="font-semibold text-foreground"
+                                            class="truncate font-semibold text-foreground"
                                         >
                                             {$authStore.user.name}
                                         </p>
-                                        <p class="text-sm text-foreground/50">
+                                        <p
+                                            class="truncate text-sm text-muted-foreground"
+                                        >
                                             {$authStore.user.email}
                                         </p>
                                     </div>
                                 </div>
+                                {#if uploadError}
+                                    <p
+                                        class="mt-4 text-center text-xs text-danger"
+                                    >
+                                        {uploadError}
+                                    </p>
+                                {/if}
                             </div>
                         </div>
 
-                        <!-- Subscription: UNIFIED DESIGN - Standardized card look -->
+                        <!-- Subscription Card -->
                         <div
-                            class="rounded-2xl border border-gray-200 shadow-xl transition-shadow"
+                            class="rounded-xl border border-border bg-background shadow-sm"
                         >
-                            <div
-                                class="flex items-center gap-3 border-b border-gray-100 p-4 bg-chat rounded-t-2xl"
-                            >
-                                <CreditCard
-                                    class="h-5 w-5 text-foreground/50"
-                                />
+                            <div class="border-b border-border p-4">
                                 <h2 class="font-semibold text-foreground">
                                     Subscription
                                 </h2>
                             </div>
                             <div class="p-6 space-y-4">
-                                <div
-                                    class="flex justify-between items-baseline"
-                                >
-                                    <span class="text-sm text-foreground/80"
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-muted-foreground"
                                         >Status</span
                                     >
                                     <span
-                                        class="font-semibold capitalize text-foreground {statusInfo.color}"
-                                        >{statusInfo.text}</span
+                                        class="text-sm font-semibold capitalize text-foreground"
+                                        >{$authStore.user.subscription_status ||
+                                            "N/A"}</span
                                     >
                                 </div>
-                                <div
-                                    class="flex justify-between items-baseline"
-                                >
-                                    <span class="text-sm text-foreground/80"
-                                        >Current Plan</span
-                                    >
-                                    <span class="font-semibold text-foreground"
-                                        >{$authStore.user.active_plan_name ||
-                                            "None"}</span
-                                    >
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-muted-foreground">
+                                        {#if $authStore.user.subscription_status === "canceled"}
+                                            Expires on
+                                        {:else}
+                                            Renews on
+                                        {/if}
+                                    </span>
+                                    <span class="font-semibold text-foreground">
+                                        {formatDate(
+                                            $authStore.user.current_period_end,
+                                        )}
+                                    </span>
                                 </div>
-                                <div
-                                    class="border-t border-gray-100 pt-4 space-y-3"
-                                >
-                                    <!-- Manage Billing: PRIMARY BUTTON - Standard blue -->
+
+                                <div class="space-y-3 pt-4">
                                     <button
                                         on:click={handleManageBilling}
-                                        disabled={!$authStore.user
-                                            .stripe_customer_id ||
-                                            !!actionInProgress}
-                                        class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-white font-semibold text-sm transition hover:bg-primary/80 disabled:opacity-50"
+                                        disabled={actionInProgress !== null}
+                                        class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground font-medium ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none disabled:opacity-50"
                                     >
-                                        {#if actionInProgress === "billing"}<Loader2
-                                                class="mr-2 h-4 w-4 animate-spin"
-                                            />{/if}
-                                        Manage Billing
+                                        {#if actionInProgress === "billing"}
+                                            <Loader2
+                                                class="h-4 w-4 animate-spin"
+                                            /> Redirecting...
+                                        {:else}
+                                            <ExternalLink class="h-4 w-4" /> Manage
+                                            Billing
+                                        {/if}
                                     </button>
 
                                     {#if $authStore.user.subscription_status === "active"}
-                                        <!-- Cancel: DANGER BUTTON - Standard red -->
                                         <button
                                             on:click={handleCancelSubscription}
-                                            disabled={!!actionInProgress}
-                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 transition disabled:opacity-50"
+                                            disabled={actionInProgress !== null}
+                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-danger/10 text-danger font-medium ring-offset-background transition-colors hover:bg-danger/20 focus-visible:outline-none disabled:opacity-50"
                                         >
-                                            {#if actionInProgress === "cancel"}<Loader2
+                                            {#if actionInProgress === "cancel"}
+                                                <Loader2
                                                     class="h-4 w-4 animate-spin"
-                                                />{:else}<ShieldX
-                                                    class="h-4 w-4"
-                                                />{/if}
-                                            Cancel Subscription
+                                                /> Canceling...
+                                            {:else}
+                                                <ShieldX class="h-4 w-4" /> Cancel
+                                                Subscription
+                                            {/if}
                                         </button>
                                     {:else if $authStore.user.subscription_status === "canceled"}
-                                        <!-- Reactivate: PRIMARY BUTTON - Standard blue -->
                                         <button
                                             on:click={handleReactivateSubscription}
-                                            disabled={!!actionInProgress}
-                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/80 transition disabled:opacity-50"
+                                            disabled={actionInProgress !== null}
+                                            class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-green-500/10 text-green-400 font-medium ring-offset-background transition-colors hover:bg-green-500/20 focus-visible:outline-none disabled:opacity-50"
                                         >
-                                            {#if actionInProgress === "reactivate"}<Loader2
+                                            {#if actionInProgress === "reactivate"}
+                                                <Loader2
                                                     class="h-4 w-4 animate-spin"
-                                                />{:else}<ShieldCheck
-                                                    class="h-4 w-4"
-                                                />{/if}
-                                            Reactivate Subscription
+                                                /> Reactivating...
+                                            {:else}
+                                                <ShieldCheck class="h-4 w-4" /> Reactivate
+                                                Subscription
+                                            {/if}
                                         </button>
                                     {/if}
                                 </div>
@@ -348,14 +445,11 @@
                         </div>
                     </div>
 
-                    <!-- Right Column (Transaction History): UNIFIED DESIGN - Standardized card look -->
+                    <!-- Right Column: Transaction History -->
                     <div
-                        class="lg:col-span-2 rounded-2xl border border-gray-200 shadow-xl transition-shadow"
+                        class="lg:col-span-2 rounded-xl border border-border bg-background shadow-sm"
                     >
-                        <div
-                            class="flex items-center gap-3 border-b border-gray-100 p-4 bg-chat rounded-t-2xl"
-                        >
-                            <History class="h-5 w-5 text-foreground/50" />
+                        <div class="border-b border-border p-4">
                             <h2 class="font-semibold text-foreground">
                                 Transaction History
                             </h2>
@@ -363,63 +457,86 @@
                         <div class="p-2">
                             {#if isLoadingTransactions}
                                 <div
-                                    class="flex justify-center items-center p-12"
+                                    class="flex h-96 flex-col items-center justify-center text-muted-foreground"
                                 >
                                     <Loader2
-                                        class="h-6 w-6 animate-spin text-foreground/40"
+                                        class="mb-3 h-8 w-8 animate-spin text-primary"
                                     />
+                                    <p class="font-medium">
+                                        Loading transactions...
+                                    </p>
                                 </div>
                             {:else if transactions.length === 0}
-                                <p class="p-12 text-center text-foreground/50">
-                                    No transactions found.
-                                </p>
+                                <div
+                                    class="flex h-96 flex-col items-center justify-center text-muted-foreground"
+                                >
+                                    <History class="mb-4 h-12 w-12" />
+                                    <p class="font-semibold">
+                                        No Transactions Found
+                                    </p>
+                                    <p class="mt-1 text-sm">
+                                        Your payment history will appear here.
+                                    </p>
+                                </div>
                             {:else}
                                 <div class="overflow-x-auto">
-                                    <table
-                                        class="w-full text-sm text-foreground/50"
-                                    >
-                                        <thead
-                                            class="text-left text-foreground"
-                                        >
-                                            <tr>
-                                                <th class="p-3 font-medium"
+                                    <table class="w-full text-sm">
+                                        <thead class="text-left">
+                                            <tr class="border-b border-border">
+                                                <th
+                                                    class="p-4 font-medium text-muted-foreground"
                                                     >Date</th
                                                 >
-                                                <th class="p-3 font-medium"
-                                                    >Description</th
+                                                <th
+                                                    class="p-4 font-medium text-muted-foreground"
+                                                    >Amount</th
                                                 >
                                                 <th
-                                                    class="p-3 font-medium text-right"
-                                                    >Amount</th
+                                                    class="p-4 font-medium text-muted-foreground"
+                                                    >Status</th
+                                                >
+                                                <th
+                                                    class="p-4 font-medium text-muted-foreground text-right"
+                                                    >Invoice</th
                                                 >
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {#each transactions as trx}
+                                            {#each transactions as trx (trx.id)}
                                                 <tr
-                                                    class="border-t border-gray-100 hover:bg-chat/50 transition"
+                                                    class="border-b border-border/50"
                                                 >
-                                                    <td
-                                                        class="p-3 whitespace-nowrap"
+                                                    <td class="p-4"
                                                         >{formatDate(
                                                             trx.created,
                                                         )}</td
                                                     >
-                                                    <td class="p-3"
-                                                        >{trx.description}</td
-                                                    >
-                                                    <td
-                                                        class="p-3 text-right font-mono"
-                                                        class:text-green-600={trx.amount >
-                                                            0}
-                                                        class:text-red-600={trx.amount <
-                                                            0}
-                                                    >
-                                                        {trx.amount > 0
-                                                            ? "+"
-                                                            : ""}{trx.amount.toFixed(
-                                                            0,
-                                                        )}
+                                                    <td class="p-4">
+                                                        ${(
+                                                            trx.amount / 100
+                                                        ).toFixed(2)}
+                                                        {trx.currency.toUpperCase()}
+                                                    </td>
+                                                    <td class="p-4">
+                                                        <span
+                                                            class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold {statusInfo(
+                                                                trx.status,
+                                                            ).color}"
+                                                        >
+                                                            {statusInfo(
+                                                                trx.status,
+                                                            ).text}
+                                                        </span>
+                                                    </td>
+                                                    <td class="p-4 text-right">
+                                                        <a
+                                                            href={trx.invoice_pdf}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            class="font-medium text-primary hover:underline"
+                                                        >
+                                                            View
+                                                        </a>
                                                     </td>
                                                 </tr>
                                             {/each}
@@ -432,11 +549,12 @@
                 </div>
             </div>
         {:else if !$authStore.isLoading}
+            <!-- This state might occur if the user is logged out or session expires.
+				 The layout's checks should ideally handle this, but this is a fallback. -->
             <div
-                class="flex h-[50vh] flex-col items-center justify-center text-center"
+                class="flex flex-col items-center justify-center h-[50vh] text-muted-foreground"
             >
-                <Loader2 class="h-8 w-8 animate-spin text-gray-600" />
-                <p class="mt-4 text-gray-500">Loading user data...</p>
+                <p>Please log in to view your dashboard.</p>
             </div>
         {/if}
     </main>

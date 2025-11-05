@@ -1,5 +1,6 @@
 <!-- src/routes/+page.svelte -->
 <script lang="ts">
+    import { onMount, tick } from "svelte";
     import { authStore } from "$lib/stores/authStore";
     import { chatStore } from "$lib/stores/chatStore";
     import { historyStore } from "$lib/stores/historyStore";
@@ -9,14 +10,25 @@
     import ChatHistory from "$lib/components/ChatHistory.svelte";
     import ChatInput from "$lib/components/ChatInput.svelte";
     import ArchivesModal from "$lib/components/ArchivesModal.svelte";
-    // ✅ Import ImageLightbox if you use it for fullscreen images
-    // import ImageLightbox from '$lib/components/ImageLightbox.svelte';
+    import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 
     import { MessageSquarePlus } from "lucide-svelte";
 
     let isArchivesOpen = false;
     let fullscreenImageUrl: string | null = null;
     let reattachedFiles: Attachment[] = [];
+    let chatContainer: HTMLDivElement;
+
+    async function scrollToBottom() {
+        // Wait for the DOM to update before scrolling
+        await tick();
+        if (chatContainer) {
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    }
 
     function handleReattach(event: CustomEvent<Attachment>) {
         const newAttachment = event.detail;
@@ -35,12 +47,9 @@
         );
     }
 
-    // ✅ REMOVED: handleRequestLogin is no longer needed here.
-
     async function handleSendMessage(
         event: CustomEvent<{ message: string; attachments: Attachment[] }>,
     ) {
-        // Auth check is now inside ChatInput, but an extra check here is good for safety.
         if (!$authStore.isAuthenticated) {
             console.error("Cannot send message. User not authenticated.");
             return;
@@ -51,6 +60,9 @@
 
         chatStore.sendMessage(message, attachments);
         reattachedFiles = [];
+
+        // Immediately scroll to bottom to show the user's message
+        scrollToBottom();
 
         await streamChat(
             message,
@@ -69,23 +81,49 @@
         fullscreenImageUrl = event.detail.url;
     }
 
+    function handleDownload(event: CustomEvent<Attachment>) {
+        const attachment = event.detail;
+        if (!attachment.url) {
+            console.error("No URL available for download.");
+            return;
+        }
+        // Create a temporary link to trigger the download
+        const link = document.createElement("a");
+        link.href = attachment.url;
+        link.download = attachment.filename;
+        link.target = "_blank"; // Fallback for some browsers
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     $: isStreaming = $chatStore.activeStreams.size > 0;
+
+    // When new messages arrive, scroll to the bottom.
+    $: if ($chatStore.messages) {
+        scrollToBottom();
+    }
 </script>
 
-<div class="relative h-full bg-background text-gray-900">
-    <ChatHistory
-        className="h-full overflow-y-auto pb-48 pt-6"
-        messages={$chatStore.messages}
-        isLoading={$chatStore.isLoading}
-        userName={$authStore.user?.name || "You"}
-        userAvatarUrl={$authStore.user?.avatar}
-        on:reattach={handleReattach}
-        on:viewImage={handleViewImage}
-    />
+<div class="flex h-full flex-col bg-background text-foreground">
+    <!-- This is the main scrolling area for chat history -->
+    <div class="flex-1 overflow-y-auto pt-16" bind:this={chatContainer}>
+        <ChatHistory
+            messages={$chatStore.messages}
+            isLoading={$chatStore.isLoading}
+            userName={$authStore.user?.name || "You"}
+            userAvatarUrl={$authStore.user?.avatar}
+            on:reattach={handleReattach}
+            on:viewImage={handleViewImage}
+            on:download={handleDownload}
+        />
+    </div>
 
-    <div class="absolute bottom-0 left-0 z-10 w-full">
+    <!-- This container is fixed at the bottom and does not scroll -->
+    <div
+        class="w-full shrink-0 border-t border-border bg-background/95 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]"
+    >
         {#if $historyStore.selectedSessionId === null}
-            <!-- ✅ REMOVED: on:requestLogin is no longer needed -->
             <ChatInput
                 isLoading={$chatStore.isLoading}
                 {isStreaming}
@@ -95,25 +133,26 @@
             />
         {:else}
             <div
-                class="border-t border-gray-200 bg-white/80 p-4 backdrop-blur-md"
+                class="container mx-auto flex flex-col items-center justify-center gap-y-3 px-4 py-4 text-center sm:px-6"
             >
-                <div
-                    class="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center"
+                <p class="text-sm text-muted-foreground">
+                    This is a read-only view of a past conversation.
+                </p>
+                <button
+                    on:click={() => historyStore.createNewSession()}
+                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                    <p class="font-medium text-gray-500">
-                        This is a read-only view of a past conversation.
-                    </p>
-                    <button
-                        on:click={() => historyStore.createNewSession()}
-                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
-                    >
-                        <MessageSquarePlus class="h-4 w-4" />
-                        Start a New Chat
-                    </button>
-                </div>
+                    <MessageSquarePlus class="h-4 w-4" />
+                    <span>Start a New Chat</span>
+                </button>
             </div>
         {/if}
     </div>
 </div>
 
 <ArchivesModal bind:isOpen={isArchivesOpen} />
+
+<ImageLightbox
+    url={fullscreenImageUrl}
+    on:close={() => (fullscreenImageUrl = null)}
+/>

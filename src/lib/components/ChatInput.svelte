@@ -1,13 +1,13 @@
 <!-- src/lib/components/ChatInput.svelte -->
 <script lang="ts">
-    import { createEventDispatcher, onMount, onDestroy } from "svelte";
-    import { fade } from "svelte/transition";
-    import { Send, Paperclip, X, FileIcon, Reply } from "lucide-svelte";
-    import { getUploadUrl } from "$lib/services/files";
+    import { createEventDispatcher, onDestroy, onMount } from "svelte";
+    import { slide } from "svelte/transition";
     import { agentStore } from "$lib/stores/agentStore";
-    import { authStore } from "$lib/stores/authStore"; // ✅ To check auth status
-    import { uiStore } from "$lib/stores/uiStore"; // ✅ To open the modal directly
-    import type { Attachment, Agent } from "$lib/types";
+    import { authStore } from "$lib/stores/authStore";
+    import { uiStore } from "$lib/stores/uiStore";
+    import type { Agent, Attachment } from "$lib/types";
+    import { getUploadUrl } from "$lib/services/files";
+    import { File as FileIcon, Paperclip, Reply, Send, X } from "lucide-svelte";
 
     export let isLoading: boolean = false;
     export let isStreaming: boolean = false;
@@ -19,111 +19,136 @@
     let uploadError: string | null = null;
     let textareaElement: HTMLTextAreaElement;
     let fileInputElement: HTMLInputElement;
+    let suggestionsContainer: HTMLDivElement;
 
     const dispatch = createEventDispatcher();
 
-    // --- State for Agent Suggestions ---
+    // Agent suggestions state
     let showSuggestions = false;
     let suggestions: Agent[] = [];
-    let activeSuggestionIndex = 0;
-    let suggestionTriggerPosition = 0;
+    let activeSuggestionIndex = -1;
+    let suggestionTriggerPosition: number | null = null;
 
     interface StagedAttachment {
         file: File;
+        preview: string | null;
+        filename: string;
         uploadData: {
             upload_url: string;
             upload_fields: Record<string, string>;
             file_id: string;
             s3_key: string;
         };
-        filename: string;
-        preview?: string;
     }
 
     onMount(() => {
-        document.addEventListener("click", handleClickOutside);
+        document.addEventListener("click", handleClickOutside, true);
+        autoresize();
     });
+
     onDestroy(() => {
-        document.removeEventListener("click", handleClickOutside);
+        document.removeEventListener("click", handleClickOutside, true);
     });
 
     function handleClickOutside(event: MouseEvent) {
         if (
             showSuggestions &&
-            !event.composedPath().includes(textareaElement)
+            suggestionsContainer &&
+            !suggestionsContainer.contains(event.target as Node)
         ) {
             showSuggestions = false;
         }
     }
 
-    function autoresize(element: HTMLTextAreaElement) {
+    function autoresize() {
+        if (!textareaElement) return;
+
         function resize() {
-            element.style.height = "auto";
-            const newHeight = Math.min(element.scrollHeight, 200);
-            element.style.height = `${newHeight}px`;
+            textareaElement.style.height = "auto";
+            const newHeight = Math.min(textareaElement.scrollHeight, 200); // Max height of 200px
+            textareaElement.style.height = `${newHeight}px`;
         }
-        element.addEventListener("input", resize);
-        requestAnimationFrame(resize);
-        return {
-            destroy() {
-                element.removeEventListener("input", resize);
-            },
-        };
+
+        textareaElement.addEventListener("input", resize, false);
+        resize(); // Initial resize
     }
 
     async function handleSubmit() {
-        // ✅ SIMPLE AUTH CHECK: If not logged in, open modal and stop.
+        if (
+            isUploading ||
+            isStreaming ||
+            (message.trim() === "" &&
+                stagedFiles.length === 0 &&
+                reattachedFiles.length === 0)
+        ) {
+            return;
+        }
+
         if (!$authStore.isAuthenticated) {
             uiStore.openLoginModal();
             return;
         }
 
-        if (
-            isLoading ||
-            isStreaming ||
-            (!message.trim() &&
-                stagedFiles.length === 0 &&
-                reattachedFiles.length === 0)
-        )
-            return;
-
         isUploading = true;
         uploadError = null;
+
         try {
-            const uploadedAttachments = await Promise.all(
-                stagedFiles.map(async (fileInfo) => {
+            // Step 1: Upload all staged files to the presigned URL
+            const uploadedAttachments: Attachment[] = await Promise.all(
+                stagedFiles.map(async (stagedFile) => {
                     const formData = new FormData();
-                    Object.entries(fileInfo.uploadData.upload_fields).forEach(
-                        ([key, value]) => formData.append(key, value),
+                    Object.entries(stagedFile.uploadData.upload_fields).forEach(
+                        ([key, value]) => {
+                            formData.append(key, value);
+                        },
                     );
-                    formData.append("file", fileInfo.file);
+                    formData.append("file", stagedFile.file);
+
                     const s3Response = await fetch(
-                        fileInfo.uploadData.upload_url,
-                        { method: "POST", body: formData },
+                        stagedFile.uploadData.upload_url,
+                        {
+                            method: "POST",
+                            body: formData,
+                        },
                     );
-                    if (!s3Response.ok)
+
+                    if (!s3Response.ok) {
                         throw new Error(
-                            `Upload failed for ${fileInfo.filename}`,
+                            `Upload failed for ${stagedFile.filename}`,
                         );
+                    }
+
                     return {
-                        file_id: fileInfo.uploadData.file_id,
-                        s3_key: fileInfo.uploadData.s3_key,
-                        filename: fileInfo.filename,
+                        file_id: stagedFile.uploadData.file_id,
+                        s3_key: stagedFile.uploadData.s3_key,
+                        filename: stagedFile.filename,
                         content_type:
-                            fileInfo.file.type || "application/octet-stream",
-                        size: fileInfo.file.size,
+                            stagedFile.file.type || "application/octet-stream",
+                        size: stagedFile.file.size,
                     };
                 }),
             );
+
+            // Step 2: Combine newly uploaded files with any re-attached files
             const allAttachments = [...uploadedAttachments, ...reattachedFiles];
-            dispatch("send", { message, attachments: allAttachments });
+
+            // Step 3: Dispatch the send event
+            dispatch("send", {
+                message: message.trim(),
+                attachments: allAttachments,
+            });
+
+            // Step 4: Reset state
             message = "";
             stagedFiles = [];
+            if (textareaElement) {
+                textareaElement.style.height = "auto";
+            }
         } catch (error) {
             uploadError =
                 error instanceof Error
                     ? error.message
-                    : "An unknown upload error occurred.";
+                    : "An unknown error occurred during upload.";
         } finally {
             isUploading = false;
         }
@@ -142,12 +167,16 @@
                     suggestions.length;
             } else if (event.key === "Enter" || event.key === "Tab") {
                 event.preventDefault();
-                selectSuggestion(suggestions[activeSuggestionIndex]);
+                if (activeSuggestionIndex !== -1) {
+                    selectSuggestion(suggestions[activeSuggestionIndex]);
+                }
             } else if (event.key === "Escape") {
-                event.preventDefault();
                 showSuggestions = false;
             }
-        } else if (event.key === "Enter" && !event.shiftKey) {
+            return;
+        }
+
+        if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             handleSubmit();
         }
@@ -159,13 +188,13 @@
         const atMatch = textBeforeCursor.match(/@(\w*)$/);
 
         if (atMatch) {
-            const query = atMatch[1];
+            suggestionTriggerPosition = atMatch.index;
+            const query = atMatch[1].toLowerCase();
             const results = agentStore.search(query);
             if (results.length > 0) {
                 suggestions = results;
                 showSuggestions = true;
                 activeSuggestionIndex = 0;
-                suggestionTriggerPosition = atMatch.index!;
             } else {
                 showSuggestions = false;
             }
@@ -175,233 +204,251 @@
     }
 
     function selectSuggestion(agent: Agent) {
+        if (suggestionTriggerPosition === null) return;
+
         const textBefore = message.substring(0, suggestionTriggerPosition);
         const textAfter = message.substring(textareaElement.selectionStart);
+
         message = `${textBefore}@${agent.name} ${textAfter}`;
+
         showSuggestions = false;
+        suggestionTriggerPosition = null;
+
+        const newCursorPos = textBefore.length + agent.name.length + 2;
+        textareaElement.focus();
         setTimeout(() => {
-            const newCursorPos =
-                suggestionTriggerPosition + agent.name.length + 2;
-            textareaElement.focus();
             textareaElement.setSelectionRange(newCursorPos, newCursorPos);
-        }, 0);
+        }, 10);
     }
 
     async function handleFileSelect(event: Event) {
-        // ✅ SIMPLE AUTH CHECK: If not logged in, open modal and stop.
         if (!$authStore.isAuthenticated) {
             uiStore.openLoginModal();
-            // Clear the file input so the user can try again after login
-            const target = event.target as HTMLInputElement;
-            if (target) target.value = "";
             return;
         }
 
         const target = event.target as HTMLInputElement;
-        const files = Array.from(target.files || []);
+        if (!target.files) return;
+
+        uploadError = null;
+        const files = Array.from(target.files);
         if (files.length === 0) return;
 
-        isUploading = true;
-        uploadError = null;
         try {
-            const newStagedFiles: StagedAttachment[] = [];
-            for (const file of files) {
+            const newStagedFilesPromises = files.map(async (file) => {
                 const uploadData = await getUploadUrl(
                     file.name,
                     file.type || "application/octet-stream",
                 );
+
+                let preview: string | null = null;
+                if (file.type.startsWith("image/")) {
+                    preview = URL.createObjectURL(file);
+                }
+
                 const stagedFile: StagedAttachment = {
                     file,
-                    uploadData,
+                    preview,
                     filename: file.name,
+                    uploadData,
                 };
-                if (file.type.startsWith("image/"))
-                    stagedFile.preview = URL.createObjectURL(file);
-                newStagedFiles.push(stagedFile);
-            }
+                return stagedFile;
+            });
+
+            const newStagedFiles = await Promise.all(newStagedFilesPromises);
             stagedFiles = [...stagedFiles, ...newStagedFiles];
-        } catch (error) {
+        } catch (err) {
             uploadError =
-                error instanceof Error ? error.message : "File staging failed.";
+                err instanceof Error
+                    ? err.message
+                    : "Failed to prepare files for upload.";
         } finally {
-            isUploading = false;
-            if (fileInputElement) fileInputElement.value = "";
+            if (fileInputElement) {
+                fileInputElement.value = "";
+            }
         }
     }
 
     function removeStagedFile(index: number) {
         const file = stagedFiles[index];
-        if (file.preview) URL.revokeObjectURL(file.preview);
+        if (file.preview) {
+            URL.revokeObjectURL(file.preview);
+        }
         stagedFiles = stagedFiles.filter((_, i) => i !== index);
     }
 
     function removeReattachedFile(index: number) {
         dispatch("removeReattached", { index });
     }
+
+    let isFocused = false;
+    $: canSend =
+        !isUploading &&
+        !isStreaming &&
+        (message.trim() !== "" ||
+            stagedFiles.length > 0 ||
+            reattachedFiles.length > 0);
 </script>
 
-<div class="w-full bg-transparent px-4">
-    <div
-        class="max-w-4xl bg-background backdrop-blur-md rounded-t-4xl pb-3 mx-auto relative"
-    >
-        <!-- Agent Suggestion Popup is always available -->
-        {#if showSuggestions}
-            <div
-                transition:fade={{ duration: 100 }}
-                class="absolute bottom-full mb-2 w-full max-w-sm rounded-lg border border-border bg-muted/90 backdrop-blur-md shadow-2xl overflow-hidden z-30"
-            >
-                <ul class="p-1 max-h-[300px] overflow-y-auto">
-                    {#each suggestions as agent, i (agent.id)}
-                        {@const isActive = activeSuggestionIndex === i}
-                        <li>
-                            <button
-                                class="w-full text-left flex items-center gap-3 p-2 rounded-md transition-colors"
-                                class:bg-primary={isActive}
-                                class:text-primary-foreground={isActive}
-                                on:click={() => selectSuggestion(agent)}
-                                on:mouseenter={() =>
-                                    (activeSuggestionIndex = i)}
-                            >
-                                <img
-                                    src={agent.avatar}
-                                    alt={agent.name}
-                                    class="w-10 h-10 rounded-md object-cover flex-shrink-0"
-                                />
-                                <div class="min-w-0">
-                                    <p
-                                        class="font-semibold truncate"
-                                        class:text-primary-foreground={isActive}
-                                    >
-                                        {agent.name}
-                                    </p>
-                                    <p
-                                        class="text-xs truncate"
-                                        class:text-primary-foreground={isActive}
-                                        class:text-muted-foreground={!isActive}
-                                    >
-                                        {agent.description}
-                                    </p>
-                                </div>
-                            </button>
-                        </li>
-                    {/each}
-                </ul>
-            </div>
-        {/if}
+<div class="container relative mx-auto max-w-3xl px-4 py-4 sm:px-6">
+    <!-- Agent Suggestions Popover -->
+    {#if showSuggestions}
+        <div
+            bind:this={suggestionsContainer}
+            class="absolute bottom-full mb-2 w-full origin-bottom overflow-hidden rounded-xl border bg-popover shadow-lg"
+            transition:slide={{ duration: 150 }}
+        >
+            <ul class="max-h-[300px] overflow-y-auto p-1">
+                {#each suggestions as agent, i (agent.id)}
+                    {@const isActive = activeSuggestionIndex === i}
+                    <li>
+                        <button
+                            type="button"
+                            on:click={() => selectSuggestion(agent)}
+                            class="flex w-full items-center gap-3 rounded-lg p-2 text-left"
+                            class:bg-muted={isActive}
+                        >
+                            <img
+                                src={agent.avatar}
+                                alt={agent.name}
+                                class="h-8 w-8 rounded-full object-cover"
+                            />
+                            <div class="min-w-0">
+                                <p
+                                    class="truncate text-sm font-medium text-popover-foreground"
+                                >
+                                    {agent.name}
+                                </p>
+                                <p
+                                    class="truncate text-xs text-muted-foreground"
+                                >
+                                    {agent.description}
+                                </p>
+                            </div>
+                        </button>
+                    </li>
+                {/each}
+            </ul>
+        </div>
+    {/if}
 
-        <!-- File Previews -->
-        {#if stagedFiles.length > 0 || reattachedFiles.length > 0}
-            <div class="mb-3 flex flex-wrap gap-3">
-                {#each stagedFiles as file, index (file.filename + file.file.size)}
+    <!-- Attachment Previews -->
+    {#if stagedFiles.length > 0 || reattachedFiles.length > 0}
+        <div class="mb-3 flex flex-wrap gap-3">
+            {#each stagedFiles as file, index (file.uploadData.s3_key)}
+                <div
+                    class="flex items-center gap-2 rounded-lg bg-muted p-2 text-sm"
+                >
                     <div
-                        class="relative group flex items-center gap-2 rounded-lg bg-muted p-2 border border-border shadow-sm"
+                        class="flex h-8 w-8 items-center justify-center rounded-md bg-background"
                     >
                         {#if file.preview}
                             <img
                                 src={file.preview}
                                 alt={file.filename}
-                                class="w-11 h-11 rounded-md object-cover"
+                                class="h-full w-full rounded-md object-cover"
                             />
                         {:else}
-                            <div
-                                class="flex h-11 w-11 items-center justify-center rounded-md bg-background"
-                            >
-                                <FileIcon
-                                    class="w-6 h-6 text-muted-foreground"
-                                />
-                            </div>
+                            <FileIcon class="h-5 w-5 text-muted-foreground" />
                         {/if}
-                        <span
-                            class="text-sm max-w-[120px] truncate text-foreground"
-                            >{file.filename}</span
-                        >
-                        <button
-                            on:click={() => removeStagedFile(index)}
-                            class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-danger-foreground"
-                            aria-label="Remove file"
-                            ><X class="w-3 h-3" /></button
-                        >
                     </div>
-                {/each}
-                {#each reattachedFiles as file, index (file.s3_key)}
-                    <div
-                        class="relative group flex items-center gap-2 rounded-lg bg-primary/10 p-2 border border-primary/20 shadow-sm"
+                    <span class="max-w-[120px] truncate text-foreground"
+                        >{file.filename}</span
                     >
-                        <div
-                            class="flex h-11 w-11 items-center justify-center rounded-md bg-background/50"
-                        >
-                            {#if file.url && file.content_type?.startsWith("image/")}
-                                <img
-                                    src={file.url}
-                                    alt={file.filename}
-                                    class="w-full h-full rounded-md object-cover"
-                                />
-                            {:else}
-                                <Reply class="w-5 h-5 text-primary" />
-                            {/if}
-                        </div>
-                        <span
-                            class="text-sm max-w-[120px] truncate text-foreground"
-                            >{file.filename}</span
-                        >
-                        <button
-                            on:click={() => removeReattachedFile(index)}
-                            class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-danger-foreground"
-                            aria-label="Remove re-attached file"
-                            ><X class="w-3 h-3" /></button
-                        >
+                    <button
+                        on:click={() => removeStagedFile(index)}
+                        class="flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                    >
+                        <X class="h-3 w-3" />
+                    </button>
+                </div>
+            {/each}
+            {#each reattachedFiles as file, index (file.s3_key)}
+                <div
+                    class="flex items-center gap-2 rounded-lg bg-muted p-2 text-sm"
+                >
+                    <div
+                        class="flex h-8 w-8 items-center justify-center rounded-md bg-background"
+                    >
+                        {#if file.url && file.content_type?.startsWith("image/")}
+                            <img
+                                src={file.url}
+                                alt={file.filename}
+                                class="h-full w-full rounded-md object-cover"
+                            />
+                        {:else}
+                            <Reply class="h-5 w-5 text-primary" />
+                        {/if}
                     </div>
-                {/each}
-            </div>
-        {/if}
+                    <span class="max-w-[120px] truncate text-foreground"
+                        >{file.filename}</span
+                    >
+                    <button
+                        on:click={() => removeReattachedFile(index)}
+                        class="flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                    >
+                        <X class="h-3 w-3" />
+                    </button>
+                </div>
+            {/each}
+        </div>
+    {/if}
 
-        <!-- Main Input Container is always visible -->
-        <div
-            class="relative flex w-full items-end rounded-2xl backdrop-blur-lg bg-background border border-border shadow-md transition-all focus-within:ring-2 focus-within:ring-primary/40"
+    {#if uploadError}
+        <p class="mb-2 text-center text-sm text-danger">{uploadError}</p>
+    {/if}
+
+    <!-- Main Input Bar -->
+    <div
+        class="flex items-start gap-2 rounded-2xl border bg-background p-2 transition-all"
+        class:ring-2={isFocused}
+        class:ring-ring={isFocused}
+        class:border-input={!isFocused}
+        class:border-ring={isFocused}
+    >
+        <input
+            bind:this={fileInputElement}
+            type="file"
+            multiple
+            hidden
+            on:change={handleFileSelect}
+            accept="image/*, application/pdf, .txt, .md"
+        />
+        <button
+            on:click={() => fileInputElement.click()}
+            disabled={isUploading || isStreaming}
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+            aria-label="Attach file"
         >
-            <input
-                bind:this={fileInputElement}
-                type="file"
-                multiple
-                hidden
-                on:change={handleFileSelect}
-            />
-            <div class="flex-shrink-0 p-2">
-                <button
-                    on:click={() => fileInputElement.click()}
-                    disabled={isLoading || isStreaming || isUploading}
-                    class="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:opacity-50"
-                    aria-label="Attach file"
-                >
-                    <Paperclip class="w-5 h-5" />
-                </button>
-            </div>
-            <textarea
-                bind:this={textareaElement}
-                use:autoresize
-                bind:value={message}
-                on:keydown={handleKeyDown}
-                on:input={handleInput}
-                disabled={isLoading || isStreaming || isUploading}
-                placeholder="Message @Agent or ask anything..."
-                class="flex-1 resize-none bg-transparent py-[16px] text-foreground placeholder:text-foreground/50 focus:outline-none disabled:opacity-50"
-                rows="1"
-            ></textarea>
-            <div class="flex-shrink-0 p-2">
-                <button
-                    on:click={handleSubmit}
-                    disabled={isLoading ||
-                        isStreaming ||
-                        isUploading ||
-                        (!message.trim() &&
-                            stagedFiles.length === 0 &&
-                            reattachedFiles.length === 0)}
-                    class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:bg-primary/90 disabled:bg-border disabled:text-muted-foreground disabled:shadow-none"
-                    aria-label="Send message"
-                >
-                    <Send class="w-5 h-5" />
-                </button>
-            </div>
+            <Paperclip class="h-5 w-5" />
+        </button>
+        <textarea
+            bind:this={textareaElement}
+            bind:value={message}
+            on:keydown={handleKeyDown}
+            on:input={handleInput}
+            on:focus={() => (isFocused = true)}
+            on:blur={() => (isFocused = false)}
+            disabled={isUploading || isStreaming}
+            rows="1"
+            placeholder="Type a message..."
+            class="w-full resize-none self-center border-none bg-transparent py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
+        />
+        <div class="flex shrink-0 self-end">
+            <button
+                on:click={handleSubmit}
+                disabled={!canSend}
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:scale-90 disabled:bg-muted disabled:text-muted-foreground"
+                aria-label="Send message"
+            >
+                {#if isUploading}
+                    <div
+                        class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
+                    />
+                {:else}
+                    <Send class="h-5 w-5" />
+                {/if}
+            </button>
         </div>
     </div>
 </div>
