@@ -68,19 +68,19 @@
                     href="/pricing"
                     class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    Pricing
+                    pricing
                 </a>
                 <a
                     href="/agents"
                     class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    Agents
+                    agents
                 </a>
                 <a
                     href="/about"
                     class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
-                    About
+                    about
                 </a>
             </div>
         </div>

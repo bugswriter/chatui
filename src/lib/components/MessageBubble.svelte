@@ -1,7 +1,7 @@
 <!-- src/lib/components/MessageBubble.svelte -->
 <script lang="ts">
     import { createEventDispatcher, afterUpdate } from "svelte";
-    import { Bot, User, Info } from "lucide-svelte";
+    import { Bot, User, Info, Loader2 } from "lucide-svelte";
     import { marked } from "marked";
     import { markedHighlight } from "marked-highlight";
     import hljs from "highlight.js/lib/core";
@@ -64,8 +64,9 @@
         isCurrentlyStreaming = store.activeStreams.has(message.id);
     });
 
+    // --- THE CORE FIX for Agent Popover ---
     // This reactive block re-runs when the message content changes OR when the agentStore is initialized.
-    // This prevents a race condition where we try to find an agent before the store is ready.
+    // This prevents the race condition where we try to find an agent before the store is ready.
     $: if ($agentStore.isInitialized) {
         (async () => {
             const rawHtml = await marked.parse(message.content || "", {
@@ -79,7 +80,7 @@
             });
         })();
     } else {
-        // Fallback before the agent store is ready
+        // Fallback before the agent store is ready: just parse markdown without agent tags.
         (async () => {
             parsedContent = await marked.parse(message.content || "", {
                 breaks: true,
@@ -230,18 +231,17 @@
                 >
                     <div class="prose">
                         {#if message.progress}
-                            <div class="w-64 text-sm">
-                                <p class="font-semibold">
-                                    {message.progress.agent_name}
-                                </p>
-                                <p class="mb-2 text-xs opacity-80">
+                            <div
+                                class="animated-progress-wrapper w-80 space-y-2"
+                            >
+                                <p class="text-xs opacity-80">
                                     {message.progress.message}
                                 </p>
                                 <div
                                     class="h-1.5 w-full overflow-hidden rounded-full bg-background/20"
                                 >
                                     <div
-                                        class="h-1.5 rounded-full bg-background transition-all duration-300"
+                                        class="animated-progress h-1.5 rounded-full bg-background transition-all duration-300"
                                         style="width: {progressPercentage}%"
                                     />
                                 </div>
@@ -330,13 +330,12 @@
     }
 
     /* --- Agent Tag Styling --- */
-    /* Default style (for assistant messages) */
     .prose :global(.agent-tag) {
         font-weight: 500;
         background-color: hsl(var(--primary) / 0.15);
         color: hsl(var(--primary));
         padding: 0.125rem 0.625rem;
-        border-radius: var(--radius-full);
+        border-radius: 9999px; /* --radius-full */
         border: 1px solid hsl(var(--primary) / 0.2);
         cursor: pointer;
         transition:
@@ -349,7 +348,6 @@
         border-color: hsl(var(--primary) / 0.3);
     }
 
-    /* High-contrast override for user message bubbles */
     :global(.user-bubble) .prose :global(.agent-tag) {
         background-color: hsl(var(--primary-foreground) / 0.15);
         color: hsl(var(--primary-foreground));
@@ -358,5 +356,59 @@
     :global(.user-bubble) .prose :global(.agent-tag:hover) {
         background-color: hsl(var(--primary-foreground) / 0.25);
         border-color: hsl(var(--primary-foreground) / 0.4);
+    }
+
+    /* --- Progress Bar Animation --- */
+    .animated-progress-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-lg);
+    }
+    .animated-progress-wrapper::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 0 0 1px hsl(var(--primary) / 0.5);
+        animation: snake-border 2s linear infinite;
+    }
+
+    .animated-progress::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        background-image: linear-gradient(
+            90deg,
+            hsla(0, 0%, 100%, 0) 0,
+            hsla(0, 0%, 100%, 0.2) 20%,
+            hsla(0, 0%, 100%, 0.5) 60%,
+            hsla(0, 0%, 100%, 0)
+        );
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes snake-border {
+        0% {
+            clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+        }
+        25% {
+            clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+        }
+        50% {
+            clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+        }
+        75% {
+            clip-path: polygon(100% 100%, 0 100%, 0 100%, 100% 100%);
+        }
+        100% {
+            clip-path: polygon(0 100%, 0 100%, 0 0, 0 0);
+        }
     }
 </style>
