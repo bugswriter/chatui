@@ -21,9 +21,10 @@
         await invalidate("app:auth");
     }
 
-    function handleRegisterSuccess() {
-        uiStore.closeModals();
-    }
+    // ✅ REMOVED: This function is no longer needed as the RegisterModal handles its own success state.
+    // function handleRegisterSuccess() {
+    //     uiStore.closeModals();
+    // }
 </script>
 
 <!-- The logic now correctly relies only on the reactive store -->
@@ -57,7 +58,6 @@
 
     <RegisterModal
         isOpen={$uiStore.isRegisterModalOpen}
-        on:success={handleRegisterSuccess}
         on:switchToLogin={uiStore.openLoginModal}
         on:close={uiStore.closeModals}
     />

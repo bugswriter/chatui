@@ -160,7 +160,7 @@
                 {:else if googleAuthUrl}
                     <!-- Single Google Sign-In Button -->
                     <button
-                        on:click={() => handleOAuthLogin(googleAuthUrl)}
+                        on:click={() => handleOAuthLogin(googleAuthUrl!)}
                         class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 font-semibold text-sm shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
                         disabled={isLoading || isOAuthRedirecting}
                     >
