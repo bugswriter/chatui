@@ -3,38 +3,40 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { authToken } from "$lib/stores/tokenStore";
+    import { authStore } from "$lib/stores/authStore"; // ✅ IMPORT authStore
     import { Loader2 } from "lucide-svelte";
 
-    // The 'data' prop is automatically populated by the return value
-    // of the `load` function in the +page.ts file.
     export let data: { token: string | null; error: string | null };
 
-    onMount(() => {
-        // This code is GUARANTEED to run ONLY in the browser.
+    onMount(async () => {
         if (data.error) {
             console.error("OAuth Callback Error:", data.error);
-            // You can optionally show a toast/notification here
-            goto("/"); // Redirect home on error
+            goto("/");
         } else if (data.token) {
             console.log(
-                "OAuth callback successful. Token found, saving and redirecting...",
+                "OAuth callback successful. Setting token and initializing session...",
             );
 
-            // 1. Save the token to localStorage via our synchronized store.
+            // 1. Save the token. This synchronously updates localStorage.
             authToken.set(data.token);
 
-            // 2. Redirect to the homepage. The main layout will detect the new
-            //    token and automatically complete the login process.
+            // 2. ✅ CRUCIAL FIX: Explicitly run the initialization process.
+            // This function is the single source of truth for setting the
+            // app's auth state. It will fetch user details and update the
+            // authStore, making it immediately aware of the new user.
+            await authStore.initialize();
+
+            // 3. Now redirect to the homepage. The navbar and other components
+            // will already be reacting to the updated store state from the step above.
             goto("/", { replaceState: true });
         } else {
-            // This handles the edge case where someone navigates here manually.
             console.error("Callback page loaded without a token or error.");
             goto("/");
         }
     });
 </script>
 
-<!-- This UI will be shown for a moment while the onMount logic runs -->
+<!-- UI remains the same, providing feedback during the async operations -->
 <div
     class="flex h-screen w-full flex-col items-center justify-center bg-white space-y-4"
 >
