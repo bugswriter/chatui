@@ -68,14 +68,11 @@ function createAuthStore() {
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await fetch(
-      `${API_CONFIG.authBaseUrl}/api/v1/auth/token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
-      },
-    );
+    const response = await fetch(`${API_CONFIG.bizAPIURL}/api/v1/auth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData.toString(),
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
@@ -99,7 +96,7 @@ function createAuthStore() {
       throw new Error("Password must be at least 8 characters long.");
     }
     const response = await fetch(
-      `${API_CONFIG.authBaseUrl}/api/v1/auth/register`,
+      `${API_CONFIG.bizAPIURL}/api/v1/auth/register`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,7 +130,7 @@ function createAuthStore() {
     const formData = new FormData();
     formData.append("avatar_file", file);
     const response = await fetch(
-      `${API_CONFIG.authBaseUrl}/api/v1/users/me/avatar`,
+      `${API_CONFIG.bizAPIURL}/api/v1/users/me/avatar`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

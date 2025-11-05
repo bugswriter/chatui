@@ -71,7 +71,7 @@
         if (!token) return (isLoadingTransactions = false);
         try {
             const res = await fetch(
-                `${API_CONFIG.authBaseUrl}/api/v1/users/me/transactions`,
+                `${API_CONFIG.bizAPIURL}/api/v1/users/me/transactions`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 },
@@ -91,7 +91,7 @@
         const token = getAuthToken();
         try {
             const res = await fetch(
-                `${API_CONFIG.authBaseUrl}/api/v1/payments/customer-portal`,
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/customer-portal`,
                 {
                     method: "POST",
                     headers: {
@@ -121,7 +121,7 @@
         const token = getAuthToken();
         try {
             const res = await fetch(
-                `${API_CONFIG.authBaseUrl}/api/v1/payments/subscriptions/cancel`,
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/subscriptions/cancel`,
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },
@@ -141,7 +141,7 @@
         const token = getAuthToken();
         try {
             const res = await fetch(
-                `${API_CONFIG.authBaseUrl}/api/v1/payments/subscriptions/reactivate`,
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/subscriptions/reactivate`,
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },
