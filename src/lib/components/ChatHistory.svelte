@@ -47,14 +47,15 @@
             <div
                 class="flex h-full flex-col items-center justify-center py-24 text-center"
             >
-                <MessageSquare
-                    class="h-12 w-12 text-muted-foreground/50"
-                    stroke-width="1.5"
+                <img
+                    src="https://media.tenor.com/Jwq3k63p73sAAAAj/manidhaya.gif"
+                    alt="Assistant animation"
+                    class="w-36"
                 />
                 <h1
-                    class="mt-6 text-2xl font-semibold tracking-tight text-foreground"
+                    class="mt-6 text-4xl font-semibold tracking-tight text-foreground"
                 >
-                    Ready to Assist
+                    Cherry Blossom
                 </h1>
                 <p class="mt-2 max-w-sm text-muted-foreground">
                     Start a conversation by typing a message below, or upload a
