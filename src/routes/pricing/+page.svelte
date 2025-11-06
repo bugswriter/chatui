@@ -168,8 +168,18 @@
                     >
                         {#each subscriptionPlans as plan, i (plan.price_id)}
                             <div
-                                class="flex flex-col rounded-2xl border border-border/50 bg-background/50 p-8 text-center shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-border hover:shadow-xl"
+                                class="relative flex flex-col rounded-2xl border bg-background/50 p-8 text-center shadow-lg backdrop-blur-sm transition-all duration-300 {$authStore
+                                    .user?.subscription_plan_name === plan.name
+                                    ? 'border-primary shadow-primary/20'
+                                    : 'border-border/50 hover:border-border hover:shadow-xl'}"
                             >
+                                {#if $authStore.user?.subscription_plan_name === plan.name}
+                                    <div
+                                        class="absolute right-4 top-4 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+                                    >
+                                        Current Plan
+                                    </div>
+                                {/if}
                                 <div class="flex-grow">
                                     <h3
                                         class="text-lg font-semibold text-foreground"
@@ -227,26 +237,48 @@
                                     </ul>
                                 </div>
 
-                                <button
-                                    on:click={() =>
-                                        handleCheckout(
-                                            plan.price_id,
-                                            "subscription",
-                                        )}
-                                    disabled={!!redirectingPriceId}
-                                    class="mt-10 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg font-semibold ring-offset-background transition-colors focus-visible:outline-none disabled:opacity-50 {i ===
-                                    1
-                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                        : 'bg-foreground/5 text-foreground hover:bg-foreground/10'}"
+                                <div
+                                    class="mt-10"
+                                    title={$authStore.isAuthenticated &&
+                                    $authStore.user?.subscription_status ===
+                                        "active" &&
+                                    $authStore.user?.subscription_plan_name !==
+                                        plan.name
+                                        ? "You already have an active subscription."
+                                        : ""}
                                 >
-                                    {#if redirectingPriceId === plan.price_id}
-                                        <Loader2 class="h-5 w-5 animate-spin" />
-                                        <span>Redirecting...</span>
-                                    {:else}
-                                        <span>Get Started</span>
-                                        <ArrowRight class="h-4 w-4" />
-                                    {/if}
-                                </button>
+                                    <button
+                                        on:click={() =>
+                                            handleCheckout(
+                                                plan.price_id,
+                                                "subscription",
+                                            )}
+                                        disabled={!!redirectingPriceId ||
+                                            ($authStore.isAuthenticated &&
+                                                $authStore.user
+                                                    ?.subscription_status ===
+                                                    "active")}
+                                        class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg font-semibold ring-offset-background transition-colors focus-visible:outline-none disabled:opacity-50 {$authStore
+                                            .user?.subscription_plan_name ===
+                                        plan.name
+                                            ? 'bg-primary text-primary-foreground cursor-default'
+                                            : i === 1
+                                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                              : 'bg-foreground/5 text-foreground hover:bg-foreground/10'}"
+                                    >
+                                        {#if redirectingPriceId === plan.price_id}
+                                            <Loader2
+                                                class="h-5 w-5 animate-spin"
+                                            />
+                                            <span>Redirecting...</span>
+                                        {:else if $authStore.user?.subscription_plan_name === plan.name}
+                                            <span>Current Plan</span>
+                                        {:else}
+                                            <span>Get Started</span>
+                                            <ArrowRight class="h-4 w-4" />
+                                        {/if}
+                                    </button>
+                                </div>
                             </div>
                         {/each}
                     </div>
@@ -294,23 +326,40 @@
                                     </p>
                                 </div>
 
-                                <button
-                                    on:click={() =>
-                                        handleCheckout(
-                                            pack.price_id,
-                                            "payment",
-                                        )}
-                                    disabled={!!redirectingPriceId}
-                                    class="mt-8 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-foreground text-background font-semibold ring-offset-background transition-colors hover:bg-foreground/90 focus-visible:outline-none disabled:opacity-50"
+                                <div
+                                    class="mt-8"
+                                    title={!$authStore.isAuthenticated ||
+                                    ($authStore.user &&
+                                        $authStore.user.subscription_status !==
+                                            "active")
+                                        ? "An active subscription is required to purchase boosters."
+                                        : ""}
                                 >
-                                    {#if redirectingPriceId === pack.price_id}
-                                        <Loader2 class="h-5 w-5 animate-spin" />
-                                        <span>Redirecting...</span>
-                                    {:else}
-                                        <ShoppingCart class="h-4 w-4" />
-                                        <span>Buy Now</span>
-                                    {/if}
-                                </button>
+                                    <button
+                                        on:click={() =>
+                                            handleCheckout(
+                                                pack.price_id,
+                                                "payment",
+                                            )}
+                                        disabled={!!redirectingPriceId ||
+                                            !$authStore.isAuthenticated ||
+                                            ($authStore.user &&
+                                                $authStore.user
+                                                    .subscription_status !==
+                                                    "active")}
+                                        class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-foreground text-background font-semibold ring-offset-background transition-colors hover:bg-foreground/90 focus-visible:outline-none disabled:opacity-50"
+                                    >
+                                        {#if redirectingPriceId === pack.price_id}
+                                            <Loader2
+                                                class="h-5 w-5 animate-spin"
+                                            />
+                                            <span>Redirecting...</span>
+                                        {:else}
+                                            <ShoppingCart class="h-4 w-4" />
+                                            <span>Buy Now</span>
+                                        {/if}
+                                    </button>
+                                </div>
                             </div>
                         {/each}
                     </div>
