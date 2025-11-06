@@ -12,6 +12,7 @@
         AlertTriangle,
         ShoppingCart,
         ArrowRight,
+        Coins,
     } from "lucide-svelte";
     import { fade } from "svelte/transition";
 
@@ -98,8 +99,8 @@
         }
     }
 
-    function formatPrice(priceInCents: number) {
-        return (priceInCents / 100).toLocaleString("en-US", {
+    function formatPrice(price: number) {
+        return price.toLocaleString("en-US", {
             style: "currency",
             currency: "USD",
         });
@@ -110,11 +111,11 @@
     <main class="container mx-auto px-4 py-24 sm:py-32">
         <div class="mx-auto max-w-4xl items-center text-center">
             <h1
-                class="text-4xl font-bold tracking-tight text-foreground sm:text-6xl"
+                class="text-5xl font-bold tracking-tight text-foreground sm:text-7xl"
             >
-                Pricing Plans
+                Simple, transparent pricing.
             </h1>
-            <p class="mt-4 text-lg text-muted-foreground">
+            <p class="mt-6 text-lg text-muted-foreground">
                 Choose your path—a steady subscription for continuous access or
                 one-time boosters for a creative spark.
             </p>
@@ -122,22 +123,22 @@
 
         <!-- Tabs -->
         <div
-            class="mt-12 mx-auto max-w-4xl flex justify-center rounded-full border border-border bg-muted/50 p-1.5"
+            class="mt-16 mx-auto flex w-fit justify-center rounded-full border border-border bg-background/50 p-1.5 backdrop-blur-sm"
         >
             <button
                 on:click={() => (activeTab = "subscription")}
-                class="w-1/2 rounded-full px-6 py-2 text-sm font-medium transition-colors {activeTab ===
+                class="w-1/2 rounded-full px-8 py-2 text-sm font-semibold transition-colors {activeTab ===
                 'subscription'
-                    ? 'bg-background text-foreground shadow-sm'
+                    ? 'bg-muted text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'}"
             >
                 Subscription
             </button>
             <button
                 on:click={() => (activeTab = "one_time")}
-                class="w-1/2 rounded-full px-6 py-2 text-sm font-medium transition-colors {activeTab ===
+                class="w-1/2 rounded-full px-8 py-2 text-sm font-semibold transition-colors {activeTab ===
                 'one_time'
-                    ? 'bg-background text-foreground shadow-sm'
+                    ? 'bg-muted text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'}"
             >
                 Boosters
@@ -163,29 +164,67 @@
                 {#if activeTab === "subscription"}
                     <div
                         transition:fade
-                        class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:mx-auto lg:max-w-4xl"
+                        class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:mx-auto lg:max-w-6xl"
                     >
-                        {#each subscriptionPlans as plan (plan.price_id)}
+                        {#each subscriptionPlans as plan, i (plan.price_id)}
                             <div
-                                class="flex flex-col rounded-xl border border-border bg-background p-8 shadow-sm"
+                                class="flex flex-col rounded-2xl border border-border/50 bg-background/50 p-8 text-center shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-border hover:shadow-xl"
                             >
-                                <h3
-                                    class="text-lg font-semibold text-foreground"
-                                >
-                                    {plan.name}
-                                </h3>
-                                <p class="mt-2 text-sm text-muted-foreground">
-                                    {plan.description || " "}
-                                </p>
-                                <div class="mt-6 flex items-baseline gap-1">
-                                    <span
-                                        class="text-4xl font-bold text-foreground"
+                                <div class="flex-grow">
+                                    <h3
+                                        class="text-lg font-semibold text-foreground"
                                     >
-                                        {formatPrice(plan.price)}
-                                    </span>
-                                    <span class="text-sm text-muted-foreground"
-                                        >/month</span
+                                        {plan.name}
+                                    </h3>
+                                    <p
+                                        class="mt-2 text-sm text-muted-foreground"
                                     >
+                                        {plan.description || " "}
+                                    </p>
+                                    <div
+                                        class="mt-8 flex flex-col items-center justify-center"
+                                    >
+                                        <div
+                                            class="flex items-center gap-2 font-mono text-4xl font-bold text-primary"
+                                        >
+                                            <Coins
+                                                class="h-8 w-8 text-amber-500"
+                                            />
+                                            <span>{plan.coins}</span>
+                                        </div>
+                                        <p
+                                            class="text-sm font-medium text-muted-foreground"
+                                        >
+                                            Coins per month
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="mt-4 flex items-baseline justify-center gap-1"
+                                    >
+                                        <span
+                                            class="text-3xl font-bold tracking-tight text-foreground"
+                                        >
+                                            {formatPrice(plan.price)}
+                                        </span>
+                                        <span
+                                            class="text-sm text-muted-foreground"
+                                            >/month</span
+                                        >
+                                    </div>
+                                    <ul
+                                        class="mx-auto mt-8 w-fit space-y-3 text-left text-sm text-muted-foreground"
+                                    >
+                                        {#each plan.features as feature}
+                                            <li
+                                                class="flex items-start gap-x-3"
+                                            >
+                                                <CheckCircle
+                                                    class="h-5 w-5 flex-shrink-0 text-primary"
+                                                />
+                                                <span>{@html feature}</span>
+                                            </li>
+                                        {/each}
+                                    </ul>
                                 </div>
 
                                 <button
@@ -195,29 +234,19 @@
                                             "subscription",
                                         )}
                                     disabled={!!redirectingPriceId}
-                                    class="mt-8 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground font-medium ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none disabled:opacity-50"
+                                    class="mt-10 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg font-semibold ring-offset-background transition-colors focus-visible:outline-none disabled:opacity-50 {i ===
+                                    1
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                        : 'bg-foreground/5 text-foreground hover:bg-foreground/10'}"
                                 >
                                     {#if redirectingPriceId === plan.price_id}
-                                        <Loader2 class="h-4 w-4 animate-spin" />
+                                        <Loader2 class="h-5 w-5 animate-spin" />
                                         <span>Redirecting...</span>
                                     {:else}
                                         <span>Get Started</span>
                                         <ArrowRight class="h-4 w-4" />
                                     {/if}
                                 </button>
-
-                                <ul
-                                    class="mt-8 space-y-3 text-sm text-muted-foreground"
-                                >
-                                    {#each plan.features as feature}
-                                        <li class="flex items-start gap-x-3">
-                                            <CheckCircle
-                                                class="h-5 w-5 flex-shrink-0 text-primary"
-                                            />
-                                            <span>{@html feature}</span>
-                                        </li>
-                                    {/each}
-                                </ul>
                             </div>
                         {/each}
                     </div>
@@ -228,33 +257,42 @@
                     >
                         {#each oneTimePacks as pack (pack.price_id)}
                             <div
-                                class="flex flex-col rounded-xl border border-border bg-background p-8 text-center shadow-sm"
+                                class="flex flex-col justify-between rounded-2xl border border-border/50 bg-background/50 p-8 text-center shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-border hover:shadow-xl"
                             >
-                                <h3
-                                    class="text-lg font-semibold text-foreground"
-                                >
-                                    {pack.name}
-                                </h3>
-                                <p class="mt-2 text-sm text-muted-foreground">
-                                    One-time purchase
-                                </p>
-                                <div
-                                    class="mt-6 flex flex-col items-center justify-center"
-                                >
-                                    <p
-                                        class="font-mono text-xl font-bold text-primary"
+                                <div>
+                                    <h3
+                                        class="text-lg font-semibold text-foreground"
                                     >
-                                        {pack.coins}
+                                        {pack.name}
+                                    </h3>
+                                    <p
+                                        class="mt-2 text-sm text-muted-foreground"
+                                    >
+                                        One-time coin booster
                                     </p>
-                                    <p class="text-sm text-muted-foreground">
-                                        Coins
+                                    <div
+                                        class="mt-8 flex flex-col items-center justify-center"
+                                    >
+                                        <div
+                                            class="flex items-center gap-2 font-mono text-4xl font-bold text-primary"
+                                        >
+                                            <Coins
+                                                class="h-8 w-8 text-amber-500"
+                                            />
+                                            <span>{pack.coins}</span>
+                                        </div>
+                                        <p
+                                            class="text-sm font-medium text-muted-foreground"
+                                        >
+                                            Coins
+                                        </p>
+                                    </div>
+                                    <p
+                                        class="mt-4 text-3xl font-bold tracking-tight text-foreground"
+                                    >
+                                        {formatPrice(pack.price)}
                                     </p>
                                 </div>
-                                <p
-                                    class="mt-4 text-3xl font-bold text-foreground"
-                                >
-                                    {formatPrice(pack.price)}
-                                </p>
 
                                 <button
                                     on:click={() =>
@@ -263,10 +301,10 @@
                                             "payment",
                                         )}
                                     disabled={!!redirectingPriceId}
-                                    class="mt-8 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-foreground text-background font-medium ring-offset-background transition-colors hover:bg-foreground/90 focus-visible:outline-none disabled:opacity-50"
+                                    class="mt-8 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-foreground text-background font-semibold ring-offset-background transition-colors hover:bg-foreground/90 focus-visible:outline-none disabled:opacity-50"
                                 >
                                     {#if redirectingPriceId === pack.price_id}
-                                        <Loader2 class="h-4 w-4 animate-spin" />
+                                        <Loader2 class="h-5 w-5 animate-spin" />
                                         <span>Redirecting...</span>
                                     {:else}
                                         <ShoppingCart class="h-4 w-4" />

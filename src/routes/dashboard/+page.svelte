@@ -7,13 +7,14 @@
     import { authToken } from "$lib/stores/tokenStore";
     import {
         AlertTriangle,
-        CreditCard,
+        Coins,
+        Download,
+        ExternalLink,
         History,
         Loader2,
         ShieldCheck,
         ShieldX,
         UserCircle,
-        ExternalLink,
     } from "lucide-svelte";
     import { fade } from "svelte/transition";
 
@@ -483,75 +484,61 @@
                                     </p>
                                 </div>
                             {:else}
-                                <div class="overflow-x-auto">
+                                <div class="h-96 overflow-y-auto">
                                     <table class="w-full text-sm">
-                                        <thead class="text-left">
+                                        <thead
+                                            class="sticky top-0 z-10 bg-background text-left"
+                                        >
                                             <tr class="border-b border-border">
                                                 <th
-                                                    class="p-4 font-medium text-muted-foreground"
+                                                    class="px-4 py-3 font-medium text-muted-foreground"
+                                                    >Transaction</th
+                                                >
+                                                <th
+                                                    class="px-4 py-3 font-medium text-muted-foreground"
                                                     >Date</th
                                                 >
                                                 <th
-                                                    class="p-4 font-medium text-muted-foreground"
-                                                    >Amount</th
-                                                >
-                                                <th
-                                                    class="p-4 font-medium text-muted-foreground"
-                                                    >Status</th
-                                                >
-                                                <th
-                                                    class="p-4 font-medium text-muted-foreground text-right"
-                                                    >Invoice</th
+                                                    class="px-4 py-3 font-medium text-muted-foreground text-right"
+                                                    >Credits</th
                                                 >
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {#each transactions as trx (trx.id)}
                                                 <tr
-                                                    class="border-b border-border/50"
+                                                    class="border-b border-border/50 transition-colors hover:bg-muted/50"
                                                 >
-                                                    <td class="p-4"
+                                                    <td
+                                                        class="px-4 py-3 font-medium capitalize"
+                                                    >
+                                                        {trx.description?.replaceAll(
+                                                            "_",
+                                                            " ",
+                                                        )}
+                                                    </td>
+                                                    <td class="px-4 py-3"
                                                         >{formatDate(
                                                             trx.created,
                                                         )}</td
                                                     >
-                                                    <td class="p-4">
-                                                        ${(
-                                                            trx.amount / 100
-                                                        ).toFixed(2)}
-                                                        {trx.currency
-                                                            ? trx.currency.toUpperCase()
-                                                            : ""}
-                                                    </td>
-                                                    <td class="p-4">
-                                                        <span
-                                                            class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold {statusInfo(
-                                                                trx.status ||
-                                                                    'unknown',
-                                                            ).color}"
+                                                    <td
+                                                        class="px-4 py-3 text-right"
+                                                    >
+                                                        <div
+                                                            class="flex items-center justify-end gap-2"
                                                         >
-                                                            {statusInfo(
-                                                                trx.description ||
-                                                                    "unknown",
-                                                            ).text}
-                                                        </span>
-                                                    </td>
-                                                    <td class="p-4 text-right">
-                                                        {#if trx.invoice_pdf}
-                                                            <a
-                                                                href={trx.invoice_pdf}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                class="font-medium text-primary hover:underline"
-                                                            >
-                                                                View
-                                                            </a>
-                                                        {:else}
+                                                            <Coins
+                                                                class="h-4 w-4 text-amber-500"
+                                                            />
                                                             <span
-                                                                class="text-muted-foreground"
-                                                                >N/A</span
+                                                                class="font-semibold"
+                                                                >-{Math.round(
+                                                                    trx.amount /
+                                                                        100,
+                                                                )}</span
                                                             >
-                                                        {/if}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             {/each}
