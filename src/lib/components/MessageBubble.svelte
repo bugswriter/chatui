@@ -188,7 +188,7 @@
     }
 </script>
 
-<AgentPopover {hoveredAgent} targetElement={hoveredAgentElement} />
+<AgentPopover agent={hoveredAgent} targetElement={hoveredAgentElement} />
 
 {#if isSystem}
     <div
