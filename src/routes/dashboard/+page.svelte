@@ -1,7 +1,10 @@
 <!-- src/routes/dashboard/+page.svelte -->
 <script lang="ts">
     import { onMount } from "svelte";
+    import { get } from "svelte/store";
+    import { uiStore } from "$lib/stores/uiStore";
     import { authStore } from "$lib/stores/authStore";
+    import { authToken } from "$lib/stores/tokenStore";
     import {
         AlertTriangle,
         CreditCard,
@@ -16,11 +19,13 @@
 
     interface Transaction {
         id: string;
+        type: string; // Added based on API response
         amount: number;
-        currency: string;
-        status: "paid" | "open" | "failed" | "uncollectible";
+        description?: string | null; // Added based on API response
+        currency?: string; // Made optional
+        status?: "paid" | "open" | "failed" | "uncollectible"; // Made optional
         created: string;
-        invoice_pdf: string;
+        invoice_pdf?: string; // Made optional
     }
 
     let transactions: Transaction[] = [];
@@ -54,11 +59,11 @@
         isLoadingTransactions = true;
         error = null;
         try {
-            const token = $authStore.token;
+            const token = get(authToken);
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/users/transactions",
+                "https://api.bugswriter.ai/api/v1/users/me/transactions",
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -85,11 +90,11 @@
         actionInProgress = "billing";
         error = null;
         try {
-            const token = $authStore.token;
+            const token = get(authToken);
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/users/create-portal-session",
+                "https://api.bugswriter.ai/api/v1/payments/customer-portal",
                 {
                     method: "POST",
                     headers: {
@@ -130,7 +135,7 @@
         actionInProgress = "cancel";
         error = null;
         try {
-            const token = $authStore.token;
+            const token = get(authToken);
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
@@ -161,7 +166,7 @@
         actionInProgress = "reactivate";
         error = null;
         try {
-            const token = $authStore.token;
+            const token = get(authToken);
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
@@ -378,19 +383,18 @@
                                             "N/A"}</span
                                     >
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm text-muted-foreground">
-                                        {#if $authStore.user.subscription_status === "canceled"}
-                                            Expires on
-                                        {:else}
-                                            Renews on
-                                        {/if}
-                                    </span>
-                                    <span class="font-semibold text-foreground">
-                                        {formatDate(
-                                            $authStore.user.current_period_end,
-                                        )}
-                                    </span>
+                                <div
+                                    class="flex justify-between items-baseline"
+                                >
+                                    <span class="text-sm text-muted-foreground"
+                                        >Current Plan</span
+                                    >
+
+                                    <span
+                                        class="text-sm font-semibold capitalize text-foreground"
+                                        >{$authStore.user.active_plan_name ||
+                                            "None"}</span
+                                    >
                                 </div>
 
                                 <div class="space-y-3 pt-4">
@@ -515,28 +519,39 @@
                                                         ${(
                                                             trx.amount / 100
                                                         ).toFixed(2)}
-                                                        {trx.currency.toUpperCase()}
+                                                        {trx.currency
+                                                            ? trx.currency.toUpperCase()
+                                                            : ""}
                                                     </td>
                                                     <td class="p-4">
                                                         <span
                                                             class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold {statusInfo(
-                                                                trx.status,
+                                                                trx.status ||
+                                                                    'unknown',
                                                             ).color}"
                                                         >
                                                             {statusInfo(
-                                                                trx.status,
+                                                                trx.description ||
+                                                                    "unknown",
                                                             ).text}
                                                         </span>
                                                     </td>
                                                     <td class="p-4 text-right">
-                                                        <a
-                                                            href={trx.invoice_pdf}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            class="font-medium text-primary hover:underline"
-                                                        >
-                                                            View
-                                                        </a>
+                                                        {#if trx.invoice_pdf}
+                                                            <a
+                                                                href={trx.invoice_pdf}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                class="font-medium text-primary hover:underline"
+                                                            >
+                                                                View
+                                                            </a>
+                                                        {:else}
+                                                            <span
+                                                                class="text-muted-foreground"
+                                                                >N/A</span
+                                                            >
+                                                        {/if}
                                                     </td>
                                                 </tr>
                                             {/each}
