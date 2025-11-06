@@ -492,7 +492,11 @@
                                             <tr class="border-b border-border">
                                                 <th
                                                     class="px-4 py-3 font-medium text-muted-foreground"
-                                                    >Transaction</th
+                                                    >Type</th
+                                                >
+                                                <th
+                                                    class="px-4 py-3 font-medium text-muted-foreground"
+                                                    >Description</th
                                                 >
                                                 <th
                                                     class="px-4 py-3 font-medium text-muted-foreground"
@@ -500,43 +504,47 @@
                                                 >
                                                 <th
                                                     class="px-4 py-3 font-medium text-muted-foreground text-right"
-                                                    >Credits</th
+                                                    >Coins</th
                                                 >
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {#each transactions as trx (trx.id)}
+                                                {@const isCredit =
+                                                    trx.type === "bonus" ||
+                                                    trx.type === "refund"}
                                                 <tr
                                                     class="border-b border-border/50 transition-colors hover:bg-muted/50"
                                                 >
                                                     <td
                                                         class="px-4 py-3 font-medium capitalize"
                                                     >
-                                                        {trx.description?.replaceAll(
-                                                            "_",
-                                                            " ",
+                                                        {trx.type}
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        {trx.description}
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        {formatDate(
+                                                            trx.created,
                                                         )}
                                                     </td>
-                                                    <td class="px-4 py-3"
-                                                        >{formatDate(
-                                                            trx.created,
-                                                        )}</td
-                                                    >
                                                     <td
                                                         class="px-4 py-3 text-right"
                                                     >
                                                         <div
-                                                            class="flex items-center justify-end gap-2"
+                                                            class="flex items-center justify-end gap-2 {isCredit
+                                                                ? 'text-green-500'
+                                                                : 'text-red-500'}"
                                                         >
                                                             <Coins
-                                                                class="h-4 w-4 text-amber-500"
+                                                                class="h-4 w-4"
                                                             />
                                                             <span
                                                                 class="font-semibold"
-                                                                >-{Math.round(
-                                                                    trx.amount /
-                                                                        100,
-                                                                )}</span
+                                                                >{isCredit
+                                                                    ? "+"
+                                                                    : "-"}{trx.amount}</span
                                                             >
                                                         </div>
                                                     </td>
