@@ -153,14 +153,38 @@
 
     async function handleDownload(event: CustomEvent<Attachment>) {
         const attachment = event.detail;
-        const link = document.createElement("a");
-        link.href =
+        const fileUrl =
             attachment.url ||
             attachmentUrls[attachment.s3_key || attachment.file_id || ""];
-        link.download = attachment.filename || "download";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+
+        if (!fileUrl) {
+            console.error("No URL available for download.", attachment);
+            return;
+        }
+
+        try {
+            const response = await fetch(fileUrl);
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to fetch file: ${response.status} ${response.statusText}`,
+                );
+            }
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = attachment.filename || "download"; // Use the attachment's filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up the object URL
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error("Error during download:", e);
+            // Optionally, dispatch an error or show a notification to the user
+        }
     }
 </script>
 
