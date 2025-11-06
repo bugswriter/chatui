@@ -1,9 +1,11 @@
 <!-- src/routes/pricing/+page.svelte -->
 <script lang="ts">
     import { onMount } from "svelte";
+    import { get } from "svelte/store"; // Import 'get'
     import { goto } from "$app/navigation";
     import { authStore } from "$lib/stores/authStore";
     import { uiStore } from "$lib/stores/uiStore";
+    import { authToken } from "$lib/stores/tokenStore"; // Import authToken
     import {
         CheckCircle,
         Loader2,
@@ -57,7 +59,7 @@
             return;
         }
         redirectingPriceId = priceId;
-        const token = $authStore.token;
+        const token = get(authToken); // Get token directly from authToken store
 
         try {
             const success_url = `${window.location.origin}/dashboard?checkout=success`;
@@ -106,7 +108,7 @@
 
 <div class="min-h-screen bg-background text-foreground pt-16">
     <main class="container mx-auto px-4 py-24 sm:py-32">
-        <div class="mx-auto max-w-4xl text-center">
+        <div class="mx-auto max-w-4xl items-center text-center">
             <h1
                 class="text-4xl font-bold tracking-tight text-foreground sm:text-6xl"
             >
@@ -120,7 +122,7 @@
 
         <!-- Tabs -->
         <div
-            class="mt-12 flex justify-center rounded-full border border-border bg-muted/50 p-1.5"
+            class="mt-12 mx-auto max-w-4xl flex justify-center rounded-full border border-border bg-muted/50 p-1.5"
         >
             <button
                 on:click={() => (activeTab = "subscription")}
