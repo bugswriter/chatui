@@ -150,6 +150,18 @@
         hoveredAgent = undefined;
         hoveredAgentElement = null;
     }
+
+    async function handleDownload(event: CustomEvent<Attachment>) {
+        const attachment = event.detail;
+        const link = document.createElement("a");
+        link.href =
+            attachment.url ||
+            attachmentUrls[attachment.s3_key || attachment.file_id || ""];
+        link.download = attachment.filename || "download";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 </script>
 
 <AgentPopover {hoveredAgent} targetElement={hoveredAgentElement} />
@@ -210,7 +222,7 @@
                             url={attachment.url ||
                                 (key ? attachmentUrls[key] : undefined)}
                             on:reattach
-                            on:download
+                            on:download={handleDownload}
                             on:viewImage
                             on:contentLoaded={() => dispatch("contentLoaded")}
                         />
