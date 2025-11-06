@@ -512,7 +512,9 @@
                                             {#each transactions as trx (trx.id)}
                                                 {@const isCredit =
                                                     trx.type === "bonus" ||
-                                                    trx.type === "refund"}
+                                                    trx.type === "refund" ||
+                                                    trx.type === "purchase" ||
+                                                    trx.type === "subscription"}
                                                 <tr
                                                     class="border-b border-border/50 transition-colors hover:bg-muted/50"
                                                 >
