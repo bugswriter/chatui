@@ -111,13 +111,12 @@
     <main class="container mx-auto px-4 py-24 sm:py-32">
         <div class="mx-auto max-w-4xl items-center text-center">
             <h1
-                class="text-5xl font-bold tracking-tight text-foreground sm:text-7xl"
+                class="text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
             >
                 Simple, transparent pricing.
             </h1>
             <p class="mt-6 text-lg text-muted-foreground">
-                Choose your path—a steady subscription for continuous access or
-                one-time boosters for a creative spark.
+                Get a subscription and use boosters to never run out of coins.
             </p>
         </div>
 

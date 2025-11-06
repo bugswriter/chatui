@@ -381,7 +381,7 @@
                                     <span
                                         class="text-sm font-semibold capitalize text-foreground"
                                         >{$authStore.user.subscription_status ||
-                                            "N/A"}</span
+                                            "Inactive"}</span
                                     >
                                 </div>
                                 <div
@@ -394,7 +394,7 @@
                                     <span
                                         class="text-sm font-semibold capitalize text-foreground"
                                         >{$authStore.user.active_plan_name ||
-                                            "None"}</span
+                                            "Free"}</span
                                     >
                                 </div>
 
