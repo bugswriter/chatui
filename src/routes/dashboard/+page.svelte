@@ -140,7 +140,7 @@
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/users/cancel-subscription",
+                "https://api.bugswriter.ai/api/v1/payments/subscriptions/cancel",
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },
@@ -546,7 +546,7 @@
                                                                 class="font-semibold"
                                                                 >{isCredit
                                                                     ? "+"
-                                                                    : "-"}{trx.amount}</span
+                                                                    : ""}{trx.amount}</span
                                                             >
                                                         </div>
                                                     </td>

@@ -52,7 +52,7 @@
 </script>
 
 <header
-    class="fixed top-0 left-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg"
+    class="fixed top-0 left-0 z-50 w-full bg-background/80 backdrop-blur-lg"
 >
     <nav class="flex h-14 items-center justify-between px-4">
         <!-- Left Side: Logo & Navigation -->
