@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { afterUpdate, tick } from "svelte";
     import type { Message } from "$lib/types";
     import MessageBubble from "./MessageBubble.svelte";
     import LoadingMessage from "./LoadingMessage.svelte";
@@ -9,39 +8,9 @@
     export let isLoading: boolean = false;
     export let userName: string = "You";
     export let userAvatarUrl: string | null | undefined = undefined;
-
-    let scrollContainer: HTMLDivElement;
-    let shouldAutoScroll = true;
-
-    async function scrollToBottom(force = false) {
-        await tick();
-        if ((shouldAutoScroll || force) && scrollContainer) {
-            scrollContainer.scrollTo({
-                top: scrollContainer.scrollHeight,
-                behavior: "smooth",
-            });
-        }
-    }
-
-    afterUpdate(() => scrollToBottom());
-
-    function handleScroll() {
-        if (!scrollContainer) return;
-        const threshold = 50;
-        const isAtBottom =
-            scrollContainer.scrollHeight -
-                scrollContainer.scrollTop -
-                scrollContainer.clientHeight <
-            threshold;
-        shouldAutoScroll = isAtBottom;
-    }
 </script>
 
-<div
-    bind:this={scrollContainer}
-    on:scroll={handleScroll}
-    class="h-full overflow-y-auto px-4"
->
+<div class="h-full overflow-y-auto px-4">
     <div class="container mx-auto max-w-3xl py-6">
         {#if messages.length === 0}
             <div
@@ -70,7 +39,6 @@
                         {userName}
                         {userAvatarUrl}
                         on:reattach
-                        on:contentLoaded={() => scrollToBottom(true)}
                         on:viewImage
                     />
                 {/each}

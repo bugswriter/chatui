@@ -1,6 +1,5 @@
 <!-- src/routes/+page.svelte -->
 <script lang="ts">
-    import { onMount, tick } from "svelte";
     import { authStore } from "$lib/stores/authStore";
     import { chatStore } from "$lib/stores/chatStore";
     import { historyStore } from "$lib/stores/historyStore";
@@ -18,15 +17,18 @@
     let fullscreenImageUrl: string | null = null;
     let reattachedFiles: Attachment[] = [];
     let chatContainer: HTMLDivElement;
+    let messagesEnd: HTMLDivElement;
+    let shouldAutoScroll = true;
 
-    async function scrollToBottom() {
-        await tick();
-        if (chatContainer) {
-            chatContainer.scrollTo({
-                top: chatContainer.scrollHeight,
-                behavior: "smooth",
-            });
-        }
+    function handleScroll() {
+        if (!chatContainer) return;
+        const threshold = 50; // pixels
+        const isAtBottom =
+            chatContainer.scrollHeight -
+                chatContainer.scrollTop -
+                chatContainer.clientHeight <
+            threshold;
+        shouldAutoScroll = isAtBottom;
     }
 
     function handleReattach(event: CustomEvent<Attachment>) {
@@ -57,10 +59,10 @@
         const { message, attachments } = event.detail;
         const isNewSession = !$chatStore.sessionId;
 
+        // Ensure we scroll down for the user's new message and the response.
+        shouldAutoScroll = true;
         chatStore.sendMessage(message, attachments);
         reattachedFiles = [];
-
-        scrollToBottom();
 
         await streamChat(
             message,
@@ -96,8 +98,12 @@
 
     $: isStreaming = $chatStore.activeStreams.size > 0;
 
-    $: if ($chatStore.messages) {
-        scrollToBottom();
+    // The simplest, most reliable auto-scroll.
+    // This runs whenever messages update, scrolling our anchor element into view.
+    $: if ($chatStore.messages && messagesEnd) {
+        if (shouldAutoScroll) {
+            messagesEnd.scrollIntoView({ behavior: "smooth" });
+        }
     }
 </script>
 
@@ -113,7 +119,11 @@
     - `pt-16`: Padding at the top to avoid content being hidden by the fixed navbar.
     - `pb-32`: Padding at the bottom to create a safe space for the fixed ChatInput area.
   -->
-    <div class="h-full overflow-y-auto pt-16 pb-32" bind:this={chatContainer}>
+    <div
+        class="h-full overflow-y-auto pt-16 pb-32"
+        bind:this={chatContainer}
+        on:scroll={handleScroll}
+    >
         <ChatHistory
             messages={$chatStore.messages}
             isLoading={$chatStore.isLoading}
@@ -123,6 +133,9 @@
             on:viewImage={handleViewImage}
             on:download={handleDownload}
         />
+
+        <!-- Empty div to act as an anchor for auto-scrolling -->
+        <div bind:this={messagesEnd} />
     </div>
 
     <!--
