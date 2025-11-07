@@ -208,17 +208,15 @@
         }, 10);
     }
 
-    async function handleFileSelect(event: Event) {
+    async function handleFiles(files: File[]) {
+        if (files.length === 0) return;
+
         if (!$authStore.isAuthenticated) {
             uiStore.openLoginModal();
             return;
         }
-        const target = event.target as HTMLInputElement;
-        if (!target.files) return;
 
         uploadError = null;
-        const files = Array.from(target.files);
-        if (files.length === 0) return;
 
         try {
             const newStagedFilesPromises = files.map(async (file) => {
@@ -240,10 +238,31 @@
                 err instanceof Error
                     ? err.message
                     : "Failed to prepare files for upload.";
-        } finally {
-            if (fileInputElement) {
-                fileInputElement.value = "";
-            }
+        }
+    }
+
+    function handleFileSelect(event: Event) {
+        const target = event.target as HTMLInputElement;
+        if (!target.files) return;
+        const files = Array.from(target.files);
+        handleFiles(files);
+
+        // Clear the file input so the same file can be selected again
+        if (fileInputElement) {
+            fileInputElement.value = "";
+        }
+    }
+
+    function handlePaste(event: ClipboardEvent) {
+        if (!event.clipboardData?.files) return;
+
+        const imageFiles = Array.from(event.clipboardData.files).filter(
+            (file) => file.type.startsWith("image/"),
+        );
+
+        if (imageFiles.length > 0) {
+            event.preventDefault();
+            handleFiles(imageFiles);
         }
     }
 
@@ -401,6 +420,7 @@
             bind:value={message}
             on:keydown={handleKeyDown}
             on:input={handleInput}
+            on:paste={handlePaste}
             on:focus={() => (isFocused = true)}
             on:blur={() => (isFocused = false)}
             disabled={isUploading || isStreaming}
