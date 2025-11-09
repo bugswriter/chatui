@@ -72,12 +72,15 @@
             const rawHtml = await marked.parse(message.content || "", {
                 breaks: true,
             });
-            parsedContent = rawHtml.replace(/@(\w+)/g, (match, agentName) => {
-                const agent = agentStore.findByName(agentName);
-                return agent
-                    ? `<span class="agent-tag" data-agent-name="${agentName}">${match}</span>`
-                    : match;
-            });
+            parsedContent = rawHtml.replace(
+                /@([\w'-]+(?: [\w'-]+)*)/g,
+                (match, agentName) => {
+                    const agent = agentStore.findByName(agentName.trim());
+                    return agent
+                        ? `<span class="agent-tag" data-agent-name="${agent.name}">${match}</span>`
+                        : match;
+                },
+            );
         })();
     } else {
         // Fallback before the agent store is ready: just parse markdown without agent tags.
@@ -114,6 +117,7 @@
     // Add copy buttons to code blocks after updates
     afterUpdate(() => {
         if (!bubbleElement) return;
+
         bubbleElement.querySelectorAll("pre").forEach((block) => {
             if (block.querySelector(".copy-button")) return;
             const button = document.createElement("button");
@@ -140,7 +144,7 @@
         if (target.classList.contains("agent-tag")) {
             const agentName = target.dataset.agentName;
             if (agentName) {
-                hoveredAgent = agentStore.findByName(agentName);
+                hoveredAgent = agentStore.findByName(agentName.trim());
                 hoveredAgentElement = target;
             }
         }

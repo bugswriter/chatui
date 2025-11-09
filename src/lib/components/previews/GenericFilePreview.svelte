@@ -1,6 +1,13 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import { Download, Reply, FileText, Film, Music } from "lucide-svelte";
+    import {
+        Download,
+        Reply,
+        FileText,
+        Film,
+        Music,
+        Loader2,
+    } from "lucide-svelte";
     import type { Attachment } from "$lib/types";
     import { formatFileSize } from "$lib/utils";
 
@@ -8,6 +15,8 @@
     export let url: string | undefined = undefined;
 
     const dispatch = createEventDispatcher();
+
+    let isDownloading = false;
 
     const videoExtensions = /\.(mp4|webm|mov|ogg|avi)$/i;
     const audioExtensions = /\.(mp3|wav|ogg|m4a)$/i;
@@ -24,7 +33,16 @@
     }
 
     function handleDownload() {
+        if (isDownloading) return;
+
+        isDownloading = true;
         dispatch("download", attachment);
+
+        // Reset the state after a short delay to provide feedback,
+        // as we can't know when the browser download is complete.
+        setTimeout(() => {
+            isDownloading = false;
+        }, 2000);
     }
 </script>
 
@@ -58,17 +76,22 @@
     <div class="flex flex-shrink-0 items-center gap-1">
         <button
             on:click={handleReattach}
-            class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+            class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-200 ease-in-out hover:bg-background hover:text-foreground hover:scale-110 active:scale-95"
             aria-label="Re-attach file"
         >
             <Reply class="h-4 w-4" />
         </button>
         <button
             on:click={handleDownload}
-            class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+            disabled={isDownloading}
+            class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-200 ease-in-out hover:bg-background hover:text-foreground hover:scale-110 active:scale-95 disabled:cursor-not-allowed disabled:scale-100 disabled:bg-transparent"
             aria-label="Download file"
         >
-            <Download class="h-4 w-4" />
+            {#if isDownloading}
+                <Loader2 class="h-4 w-4 animate-spin" />
+            {:else}
+                <Download class="h-4 w-4" />
+            {/if}
         </button>
     </div>
 </div>
