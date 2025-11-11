@@ -98,14 +98,11 @@ function createAuthStore() {
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await fetch(
-      `${API_CONFIG.bizAPIURL}/api/v1/auth/token`, // ✅ CORRECTED: Use bizAPIURL for auth
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
-      },
-    );
+    const response = await fetch(`${API_CONFIG.bizAPIURL}/api/v1/auth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData.toString(),
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
@@ -115,10 +112,12 @@ function createAuthStore() {
     const data = await response.json();
     authToken.set(data.access_token);
 
-    // ✅ ROBUSTNESS FIX: After setting the token, we re-run the authoritative
-    // `initialize` function. This will fetch the user and update the entire
-    // app's state. The UI will react instantly to this store change.
+    // Re-run the authoritative initialization function.
     await initialize();
+
+    // ✅ THIS IS THE FIX:
+    // Tell SvelteKit to re-run the root layout's load function.
+    invalidate("app:auth");
   }
 
   // No changes needed for register, refreshUserDetails, or updateAvatar
