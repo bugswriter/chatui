@@ -65,28 +65,35 @@
     });
 
     $: (async () => {
-        // Start with the raw markdown content.
-        let rawHtml = await marked.parse(message.content || "", {
-            breaks: true,
-        });
+        let contentToParse = message.content || "";
 
-        // Only attempt to replace agent tags if the store is ready.
+        // STEP 1: Replace agent tags in the RAW text string first.
+        // This is crucial to prevent the markdown parser from interfering with the @ tags.
         if ($agentStore.isInitialized) {
-            parsedContent = rawHtml.replace(
-                // The regex finds @ followed by one or more words
-                /@([\w'-]+(?: [\w'-]+)*)/g,
+            contentToParse = contentToParse.replace(
+                // The regex is simple: find @ followed by non-space characters.
+                // This is safer than the complex multi-word one for now.
+                /@(\S+)/g,
                 (match, agentName) => {
-                    // Find the agent in the store (case-insensitive)
                     const agent = agentStore.findByName(agentName.trim());
-                    // If found, wrap it in a span with data attributes. Otherwise, leave it as plain text.
-                    return agent
-                        ? `<span class="agent-tag" data-agent-name="${agent.name}">${match}</span>`
-                        : match;
+                    if (agent) {
+                        console.log(
+                            `[Tag Replacer] Found and tagged agent: ${agent.name}`,
+                        );
+                        // Replace the raw @nanobanana with our custom HTML span.
+                        return `<span class="agent-tag" data-agent-name="${agent.name}">${match}</span>`;
+                    }
+                    // If no agent is found, return the original match (@nanobanana)
+                    return match;
                 },
             );
-        } else {
-            parsedContent = rawHtml;
         }
+
+        // STEP 2: Now, parse the modified string (which may contain our HTML spans) with Marked.
+        // Marked is smart enough to preserve existing HTML tags.
+        parsedContent = await marked.parse(contentToParse, {
+            breaks: true,
+        });
     })();
 
     // Fetch presigned URLs for attachments
