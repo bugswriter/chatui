@@ -16,7 +16,7 @@
             authStore.refreshUser();
             setTimeout(() => {
                 goto("/", { replaceState: true });
-            }, 5000); // Redirect after 5 seconds
+            }, 3000); // Redirect after 5 seconds
         }
     });
 
