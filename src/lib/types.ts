@@ -20,7 +20,6 @@ export interface Agent {
 
 export interface Message {
   id: string;
-  // ✅ FIX: Add a stable `clientId` that never changes, solving the re-render key issue.
   clientId?: string;
   role: "user" | "assistant" | "system";
   content: string;
@@ -38,9 +37,17 @@ export interface ProgressInfo {
   total: number;
 }
 
+// ✅ ADD THIS NEW INTERFACE
+export interface SessionState {
+  session_id: string;
+  user_id: string;
+  mode: "router" | "worker";
+  agent_name: string | null;
+}
+
 export interface StreamEvent {
   type:
-    | "session_id"
+    | "session_id" // This event is now deprecated but harmless to keep for old versions
     | "user_message_receipt"
     | "stream_start"
     | "assistant_message_start"

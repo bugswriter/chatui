@@ -10,7 +10,7 @@ import type {
 } from "$lib/types";
 
 function createChatStore() {
-  const { subscribe, set, update } = writable<{
+  const store = writable<{
     messages: Message[];
     activeStreams: Set<string>;
     isLoading: boolean;
@@ -24,23 +24,18 @@ function createChatStore() {
     activeAgent: null,
   });
 
+  const { subscribe, set, update } = store;
+
   const handleStreamEvent = (event: StreamEvent) => {
     update((state) => {
       switch (event.type) {
-        case "session_id":
-          return { ...state, sessionId: event.session_id || state.sessionId };
-
         case "user_message_receipt":
-          // This logic updates only the necessary properties of the optimistic message
-          // instead of replacing the entire object. This maintains object reference
-          // stability for Svelte's keyed loop, preventing the re-render "flash".
           const messagesWithReceipt = state.messages.map((m) => {
-            // We find the optimistic message by its temporary client ID
+            if (m.clientId === event.message?.id) {
+              return { ...m, id: event.message.id };
+            }
             if (m.id.startsWith("client_") && event.message) {
-              return {
-                ...m, // Keep everything from the optimistic message...
-                id: event.message.id, // ...and just update its ID to the real one from the server.
-              };
+              return { ...m, id: event.message.id };
             }
             return m;
           });
@@ -49,7 +44,12 @@ function createChatStore() {
         case "stream_start":
           const newActiveStreams = new Set(state.activeStreams);
           newActiveStreams.add(event.message_id!);
-          return { ...state, activeStreams: newActiveStreams };
+          // Set isLoading to false here, as the stream has officially started
+          return {
+            ...state,
+            activeStreams: newActiveStreams,
+            isLoading: false,
+          };
 
         case "assistant_message_start":
           if (
@@ -86,7 +86,6 @@ function createChatStore() {
 
             return {
               ...state,
-              isLoading: false,
               messages: updatedMessages,
               activeAgent: newAgent || state.activeAgent,
             };
@@ -96,13 +95,9 @@ function createChatStore() {
         case "content_chunk":
           const messagesWithChunk = state.messages.map((m) => {
             if (m.id === event.message_id) {
-              const newContent = m.isPending
-                ? event.chunk || ""
-                : m.content + (event.chunk || "");
               return {
                 ...m,
-                content: newContent,
-                isPending: false,
+                content: m.content + (event.chunk || ""),
                 progress: null,
               };
             }
@@ -170,8 +165,8 @@ function createChatStore() {
   const sendMessage = (content: string, attachments: Attachment[]) => {
     const clientSideId = `client_${crypto.randomUUID()}`;
     const userMessage: Message = {
-      id: clientSideId, // This will be updated by `user_message_receipt`
-      clientId: clientSideId, // This will NEVER change
+      id: clientSideId,
+      clientId: clientSideId,
       role: "user",
       content: content,
       attachments: attachments,
@@ -194,9 +189,6 @@ function createChatStore() {
     }));
   };
 
-  /**
-   * Replaces the current chat state with data from a historical session.
-   */
   const loadFromHistory = (payload: {
     messages: Message[];
     sessionId: string;
@@ -211,9 +203,6 @@ function createChatStore() {
     });
   };
 
-  /**
-   * Puts the chat view into a loading state, clearing old messages.
-   */
   const setLoadingState = () => {
     update((state) => ({
       ...state,
@@ -224,14 +213,19 @@ function createChatStore() {
     }));
   };
 
-  const reset = () => {
+  const reset = (sessionId: string | null = null) => {
     set({
       messages: [],
       activeStreams: new Set(),
       isLoading: false,
-      sessionId: null,
+      sessionId: sessionId,
       activeAgent: null,
     });
+  };
+
+  // ✅ This is the simple helper function that the ChatPage now uses.
+  const setSessionId = (id: string) => {
+    update((s) => ({ ...s, sessionId: id }));
   };
 
   return {
@@ -242,6 +236,7 @@ function createChatStore() {
     loadFromHistory,
     setLoadingState,
     reset,
+    setSessionId, // ✅ Expose the new helper.
   };
 }
 

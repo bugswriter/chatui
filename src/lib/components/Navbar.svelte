@@ -1,17 +1,20 @@
+<!-- src/lib/components/Navbar.svelte -->
 <script lang="ts">
     import { createEventDispatcher, onMount, onDestroy } from "svelte";
-    import { page } from "$app/stores";
     import { authStore } from "$lib/stores/authStore";
     import { uiStore } from "$lib/stores/uiStore";
     import { Archive, LayoutDashboard, LogOut, Moon, Sun } from "lucide-svelte";
+    import { browser } from "$app/environment"; // ✅ IMPORT `browser`
 
     import CoinDisplay from "./CoinDisplay.svelte";
     import HistoryPopover from "$lib/components/HistoryPopover.svelte";
+    import type { UserDetails } from "$lib/services/auth";
 
+    export let isAuthenticated: boolean;
+    export let user: UserDetails | null;
     export let currentTheme: "light" | "dark";
-    const dispatch = createEventDispatcher();
 
-    $: isActivePage = $page.url.pathname === "/";
+    const dispatch = createEventDispatcher();
 
     let isDropdownOpen = false;
     let dropdownContainer: HTMLElement;
@@ -21,13 +24,9 @@
     function toggleDropdown() {
         isDropdownOpen = !isDropdownOpen;
     }
-
     function closeDropdown() {
-        if (isDropdownOpen) {
-            isDropdownOpen = false;
-        }
+        if (isDropdownOpen) isDropdownOpen = false;
     }
-
     function handleLogout() {
         authStore.logout();
         closeDropdown();
@@ -37,17 +36,25 @@
         if (
             dropdownContainer &&
             !dropdownContainer.contains(event.target as Node)
-        ) {
+        )
             closeDropdown();
-        }
+        if (
+            historyContainer &&
+            !historyContainer.contains(event.target as Node)
+        )
+            isHistoryOpen = false;
     };
 
+    // ✅ THIS IS THE FIX.
+    // The onMount lifecycle function is GUARANTEED to run only in the browser.
+    // We move the event listener registration and cleanup inside it.
     onMount(() => {
         document.addEventListener("click", handleClickOutside, true);
-    });
 
-    onDestroy(() => {
-        document.removeEventListener("click", handleClickOutside, true);
+        // The function returned from onMount is the cleanup function (equivalent to onDestroy)
+        return () => {
+            document.removeEventListener("click", handleClickOutside, true);
+        };
     });
 </script>
 
@@ -55,7 +62,7 @@
     class="fixed top-0 left-0 z-50 w-full bg-background/80 backdrop-blur-lg"
 >
     <nav class="flex h-14 items-center justify-between px-4">
-        <!-- Left Side: Logo & Navigation -->
+        <!-- Left Side (Unchanged) -->
         <div class="flex items-center gap-6">
             <a
                 href="/"
@@ -67,25 +74,22 @@
                 <a
                     href="/pricing"
                     class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    >pricing</a
                 >
-                    pricing
-                </a>
                 <a
                     href="/agents"
                     class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    >agents</a
                 >
-                    agents
-                </a>
                 <a
                     href="/about"
                     class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    >about</a
                 >
-                    about
-                </a>
             </div>
         </div>
 
-        <!-- Right Side: Theme Toggle & Auth -->
+        <!-- Right Side (Unchanged from previous correct version) -->
         <div class="flex items-center gap-2">
             <button
                 on:click={() => dispatch("toggle")}
@@ -99,10 +103,9 @@
                 {/if}
             </button>
 
-            {#if $authStore.isAuthenticated && $authStore.user}
-                <!-- Authenticated User -->
+            {#if isAuthenticated && user}
                 <div class="hidden sm:flex">
-                    <CoinDisplay coins={$authStore.user.coins} />
+                    <CoinDisplay coins={user.coins} />
                 </div>
                 <div class="relative" bind:this={dropdownContainer}>
                     <button
@@ -110,18 +113,17 @@
                         class="flex h-8 w-8 items-center justify-center rounded-full bg-muted ring-offset-2 ring-offset-background transition-all hover:ring-2 hover:ring-ring"
                         aria-label="Open user menu"
                     >
-                        {#if $authStore.user.avatar}
+                        {#if user.avatar}
                             <img
-                                src={$authStore.user.avatar}
+                                src={user.avatar}
                                 alt="User Avatar"
                                 class="h-full w-full rounded-full object-cover"
                             />
                         {:else}
                             <span
                                 class="text-sm font-semibold uppercase text-muted-foreground"
+                                >{user.name.charAt(0)}</span
                             >
-                                {$authStore.user.name.charAt(0)}
-                            </span>
                         {/if}
                     </button>
 
@@ -134,12 +136,12 @@
                                     <p
                                         class="truncate text-sm font-semibold text-popover-foreground"
                                     >
-                                        {$authStore.user.name}
+                                        {user.name}
                                     </p>
                                     <p
                                         class="truncate text-xs text-muted-foreground"
                                     >
-                                        {$authStore.user.email}
+                                        {user.email}
                                     </p>
                                 </div>
                             </div>
@@ -152,30 +154,26 @@
                                     <LayoutDashboard class="h-4 w-4" />
                                     <span>Dashboard</span>
                                 </a>
-                                {#if isActivePage}
-                                    <div
-                                        class="relative"
-                                        bind:this={historyContainer}
+                                <div
+                                    class="relative"
+                                    bind:this={historyContainer}
+                                >
+                                    <button
+                                        on:click={() =>
+                                            (isHistoryOpen = !isHistoryOpen)}
+                                        class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-popover-foreground transition-colors hover:bg-muted"
+                                        class:bg-muted={isHistoryOpen}
+                                        aria-haspopup="true"
+                                        aria-expanded={isHistoryOpen}
                                     >
-                                        <button
-                                            on:click={() =>
-                                                (isHistoryOpen =
-                                                    !isHistoryOpen)}
-                                            class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-popover-foreground transition-colors hover:bg-muted"
-                                            class:bg-muted={isHistoryOpen}
-                                            aria-haspopup="true"
-                                            aria-expanded={isHistoryOpen}
-                                        >
-                                            <Archive class="h-4 w-4" />
-                                            <span>Archive</span>
-                                        </button>
-                                        <HistoryPopover
-                                            isOpen={isHistoryOpen}
-                                            on:close={() =>
-                                                (isHistoryOpen = false)}
-                                        />
-                                    </div>
-                                {/if}
+                                        <Archive class="h-4 w-4" />
+                                        <span>Archive</span>
+                                    </button>
+                                    <HistoryPopover
+                                        isOpen={isHistoryOpen}
+                                        on:close={() => (isHistoryOpen = false)}
+                                    />
+                                </div>
                                 <button
                                     on:click={handleLogout}
                                     class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
@@ -188,7 +186,6 @@
                     {/if}
                 </div>
             {:else}
-                <!-- Unauthenticated User -->
                 <button
                     on:click={uiStore.openLoginModal}
                     class="flex h-8 items-center justify-center rounded-full px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"

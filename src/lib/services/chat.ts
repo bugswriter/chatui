@@ -6,7 +6,8 @@ import type { Attachment, StreamEvent } from "$lib/types";
 
 interface ChatRequestPayload {
   message: string;
-  session_id: string | null;
+  // ✅ MODIFICATION: session_id is no longer optional.
+  session_id: string;
   attachments: Array<{
     file_id: string;
     s3_key: string;
@@ -20,7 +21,8 @@ interface ChatRequestPayload {
  */
 export const streamChat = async (
   message: string,
-  sessionId: string | null,
+  // ✅ MODIFICATION: sessionId is now required.
+  sessionId: string,
   attachments: Attachment[],
   onEvent: (event: StreamEvent) => void,
   onError: (error: string) => void,
@@ -70,7 +72,7 @@ export const streamChat = async (
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
-        break; // Exit the loop when the stream is finished
+        break;
       }
 
       buffer += decoder.decode(value, { stream: true });
@@ -93,7 +95,6 @@ export const streamChat = async (
       }
     }
 
-    // Refresh user details after a successful stream
     console.log(
       "Chat stream finished successfully. Refreshing user details...",
     );

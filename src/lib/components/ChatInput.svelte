@@ -1,6 +1,6 @@
 <!-- src/lib/components/ChatInput.svelte -->
 <script lang="ts">
-    import { createEventDispatcher, onDestroy, onMount } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import { slide } from "svelte/transition";
     import { agentStore } from "$lib/stores/agentStore";
     import { authStore } from "$lib/stores/authStore";
@@ -43,10 +43,9 @@
 
     onMount(() => {
         document.addEventListener("click", handleClickOutside, true);
-    });
-
-    onDestroy(() => {
-        document.removeEventListener("click", handleClickOutside, true);
+        return () => {
+            document.removeEventListener("click", handleClickOutside, true);
+        };
     });
 
     function handleClickOutside(event: MouseEvent) {
@@ -67,15 +66,14 @@
     }
 
     async function handleSubmit() {
+        if (isDisabled) return;
         if (
-            isUploading ||
-            isStreaming ||
-            (message.trim() === "" &&
-                stagedFiles.length === 0 &&
-                reattachedFiles.length === 0)
-        ) {
+            message.trim() === "" &&
+            stagedFiles.length === 0 &&
+            reattachedFiles.length === 0
+        )
             return;
-        }
+
         if (!$authStore.isAuthenticated) {
             uiStore.openLoginModal();
             return;
@@ -97,10 +95,7 @@
 
                     const s3Response = await fetch(
                         stagedFile.uploadData.upload_url,
-                        {
-                            method: "POST",
-                            body: formData,
-                        },
+                        { method: "POST", body: formData },
                     );
 
                     if (!s3Response.ok) {
@@ -194,14 +189,11 @@
 
     function selectSuggestion(agent: Agent) {
         if (suggestionTriggerPosition === null) return;
-
         const textBefore = message.substring(0, suggestionTriggerPosition);
         const textAfter = message.substring(textareaElement.selectionStart);
         message = `${textBefore}@${agent.name} ${textAfter}`;
-
         showSuggestions = false;
         suggestionTriggerPosition = null;
-
         const newCursorPos = textBefore.length + agent.name.length + 2;
         textareaElement.focus();
         setTimeout(() => {
@@ -211,28 +203,23 @@
     }
 
     async function handleFiles(files: File[]) {
-        if (files.length === 0) return;
-
-        if (!$authStore.isAuthenticated) {
-            uiStore.openLoginModal();
+        if (files.length === 0 || !$authStore.isAuthenticated) {
+            if (!$authStore.isAuthenticated) uiStore.openLoginModal();
             return;
         }
 
         uploadError = null;
-
         try {
             const newStagedFilesPromises = files.map(async (file) => {
                 const uploadData = await getUploadUrl(
                     file.name,
                     file.type || "application/octet-stream",
                 );
-                let preview: string | null = null;
-                if (file.type.startsWith("image/")) {
-                    preview = URL.createObjectURL(file);
-                }
+                let preview: string | null = file.type.startsWith("image/")
+                    ? URL.createObjectURL(file)
+                    : null;
                 return { file, preview, filename: file.name, uploadData };
             });
-
             const newStagedFiles = await Promise.all(newStagedFilesPromises);
             stagedFiles = [...stagedFiles, ...newStagedFiles];
         } catch (err) {
@@ -246,22 +233,15 @@
     function handleFileSelect(event: Event) {
         const target = event.target as HTMLInputElement;
         if (!target.files) return;
-        const files = Array.from(target.files);
-        handleFiles(files);
-
-        // Clear the file input so the same file can be selected again
-        if (fileInputElement) {
-            fileInputElement.value = "";
-        }
+        handleFiles(Array.from(target.files));
+        if (fileInputElement) fileInputElement.value = "";
     }
 
     function handlePaste(event: ClipboardEvent) {
         if (!event.clipboardData?.files) return;
-
         const imageFiles = Array.from(event.clipboardData.files).filter(
             (file) => file.type.startsWith("image/"),
         );
-
         if (imageFiles.length > 0) {
             event.preventDefault();
             handleFiles(imageFiles);
@@ -270,9 +250,7 @@
 
     function removeStagedFile(index: number) {
         const file = stagedFiles[index];
-        if (file.preview) {
-            URL.revokeObjectURL(file.preview);
-        }
+        if (file.preview) URL.revokeObjectURL(file.preview);
         stagedFiles = stagedFiles.filter((_, i) => i !== index);
     }
 
@@ -280,9 +258,9 @@
         dispatch("removeReattached", { index });
     }
 
+    $: isDisabled = isLoading || isUploading || isStreaming;
     $: canSend =
-        !isUploading &&
-        !isStreaming &&
+        !isDisabled &&
         (message.trim() !== "" ||
             stagedFiles.length > 0 ||
             reattachedFiles.length > 0);
@@ -310,7 +288,7 @@
                                 alt={agent.name}
                                 class="h-8 w-8 rounded-full object-cover"
                             />
-                            <div class="min-w-0">
+                            <div>
                                 <p
                                     class="truncate text-sm font-medium text-popover-foreground"
                                 >
@@ -410,7 +388,7 @@
 
         <button
             on:click={() => fileInputElement.click()}
-            disabled={isUploading || isStreaming}
+            disabled={isDisabled}
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
             aria-label="Attach file"
         >
@@ -425,11 +403,11 @@
             on:paste={handlePaste}
             on:focus={() => (isFocused = true)}
             on:blur={() => (isFocused = false)}
-            disabled={isUploading || isStreaming}
+            disabled={isDisabled}
             rows="1"
             placeholder="Type a message..."
             class="w-full flex-1 resize-none self-center border-none bg-transparent py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
-        />
+        ></textarea>
 
         <button
             on:click={handleSubmit}
@@ -440,7 +418,7 @@
             {#if isUploading}
                 <div
                     class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
-                />
+                ></div>
             {:else}
                 <Send class="h-5 w-5" />
             {/if}

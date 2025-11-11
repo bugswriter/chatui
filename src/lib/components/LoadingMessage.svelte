@@ -23,13 +23,15 @@
     <!-- Bubble -->
     <div class="rounded-xl bg-muted px-4 py-3 text-foreground">
         <div class="flex items-center gap-1.5">
-            <span class="h-2 w-2 animate-bounce rounded-full bg-current/70" />
+            <!-- ✅ FIX: Explicitly close <span> tags -->
+            <span class="h-2 w-2 animate-bounce rounded-full bg-current/70"
+            ></span>
             <span
                 class="h-2 w-2 animate-bounce rounded-full bg-current/70 [animation-delay:0.2s]"
-            />
+            ></span>
             <span
                 class="h-2 w-2 animate-bounce rounded-full bg-current/70 [animation-delay:0.4s]"
-            />
+            ></span>
         </div>
     </div>
 </div>

@@ -1,9 +1,6 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
     import { onMount } from "svelte";
-    import { authStore } from "$lib/stores/authStore";
-    import { uiStore } from "$lib/stores/uiStore";
-    import { agentStore } from "$lib/stores/agentStore";
     import "../app.css";
 
     import Navbar from "$lib/components/Navbar.svelte";
@@ -11,109 +8,93 @@
     import LoginModal from "$lib/components/auth/LoginModal.svelte";
     import ForgotPassword from "$lib/components/auth/ForgotPassword.svelte";
     import RegisterModal from "$lib/components/auth/RegisterModal.svelte";
-
+    import { uiStore } from "$lib/stores/uiStore";
     import { page } from "$app/stores";
 
-    // --- Theme Management ---
-    let theme: "light" | "dark" = "light"; // Default before mount to prevent SSR errors
+    // ✅ THIS IS THE KEY CHANGE.
+    // The `data` prop is automatically passed from your +layout.ts file.
+    export let data;
 
+    // --- Theme Management (Unchanged) ---
+    let theme: "light" | "dark" = "light";
     onMount(() => {
-        // Initialize agent data globally when the app loads
-        agentStore.initialize();
-
         const savedTheme = localStorage.getItem("theme");
         const systemPrefersDark = window.matchMedia(
             "(prefers-color-scheme: dark)",
         ).matches;
-
-        // Determine and apply the initial theme
-        if (savedTheme === "dark" || (!savedTheme && systemPrefersDark)) {
-            theme = "dark";
-        } else {
-            theme = "light";
-        }
+        theme =
+            savedTheme === "dark" || (!savedTheme && systemPrefersDark)
+                ? "dark"
+                : "light";
         updateHtmlClass(theme);
 
-        // Listen for changes in the user's OS/browser theme preference
         const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
         const systemThemeListener = (e: MediaQueryListEvent) => {
-            // Only update if the user hasn't set an explicit preference in localStorage
             if (!localStorage.getItem("theme")) {
-                const newTheme = e.matches ? "dark" : "light";
-                theme = newTheme;
-                updateHtmlClass(newTheme);
+                theme = e.matches ? "dark" : "light";
+                updateHtmlClass(theme);
             }
         };
         mediaQuery.addEventListener("change", systemThemeListener);
-
-        // Cleanup listener when the component is destroyed
-        return () => {
+        return () =>
             mediaQuery.removeEventListener("change", systemThemeListener);
-        };
     });
 
     function updateHtmlClass(newTheme: "light" | "dark") {
-        if (newTheme === "dark") {
-            document.documentElement.classList.add("dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-        }
+        document.documentElement.classList.toggle("dark", newTheme === "dark");
     }
 
     function toggleTheme() {
-        const newTheme = theme === "dark" ? "light" : "dark";
-        theme = newTheme;
-        // When the user toggles, we set an explicit preference in localStorage
-        localStorage.setItem("theme", newTheme);
-        updateHtmlClass(newTheme);
+        theme = theme === "dark" ? "light" : "dark";
+        localStorage.setItem("theme", theme);
+        updateHtmlClass(theme);
     }
     // --- End Theme Management ---
 
-    $: isActivePage = $page.url.pathname === "/";
+    $: isChatPage =
+        $page.url.pathname === "/" || $page.url.pathname.startsWith("/c/");
 
     function handleLoginSuccess() {
         uiStore.closeModals();
     }
 </script>
 
-{#if $authStore.isLoading}
-    <div class="flex h-screen w-full items-center justify-center bg-background">
-        <div
-            class="h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"
-        />
-    </div>
-{:else}
-    <div class="flex h-screen flex-col bg-background text-foreground">
-        <Navbar currentTheme={theme} on:toggle={toggleTheme} />
+<!-- ✅ REMOVED: The #if $authStore.isLoading block is no longer needed.
+SvelteKit's router handles the loading state implicitly by waiting for the `load` function. -->
 
-        <main class="flex flex-1 flex-col overflow-y-auto">
-            <div class="flex-grow">
-                <slot />
-            </div>
-            {#if !isActivePage}
-                <Footer />
-            {/if}
-        </main>
-    </div>
-
-    <!-- Modals -->
-    <LoginModal
-        isOpen={$uiStore.isLoginModalOpen}
-        on:success={handleLoginSuccess}
-        on:switchToRegister={uiStore.openRegisterModal}
-        on:switchToForgotPassword={uiStore.openForgotPasswordModal}
-        on:close={uiStore.closeModals}
+<div class="flex h-screen flex-col bg-background text-foreground">
+    <!-- ✅ PASS DATA AS PROPS: We pass the auth state down to the Navbar. -->
+    <Navbar
+        isAuthenticated={data.isAuthenticated}
+        user={data.user}
+        currentTheme={theme}
+        on:toggle={toggleTheme}
     />
 
-    <RegisterModal
-        isOpen={$uiStore.isRegisterModalOpen}
-        on:switchToLogin={uiStore.openLoginModal}
-        on:close={uiStore.closeModals}
-    />
+    <main class="flex-1 flex flex-col overflow-y-auto">
+        <slot />
+    </main>
 
-    <ForgotPassword
-        isOpen={$uiStore.isForgotPasswordModalOpen}
-        on:switchToLogin={uiStore.openLoginModal}
-        on:close={uiStore.closeModals}
-    />
-{/if}
+    {#if !isChatPage}
+        <Footer />
+    {/if}
+</div>
+
+<!-- Modals (Unchanged) -->
+<LoginModal
+    isOpen={$uiStore.isLoginModalOpen}
+    on:success={handleLoginSuccess}
+    on:switchToRegister={uiStore.openRegisterModal}
+    on:switchToForgotPassword={uiStore.openForgotPasswordModal}
+    on:close={uiStore.closeModals}
+/>
+<RegisterModal
+    isOpen={$uiStore.isRegisterModalOpen}
+    on:switchToLogin={uiStore.openLoginModal}
+    on:close={uiStore.closeModals}
+/>
+<ForgotPassword
+    isOpen={$uiStore.isForgotPasswordModalOpen}
+    on:switchToLogin={uiStore.openLoginModal}
+    on:close={uiStore.closeModals}
+/>

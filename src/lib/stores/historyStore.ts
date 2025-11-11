@@ -1,21 +1,21 @@
 // src/lib/stores/historyStore.ts
 
 import { writable } from "svelte/store";
-import {
-  getSessionsList,
-  getSessionDetails,
-  type SessionPreview,
-  type SessionDetails,
-} from "$lib/services/history";
+import { getSessionsList } from "$lib/services/history";
 import { chatStore } from "./chatStore";
-import { agentStore } from "./agentStore";
-import type { Message, Agent } from "$lib/types";
+import { goto } from "$app/navigation";
 
 type HistoryState = {
-  sessions: SessionPreview[];
+  sessions: {
+    session_id: string;
+    created_at: string;
+    message_count: number;
+    first_message_preview: string;
+  }[];
   selectedSessionId: string | null;
   isLoading: boolean;
   error: string | null;
+  isViewingHistory: boolean;
 };
 
 function createHistoryStore() {
@@ -24,17 +24,20 @@ function createHistoryStore() {
     selectedSessionId: null,
     isLoading: false,
     error: null,
+    isViewingHistory: false,
   });
 
-  /**
-   * Loads the initial list of all sessions from the API.
-   */
   async function loadSessions() {
     update((s) => ({ ...s, isLoading: true, error: null }));
     try {
       const sessions = await getSessionsList();
-      // ✅ REMOVED the .slice(0, 5) limit.
-      set({ sessions, selectedSessionId: null, isLoading: false, error: null });
+      set({
+        sessions,
+        selectedSessionId: null,
+        isLoading: false,
+        error: null,
+        isViewingHistory: false,
+      });
     } catch (e) {
       const errorMsg =
         e instanceof Error ? e.message : "Failed to load history.";
@@ -42,87 +45,41 @@ function createHistoryStore() {
     }
   }
 
-  /**
-   * Selects a session, fetches its details, and loads it into the chat store.
-   */
-  async function selectSession(sessionId: string) {
-    let currentId;
-    subscribe((s) => (currentId = s.selectedSessionId))();
-    if (currentId === sessionId) return;
-
-    chatStore.setLoadingState();
-    update((s) => ({ ...s, selectedSessionId: sessionId, error: null }));
-
-    try {
-      const sessionDetails = await getSessionDetails(sessionId);
-
-      const transformedMessages: Message[] = sessionDetails.messages.map(
-        (apiMsg, index) => {
-          const agent = apiMsg.agent_name
-            ? agentStore.findByName(apiMsg.agent_name)
-            : null;
-          return {
-            id: `hist_${sessionId}_${index}`,
-            role: apiMsg.role,
-            content: apiMsg.content,
-            attachments: apiMsg.attachments || [],
-            timestamp: new Date(),
-            agent: agent || null,
-          };
-        },
-      );
-
-      const lastAgent = transformedMessages
-        .slice()
-        .reverse()
-        .find((m) => m.role === "assistant")?.agent;
-
-      const payload = {
-        messages: transformedMessages,
-        sessionId: sessionDetails.session_id,
-        activeAgent: lastAgent || null,
-      };
-
-      chatStore.loadFromHistory(payload);
-    } catch (e) {
-      const errorMsg =
-        e instanceof Error ? e.message : "Failed to load session.";
-      console.error(errorMsg);
-      chatStore.reset();
-      update((s) => ({ ...s, selectedSessionId: null, error: errorMsg }));
-    }
+  // When a user clicks a session in the history list, we navigate them to the read-only view.
+  function selectSession(sessionId: string) {
+    goto(`/c/${sessionId}`);
   }
 
-  /**
-   * Resets the chat store and UI to a new, empty chat session.
-   */
+  // When a user wants to start a new chat (from history or elsewhere).
   function createNewSession() {
+    // 1. Reset the chat store completely (clears messages, session ID, etc.).
     chatStore.reset();
-    update((s) => ({ ...s, selectedSessionId: null }));
+    // 2. Clear this store's own selection state.
+    clearSelection();
+    // 3. Navigate to the homepage, which is the dedicated page for starting new live chats.
+    goto("/");
   }
 
-  /**
-   * Refreshes the session list from the API.
-   */
   async function refreshSessionList() {
     try {
       const sessions = await getSessionsList();
-      // ✅ REMOVED the .slice(0, 5) limit.
       update((s) => ({ ...s, sessions }));
     } catch (e) {
       console.error("Failed to refresh session list:", e);
     }
   }
 
-  /**
-   * Clears all history data from the store, used on logout.
-   */
+  function clearSelection() {
+    update((s) => ({ ...s, selectedSessionId: null, isViewingHistory: false }));
+  }
+
   function reset() {
     set({
       sessions: [],
       selectedSessionId: null,
       isLoading: false,
       error: null,
+      isViewingHistory: false,
     });
   }
 
@@ -133,6 +90,14 @@ function createHistoryStore() {
     createNewSession,
     refreshSessionList,
     reset,
+    clearSelection,
+    // This is called by the page components to keep the UI in sync with the URL.
+    setSelectedSessionId: (id: string | null, isHistory: boolean) =>
+      update((s) => ({
+        ...s,
+        selectedSessionId: id,
+        isViewingHistory: isHistory,
+      })),
   };
 }
 

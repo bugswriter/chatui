@@ -104,7 +104,7 @@
         transition:fade={{ duration: 150 }}
         class="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
         aria-hidden="true"
-    />
+    ></div>
 
     <!-- Modal -->
     <div

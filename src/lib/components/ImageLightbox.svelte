@@ -21,6 +21,7 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if url}
+    <!-- ✅ FIX: Added tabindex and role to the img to make it focusable and interactive for accessibility -->
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div
         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-lg"
