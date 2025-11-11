@@ -12,7 +12,7 @@
     import json from "highlight.js/lib/languages/json";
 
     import type { Message, Agent, Attachment } from "$lib/types";
-    import { getPresignedUrl } from "$lib/services/files";
+    import { getPresignedUrl, downloadFile } from "$lib/services/files";
     import { chatStore } from "$lib/stores/chatStore";
     import { agentStore } from "$lib/stores/agentStore";
 
@@ -64,50 +64,52 @@
         isCurrentlyStreaming = store.activeStreams.has(message.id);
     });
 
-    // --- THE CORE FIX for Agent Popover ---
-    // This reactive block re-runs when the message content changes OR when the agentStore is initialized.
-    // This prevents the race condition where we try to find an agent before the store is ready.
-    $: if ($agentStore.isInitialized) {
-        (async () => {
-            const rawHtml = await marked.parse(message.content || "", {
-                breaks: true,
-            });
+    $: (async () => {
+        // Start with the raw markdown content.
+        let rawHtml = await marked.parse(message.content || "", {
+            breaks: true,
+        });
+
+        // Only attempt to replace agent tags if the store is ready.
+        if ($agentStore.isInitialized) {
             parsedContent = rawHtml.replace(
+                // The regex finds @ followed by one or more words
                 /@([\w'-]+(?: [\w'-]+)*)/g,
                 (match, agentName) => {
+                    // Find the agent in the store (case-insensitive)
                     const agent = agentStore.findByName(agentName.trim());
+                    // If found, wrap it in a span with data attributes. Otherwise, leave it as plain text.
                     return agent
                         ? `<span class="agent-tag" data-agent-name="${agent.name}">${match}</span>`
                         : match;
                 },
             );
-        })();
-    } else {
-        // Fallback before the agent store is ready: just parse markdown without agent tags.
-        (async () => {
-            parsedContent = await marked.parse(message.content || "", {
-                breaks: true,
-            });
-        })();
-    }
+        } else {
+            parsedContent = rawHtml;
+        }
+    })();
 
     // Fetch presigned URLs for attachments
     $: {
         if (message?.attachments) {
             for (const att of message.attachments) {
-                const key = att.file_id || att.s3_key;
-                if (
-                    key &&
-                    !att.url &&
-                    message.role === "assistant" &&
-                    !attachmentUrls[key]
-                ) {
+                // Use file_id as the primary key.
+                const key = att.file_id;
+
+                // If we have a key and we haven't already fetched a URL for it, fetch it now.
+                if (key && !attachmentUrls[key]) {
+                    // We don't await here. Let it fetch in the background.
+                    // The UI will update reactively when the URL arrives.
                     getPresignedUrl(key)
                         .then((url) => {
+                            // Svelte's reactivity handles the UI update automatically.
                             attachmentUrls = { ...attachmentUrls, [key]: url };
                         })
                         .catch((e) =>
-                            console.error(`Failed to fetch temp URL:`, e),
+                            console.error(
+                                `Failed to fetch temp URL for ${key}:`,
+                                e,
+                            ),
                         );
                 }
             }
@@ -138,7 +140,6 @@
         });
     });
 
-    // --- Event Handlers for Agent Popover ---
     function handleMouseOver(event: MouseEvent) {
         const target = event.target as HTMLElement;
         if (target.classList.contains("agent-tag")) {
@@ -157,37 +158,10 @@
 
     async function handleDownload(event: CustomEvent<Attachment>) {
         const attachment = event.detail;
-        const fileUrl =
-            attachment.url ||
-            attachmentUrls[attachment.s3_key || attachment.file_id || ""];
-
-        if (!fileUrl) {
-            console.error("No URL available for download.", attachment);
-            return;
-        }
-
         try {
-            const response = await fetch(fileUrl);
-            if (!response.ok) {
-                throw new Error(
-                    `Failed to fetch file: ${response.status} ${response.statusText}`,
-                );
-            }
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = attachment.filename || "download"; // Use the attachment's filename
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Clean up the object URL
-            URL.revokeObjectURL(url);
+            await downloadFile(attachment);
         } catch (e) {
-            console.error("Error during download:", e);
-            // Optionally, dispatch an error or show a notification to the user
+            console.error("Download failed from MessageBubble:", e);
         }
     }
 </script>

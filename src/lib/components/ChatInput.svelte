@@ -6,7 +6,7 @@
     import { authStore } from "$lib/stores/authStore";
     import { uiStore } from "$lib/stores/uiStore";
     import type { Agent, Attachment } from "$lib/types";
-    import { getUploadUrl } from "$lib/services/files";
+    import { getUploadUrl, confirmUpload } from "$lib/services/files";
     import { File as FileIcon, Paperclip, Reply, Send, X } from "lucide-svelte";
 
     export let isLoading: boolean = false;
@@ -109,7 +109,7 @@
                         );
                     }
 
-                    return {
+                    const attachmentData = {
                         file_id: stagedFile.uploadData.file_id,
                         s3_key: stagedFile.uploadData.s3_key,
                         filename: stagedFile.filename,
@@ -117,6 +117,8 @@
                             stagedFile.file.type || "application/octet-stream",
                         size: stagedFile.file.size,
                     };
+                    await confirmUpload(attachmentData);
+                    return attachmentData;
                 }),
             );
 
