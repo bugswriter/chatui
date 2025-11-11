@@ -7,6 +7,7 @@ import { API_CONFIG } from "$lib/services/api";
 import { chatStore } from "./chatStore";
 import { historyStore } from "./historyStore";
 import { invalidate } from "$app/navigation";
+import { goto } from "$app/navigation";
 
 type AuthState = {
   isAuthenticated: boolean;
@@ -72,13 +73,19 @@ function createAuthStore() {
   /**
    * Logs the user out, clears all related state, and notifies the app.
    */
+
+  // AFTER
   function logout() {
     authToken.set(null); // This clears the token from localStorage.
     chatStore.reset();
     historyStore.reset();
     set({ isAuthenticated: false, user: null, isLoading: false, error: null });
-    // Invalidate to ensure all parts of the app recognize the logged-out state.
+
+    // Invalidate is still good practice, but goto will handle the refresh.
     invalidate("app:auth");
+
+    // Redirect to the homepage after clearing all state.
+    goto("/"); // <-- ADD THIS LINE
   }
 
   /**
