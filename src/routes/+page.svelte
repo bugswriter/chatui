@@ -167,13 +167,7 @@
         </div>
     {/if}
 
-    <!--
-      ✅ GLASSY-FIX: The parent container for the input now has the backdrop-blur effect.
-      The ChatInput component itself will have a transparent background.
-    -->
-    <div
-        class="fixed bottom-0 left-0 right-0 bg-background/80 pb-4 backdrop-blur-lg"
-    >
+    <div class="fixed bottom-0 left-0 right-0 pb-4">
         <ChatInput
             isLoading={$chatStore.isLoading}
             {isStreaming}
