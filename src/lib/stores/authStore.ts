@@ -28,22 +28,16 @@ function createAuthStore() {
    * The single, authoritative function to determine auth state.
    * It's called on initial app load and after a login attempt.
    */
-  async function initialize() {
+  async function initialize(fetchFn: typeof fetch = fetch) {
     update((s) => ({ ...s, isLoading: true }));
     const token = get(authToken);
 
     if (token) {
       try {
-        // Attempt to validate the token by fetching user details.
-        const user = await getUserDetails();
+        const user = await getUserDetails(fetchFn); // ✅ Pass `fetch` down
         set({ isAuthenticated: true, user, isLoading: false, error: null });
-        // Once authenticated, load user-specific data.
-        historyStore.loadSessions();
+        historyStore.loadSessions(fetchFn); // ✅ Pass `fetch` down
       } catch (error) {
-        // ✅ THIS IS THE CRUCIAL FIX FOR STALE TOKENS.
-        // If getUserDetails fails, it means the token is invalid/expired.
-        // The service itself (getUserDetails) has already cleared the token from localStorage.
-        // We now formally update our app's state to be fully logged out.
         console.warn(
           "Initialization failed due to invalid token. Logging out.",
         );

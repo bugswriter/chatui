@@ -21,6 +21,11 @@
     let duration = "0:00";
     let hasInitialized = false;
 
+    const fakeWaveformHeights = [
+        0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.85,
+        0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15,
+    ];
+
     function forward(event: CustomEvent) {
         dispatch(event.type, event.detail);
     }
@@ -51,13 +56,13 @@
 
             wavesurfer = WaveSurfer.create({
                 container: waveContainer,
-                waveColor: `${waveColor}40`, // e.g., text-foreground/25
+                waveColor: `${waveColor}40`,
                 progressColor: progressColor,
                 url: audioUrl,
                 barWidth: 3,
                 barRadius: 3,
                 barGap: 2.5,
-                height: 48, // Taller waveform
+                height: 48,
                 cursorWidth: 0,
             });
 
@@ -66,7 +71,6 @@
                 isLoading = false;
                 wavesurfer!.play();
             });
-
             wavesurfer.on("play", () => (isPlaying = true));
             wavesurfer.on("pause", () => (isPlaying = false));
             wavesurfer.on("finish", () => {
@@ -78,7 +82,7 @@
                 (time) => (currentTime = formatTime(time)),
             );
         } catch (e) {
-            console.error("Audio player initialization failed:", e);
+            console.error("Audio player failed:", e);
             isLoading = false;
         }
     }
@@ -96,61 +100,65 @@
     });
 </script>
 
-<!-- ✅ REDESIGN: Wider, cleaner audio player with consistent ActionBar overlay -->
-<div class="w-full">
-    <!-- Filename is now a clean label above the player -->
-    <p class="mb-1.5 px-1 text-sm font-medium text-foreground">
-        {attachment.filename}
-    </p>
-    <div
-        class="group relative flex w-full items-center gap-3 overflow-hidden rounded-xl border border-border bg-muted p-2 shadow-sm"
+<div
+    class="group relative flex w-full items-center gap-3 overflow-hidden rounded-xl border border-border bg-muted/50 p-2 shadow-sm"
+>
+    <button
+        on:click={handleTogglePlay}
+        disabled={isLoading}
+        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-md transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed"
+        aria-label={isPlaying ? "Pause" : "Play"}
     >
-        <!-- Play/Pause Button -->
-        <button
-            on:click={handleTogglePlay}
-            disabled={isLoading}
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-md transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed"
-            aria-label={isPlaying ? "Pause" : "Play"}
-        >
-            {#if isLoading}
-                <Loader2 class="h-5 w-5 animate-spin text-primary" />
-            {:else if isPlaying}
-                <Pause class="h-5 w-5 text-foreground" />
-            {:else}
-                <Play class="ml-0.5 h-5 w-5 text-foreground" />
-            {/if}
-        </button>
+        {#if isLoading}
+            <Loader2 class="h-5 w-5 animate-spin text-primary" />
+        {:else if isPlaying}
+            <Pause class="h-5 w-5 text-foreground" />
+        {:else}
+            <Play class="ml-0.5 h-5 w-5 text-foreground" />
+        {/if}
+    </button>
 
-        <!-- Waveform and Timestamps -->
-        <div class="min-w-0 flex-1">
-            {#if hasInitialized}
+    <div class="flex min-w-0 flex-1 items-center gap-3">
+        {#if hasInitialized}
+            <!-- STATE: LOADED & PLAYING -->
+            <div class="flex min-h-[48px] w-full items-center gap-3">
                 <div bind:this={waveContainer} class="w-full" />
-                <div class="mt-1 flex items-center gap-2">
-                    <span class="font-mono text-xs text-muted-foreground"
-                        >{currentTime} / {duration}</span
-                    >
+                <div class="shrink-0 font-mono text-xs text-muted-foreground">
+                    <span>{currentTime} / {duration}</span>
                 </div>
-            {:else}
-                <!-- Placeholder to prevent height change -->
-                <div class="flex h-[48px] items-center">
-                    <span class="text-sm text-muted-foreground"
-                        >Click to play audio</span
-                    >
-                </div>
-            {/if}
-        </div>
+            </div>
+        {:else}
+            <!-- STATE: ELEGANT "FAKE WAVE" PLACEHOLDER -->
+            <div class="flex h-[48px] w-full items-center gap-[2.5px]">
+                {#each Array(45) as _, i}
+                    <!--
+                    ✅ THE VISIBILITY FIX:
+                    Using `bg-muted-foreground/30` provides much better contrast
+                    against the `bg-muted/50` background in both light and dark modes,
+                    making the fake wave clearly visible.
+                    -->
+                    <div
+                        class="w-[3px] rounded-full bg-muted-foreground/30"
+                        style="height: {fakeWaveformHeights[
+                            i % fakeWaveformHeights.length
+                        ] *
+                            80 +
+                            10}%"
+                    ></div>
+                {/each}
+            </div>
+        {/if}
+    </div>
 
-        <!-- Action Bar Overlay -->
-        <div
-            class="absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
-        >
-            <ActionBar
-                {attachment}
-                url={audioUrl}
-                {isReadOnly}
-                on:reattach={forward}
-                on:download={forward}
-            />
-        </div>
+    <div
+        class="absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
+    >
+        <ActionBar
+            {attachment}
+            url={audioUrl}
+            {isReadOnly}
+            on:reattach={forward}
+            on:download={forward}
+        />
     </div>
 </div>

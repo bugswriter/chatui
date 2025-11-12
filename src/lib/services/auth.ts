@@ -20,13 +20,15 @@ export interface UserDetails {
 
 // --- Service Functions ---
 
-export const getUserDetails = async (): Promise<UserDetails> => {
+export const getUserDetails = async (
+  fetchFn: typeof fetch = fetch,
+): Promise<UserDetails> => {
   const token = getAuthToken();
   if (!token) {
     throw new Error("No authentication token available.");
   }
 
-  const response = await fetch(`${API_CONFIG.bizAPIURL}/api/v1/users/me`, {
+  const response = await fetchFn(`${API_CONFIG.bizAPIURL}/api/v1/users/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

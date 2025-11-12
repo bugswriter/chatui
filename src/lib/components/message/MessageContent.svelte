@@ -154,11 +154,13 @@
 </div>
 
 <style>
-    /* This contains all the styles that were in MessageBubble before */
     .prose {
         color: inherit;
+        /* ✅ THE FIX: `max-w-none` overrides Tailwind's default narrow width for prose. */
+        /* This allows the bubble to properly fill the `max-w-[75%]` container from its parent. */
         max-width: none;
-        word-break: break-word;
+        /* `overflow-wrap` is a more robust way to handle word breaking. */
+        overflow-wrap: break-word;
     }
     .prose :global(p) {
         margin: 0 0 0.5rem 0;
@@ -225,15 +227,6 @@
     .prose :global(.agent-tag:hover) {
         background-color: hsl(var(--primary) / 0.25);
         border-color: hsl(var(--primary) / 0.3);
-    }
-    :global(.user-bubble) .prose :global(.agent-tag) {
-        background-color: hsl(var(--primary-foreground) / 0.15);
-        color: hsl(var(--primary-foreground));
-        border-color: hsl(var(--primary-foreground) / 0.3);
-    }
-    :global(.user-bubble) .prose :global(.agent-tag:hover) {
-        background-color: hsl(var(--primary-foreground) / 0.25);
-        border-color: hsl(var(--primary-foreground) / 0.4);
     }
     .animated-progress-wrapper {
         position: relative;

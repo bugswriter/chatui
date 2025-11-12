@@ -13,13 +13,14 @@
     export let userName: string = "You";
     export let userAvatarUrl: string | null | undefined = undefined;
     export let urls: Record<string, string> = {};
-    export let isLazyLoad: boolean = false; // ✅ Receive the prop
+    export let isLazyLoad: boolean = false;
 
     const dispatch = createEventDispatcher();
     $: isUser = message.role === "user";
     $: isSystem = message.role === "system";
     $: displayName = isUser ? userName : message.agent?.name || "Assistant";
     $: isCurrentlyStreaming = $chatStore.activeStreams.has(message.id);
+
     async function handleDownload(event: CustomEvent<Attachment>) {
         try {
             await downloadFile(event.detail);
@@ -27,6 +28,7 @@
             console.error("Download failed:", e);
         }
     }
+
     function forward(event: CustomEvent) {
         dispatch(event.type, event.detail);
     }
@@ -50,8 +52,15 @@
             {userName}
             agent={message.agent}
         />
+        <!--
+        ✅ THE DEFINITIVE FIX FOR WEIRD LINE BREAKS IS HERE.
+        - Replacing `min-w-0` with `flex-1` forces this container to
+          grow and fill all available horizontal space.
+        - This creates a wide, stable area for the message bubble,
+          preventing short text from wrapping unnecessarily.
+        -->
         <div
-            class="flex flex-col gap-2"
+            class="flex flex-1 flex-col gap-2"
             class:items-end={isUser}
             class:items-start={!isUser}
         >
@@ -59,14 +68,16 @@
                 {displayName}
             </p>
             {#if message.attachments && message.attachments.length > 0}
-                <MessageAttachments
-                    attachments={message.attachments}
-                    {urls}
-                    {isLazyLoad}
-                    on:reattach={forward}
-                    on:download={handleDownload}
-                    on:viewImage={forward}
-                />
+                <div class="w-[350px] max-w-full">
+                    <MessageAttachments
+                        attachments={message.attachments}
+                        {urls}
+                        {isLazyLoad}
+                        on:reattach={forward}
+                        on:download={handleDownload}
+                        on:viewImage={forward}
+                    />
+                </div>
             {/if}
             {#if message.content || isCurrentlyStreaming || message.progress}
                 <div class="max-w-[75%]" class:user-bubble={isUser}>

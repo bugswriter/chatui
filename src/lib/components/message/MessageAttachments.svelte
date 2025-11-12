@@ -10,7 +10,7 @@
 
     export let attachments: Attachment[] = [];
     export let urls: Record<string, string> = {};
-    export let isLazyLoad: boolean = false; // This prop indicates history mode
+    export let isLazyLoad: boolean = false;
 
     const dispatch = createEventDispatcher();
 
@@ -35,7 +35,7 @@
         (att) => !isImage(att) && !isVideo(att) && !isAudio(att),
     );
     $: visibleImages = imageAttachments.slice(0, 4);
-    $: isReadOnly = isLazyLoad; // ✅ Create a clearer variable name for passing down
+    $: isReadOnly = isLazyLoad;
 
     function forward(event: CustomEvent) {
         dispatch(event.type, event.detail);
@@ -46,10 +46,9 @@
     }
 </script>
 
-<!-- ✅ This logic for 5+ attachments remains, as requested. -->
 {#if attachments.length > 4}
     {#each attachments as attachment (attachment.file_id)}
-        <div class="w-full max-w-[480px]">
+        <div class="w-full">
             <GenericFilePreview
                 {attachment}
                 {isReadOnly}
@@ -59,9 +58,8 @@
         </div>
     {/each}
 {:else}
-    <!-- Image grid logic remains the same, but now passes `isReadOnly` -->
     {#if imageAttachments.length > 1}
-        <div class="w-full max-w-[480px]">
+        <div class="w-full">
             <div
                 class="relative overflow-hidden rounded-xl border border-border shadow-sm"
             >
@@ -95,7 +93,6 @@
                                 <div
                                     class="absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
                                 >
-                                    <!-- ✅ Pass `isReadOnly` to ActionBar -->
                                     <ActionBar
                                         {attachment}
                                         url={imageUrl}
@@ -117,7 +114,7 @@
     {:else if imageAttachments.length === 1}
         {@const attachment = imageAttachments[0]}
         {@const imageUrl = urls[attachment.file_id]}
-        <div class="w-full max-w-[480px]">
+        <div class="w-full">
             <div
                 class="group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/30"
                 role="button"
@@ -133,7 +130,6 @@
                     <div
                         class="absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
                     >
-                        <!-- ✅ Pass `isReadOnly` to ActionBar -->
                         <ActionBar
                             {attachment}
                             url={imageUrl}
@@ -151,9 +147,8 @@
         </div>
     {/if}
 
-    <!-- ✅ Pass `isReadOnly` to media and generic previews -->
     {#each mediaAttachments as attachment (attachment.file_id)}
-        <div class="w-full max-w-[480px]">
+        <div class="w-full">
             {#if isVideo(attachment)}
                 <VideoPreview
                     {attachment}
@@ -173,7 +168,7 @@
     {/each}
 
     {#each otherRichAttachments as attachment (attachment.file_id)}
-        <div class="w-full max-w-[480px]">
+        <div class="w-full">
             <GenericFilePreview
                 {attachment}
                 {isReadOnly}

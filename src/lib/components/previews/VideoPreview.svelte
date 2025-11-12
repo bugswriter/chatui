@@ -12,68 +12,65 @@
     const dispatch = createEventDispatcher();
 
     let videoUrl: string | null = null;
-    let isLoading = false;
-    let videoElement: HTMLVideoElement;
+    let isLoading = true; // Start in loading state
+    let hasBeenClicked = false;
 
     function forward(event: CustomEvent) {
         dispatch(event.type, event.detail);
     }
 
-    async function loadAndPlay() {
-        if (isLoading || videoUrl) return;
-        isLoading = true;
+    onMount(async () => {
         try {
+            // Fetch the video URL immediately so it's ready for playback
             videoUrl = await getPresignedUrl(attachment.file_id);
         } catch (e) {
-            console.error("Could not load video.", e);
+            console.error("Failed to fetch video URL:", e);
         } finally {
             isLoading = false;
         }
-    }
-
-    onMount(() => {
-        if (!isReadOnly) {
-            loadAndPlay();
-        }
     });
+
+    function handleClickToPlay() {
+        hasBeenClicked = true;
+    }
 </script>
 
+<!--
+The `aspect-video` container is the key to a stable layout.
+It reserves the correct space from the very beginning.
+`bg-background` makes it theme-aware (light/dark).
+-->
 <div
-    class="group relative w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm"
+    class="group relative w-full overflow-hidden rounded-xl border border-border bg-background shadow-sm aspect-video"
 >
-    <!-- ✅ FIX: The 'aspect-video' class is crucial. It reserves a 16:9 space
-         for the video, preventing any layout shift when the video loads. The
-         'w-full' ensures it fills the parent's width. -->
-    <div class="aspect-video w-full">
-        {#if videoUrl}
-            <video
-                bind:this={videoElement}
-                src={videoUrl}
-                controls
-                preload="metadata"
-                autoplay
-                class="block h-full w-full"
-            />
-        {:else}
-            <!-- This placeholder fills the same 16:9 space. -->
-            <button
-                on:click={loadAndPlay}
-                disabled={isLoading}
-                class="flex h-full w-full cursor-pointer items-center justify-center bg-muted/20 transition-colors hover:bg-muted/30"
-                aria-label="Play video"
-            >
+    {#if hasBeenClicked && videoUrl}
+        <!-- STATE 2: User has clicked, show the interactive video player -->
+        <video
+            src={videoUrl}
+            controls
+            preload="auto"
+            autoplay
+            class="block h-full w-full"
+        />
+    {:else}
+        <!-- STATE 1: Clean, theme-aware placeholder. NO thumbnail generation. -->
+        <button
+            on:click={handleClickToPlay}
+            disabled={isLoading || !videoUrl}
+            class="absolute inset-0 flex h-full w-full cursor-pointer items-center justify-center bg-muted/20"
+            aria-label="Play video"
+        >
+            {#if isLoading}
+                <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
+            {:else}
                 <div
-                    class="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-sm transition-transform group-hover:scale-110"
+                    class="flex h-16 w-16 items-center justify-center rounded-full bg-background/50 text-foreground shadow-lg backdrop-blur-sm transition-transform group-hover:scale-110"
                 >
-                    {#if isLoading}
-                        <Loader2 class="h-8 w-8 animate-spin" />
-                    {:else}
-                        <Play class="ml-1 h-8 w-8" />
-                    {/if}
+                    <Play class="ml-1 h-8 w-8" />
                 </div>
-            </button>
-        {/if}
-    </div>
+            {/if}
+        </button>
+    {/if}
 
     <div
         class="absolute top-2 right-2 z-20 opacity-0 transition-opacity group-hover:opacity-100"

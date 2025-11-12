@@ -11,6 +11,7 @@
     import type { Attachment } from "$lib/types";
     import { ChevronDown } from "lucide-svelte";
     import { fade } from "svelte/transition";
+    import { browser } from "$app/environment"; // Import browser check
 
     import ChatHistory from "$lib/components/ChatHistory.svelte";
     import ChatInput from "$lib/components/ChatInput.svelte";
@@ -19,10 +20,7 @@
     let chatContainer: HTMLDivElement;
     let messagesEnd: HTMLDivElement;
     let observer: MutationObserver;
-
     let shouldAutoScroll = true;
-
-    // --- REVERTED LOGIC: Simple state for a single fullscreen image ---
     let fullscreenImageUrl: string | null = null;
 
     function handleViewImage(event: CustomEvent<{ url: string }>) {
@@ -32,7 +30,6 @@
     function closeLightbox() {
         fullscreenImageUrl = null;
     }
-    // --- End of reverted logic ---
 
     onMount(() => {
         chatStore.reset();
@@ -77,13 +74,9 @@
             uiStore.openLoginModal();
             return;
         }
-
         shouldAutoScroll = true;
-
         const { message, attachments } = event.detail;
-
         chatStore.sendMessage(message, attachments);
-
         reattachedFiles = [];
 
         try {
@@ -93,9 +86,15 @@
             if (isFirstMessage) {
                 const newSession = await createNewSession();
                 sessionId = newSession.session_id;
-
                 chatStore.setSessionId(sessionId);
-                history.replaceState(history.state, "", `/c/${sessionId}`);
+
+                // ✅ THE DEFINITIVE FIX:
+                // We update the URL in the browser bar so the user can bookmark or refresh,
+                // but we DO NOT navigate. This keeps the user on the live chat page.
+                if (browser) {
+                    history.replaceState(history.state, "", `/c/${sessionId}`);
+                }
+                // We also update the history store's state so it knows which session is "active"
                 historyStore.setSelectedSessionId(sessionId, false);
             }
 

@@ -27,10 +27,10 @@ function createHistoryStore() {
     isViewingHistory: false,
   });
 
-  async function loadSessions() {
+  async function loadSessions(fetchFn: typeof fetch = fetch) {
     update((s) => ({ ...s, isLoading: true, error: null }));
     try {
-      const sessions = await getSessionsList();
+      const sessions = await getSessionsList(fetchFn);
       set({
         sessions,
         selectedSessionId: null,

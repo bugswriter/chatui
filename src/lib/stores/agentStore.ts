@@ -19,14 +19,14 @@ function createAgentStore() {
     error: null,
   });
 
-  async function initialize() {
+  async function initialize(fetchFn: typeof fetch = fetch) {
     // ✅ PREVENT re-fetching if already initialized
     let storeState: AgentStore | undefined;
     subscribe((s) => (storeState = s))();
     if (storeState?.isInitialized) return;
 
     try {
-      const agentsList = await getAgentsList();
+      const agentsList = await getAgentsList(fetchFn);
       agentsList.sort((a, b) => a.name.localeCompare(b.name));
 
       // ✅ NEW: Create a map for O(1) lookups by name (case-insensitive)
