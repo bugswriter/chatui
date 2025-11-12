@@ -91,7 +91,7 @@
     <!-- The footer is now a simple "Start New Chat" button -->
     <div class="fixed bottom-0 left-0 right-0">
         <div
-            class="w-full shrink-0 border-t bg-background/95 pb-4 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]"
+            class="w-full shrink-0 border-t bg-background/80 pb-4 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)] backdrop-blur-lg"
         >
             <div
                 class="container mx-auto flex flex-col items-center justify-center gap-y-3 px-4 py-4 text-center sm:px-6"

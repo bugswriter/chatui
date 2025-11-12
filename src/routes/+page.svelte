@@ -72,6 +72,9 @@
 
         chatStore.sendMessage(message, attachments);
 
+        // ✅ THIS IS THE FIX: Clear the reattached files after sending.
+        reattachedFiles = [];
+
         try {
             let sessionId = get(chatStore).sessionId;
             let isFirstMessage = !sessionId;

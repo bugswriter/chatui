@@ -1,3 +1,4 @@
+<!-- src/lib/components/previews/GenericFilePreview.svelte -->
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import {
@@ -34,12 +35,8 @@
 
     function handleDownload() {
         if (isDownloading) return;
-
         isDownloading = true;
         dispatch("download", attachment);
-
-        // Reset the state after a short delay to provide feedback,
-        // as we can't know when the browser download is complete.
         setTimeout(() => {
             isDownloading = false;
         }, 2000);

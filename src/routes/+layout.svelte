@@ -3,6 +3,8 @@
     import { onMount } from "svelte";
     import "../app.css";
 
+    import { browser } from "$app/environment"; // <-- ADD THIS IMPORT
+    import { goto } from "$app/navigation";
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
     import LoginModal from "$lib/components/auth/LoginModal.svelte";
@@ -14,6 +16,17 @@
     // ✅ THIS IS THE KEY CHANGE.
     // The `data` prop is automatically passed from your +layout.ts file.
     export let data;
+
+    let previousIsAuthenticated = data.isAuthenticated;
+    $: {
+        // This block runs whenever `data` changes.
+        // We only care about the transition from logged-in to logged-out.
+        if (browser && previousIsAuthenticated && !data.isAuthenticated) {
+            goto("/", { replaceState: true });
+        }
+        // Update the state for the next check.
+        previousIsAuthenticated = data.isAuthenticated;
+    }
 
     // --- Theme Management (Unchanged) ---
     let theme: "light" | "dark" = "light";

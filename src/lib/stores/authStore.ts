@@ -74,18 +74,13 @@ function createAuthStore() {
    * Logs the user out, clears all related state, and notifies the app.
    */
 
-  // AFTER
   function logout() {
     authToken.set(null); // This clears the token from localStorage.
     chatStore.reset();
     historyStore.reset();
     set({ isAuthenticated: false, user: null, isLoading: false, error: null });
-
-    // Invalidate is still good practice, but goto will handle the refresh.
+    // Invalidate tells SvelteKit to re-run all `load` functions that depend on this state.
     invalidate("app:auth");
-
-    // Redirect to the homepage after clearing all state.
-    goto("/"); // <-- ADD THIS LINE
   }
 
   /**

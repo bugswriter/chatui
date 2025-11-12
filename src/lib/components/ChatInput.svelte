@@ -341,18 +341,11 @@
                 <div
                     class="flex items-center gap-2 rounded-lg bg-muted p-2 text-sm"
                 >
+                    <!-- ✅ FIX: Always show a Reply icon for re-attached files for clarity -->
                     <div
                         class="flex h-8 w-8 items-center justify-center rounded-md bg-background"
                     >
-                        {#if file.url && file.content_type?.startsWith("image/")}
-                            <img
-                                src={file.url}
-                                alt={file.filename}
-                                class="h-full w-full rounded-md object-cover"
-                            />
-                        {:else}
-                            <Reply class="h-5 w-5 text-primary" />
-                        {/if}
+                        <Reply class="h-5 w-5 text-primary" />
                     </div>
                     <span class="max-w-[120px] truncate text-foreground"
                         >{file.filename}</span
