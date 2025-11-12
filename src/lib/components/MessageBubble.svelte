@@ -12,24 +12,20 @@
     export let message: Message;
     export let userName: string = "You";
     export let userAvatarUrl: string | null | undefined = undefined;
-    export let urls: Record<string, string> = {}; // Receives pre-fetched image URLs
+    export let urls: Record<string, string> = {};
 
     const dispatch = createEventDispatcher();
-
     $: isUser = message.role === "user";
     $: isSystem = message.role === "system";
     $: displayName = isUser ? userName : message.agent?.name || "Assistant";
     $: isCurrentlyStreaming = $chatStore.activeStreams.has(message.id);
-
     async function handleDownload(event: CustomEvent<Attachment>) {
         try {
             await downloadFile(event.detail);
         } catch (e) {
-            console.error("Download failed from MessageBubble:", e);
+            console.error("Download failed:", e);
         }
     }
-
-    // This ensures events bubble up correctly.
     function forward(event: CustomEvent) {
         dispatch(event.type, event.detail);
     }
@@ -53,14 +49,18 @@
             {userName}
             agent={message.agent}
         />
+
+        <!-- This is the key layout fix. Attachments and text are now siblings, not nested. -->
         <div
-            class="flex max-w-[75%] flex-col gap-2"
+            class="flex flex-col gap-2"
             class:items-end={isUser}
             class:items-start={!isUser}
         >
             <p class="px-1 text-xs font-medium text-muted-foreground">
                 {displayName}
             </p>
+
+            <!-- Attachments render first, taking up their own defined width -->
             {#if message.attachments && message.attachments.length > 0}
                 <MessageAttachments
                     attachments={message.attachments}
@@ -70,8 +70,10 @@
                     on:viewImage={forward}
                 />
             {/if}
+
+            <!-- The text bubble has its own width constraint, which no longer affects attachments -->
             {#if message.content || isCurrentlyStreaming || message.progress}
-                <div class:user-bubble={isUser}>
+                <div class="max-w-[75%]" class:user-bubble={isUser}>
                     <MessageContent {message} {isUser} {isCurrentlyStreaming} />
                 </div>
             {/if}

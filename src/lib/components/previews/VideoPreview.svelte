@@ -1,6 +1,6 @@
 <!-- src/lib/components/previews/VideoPreview.svelte -->
 <script lang="ts">
-    import { createEventDispatcher, tick } from "svelte";
+    import { createEventDispatcher, tick, onMount } from "svelte";
     import { Play, Film, AlertTriangle } from "lucide-svelte";
     import type { Attachment } from "$lib/types";
     import { getPresignedUrl } from "$lib/services/files";
@@ -8,6 +8,7 @@
     import ActionBar from "./ActionBar.svelte";
 
     export let attachment: Attachment;
+    export let isLazyLoad: boolean = false; // The new conditional loading prop
 
     const dispatch = createEventDispatcher();
 
@@ -24,17 +25,16 @@
         if (isLoadingUrl || videoUrl) return;
         isLoadingUrl = true;
         error = null;
-
         try {
             videoUrl = await getPresignedUrl(attachment.file_id);
-            // ✅ FIX: Wait for Svelte to create the <video> element in the DOM.
             await tick();
-            // ✅ FIX: Now that the element exists, we can reliably play it.
-            videoElement
-                ?.play()
-                .catch((e) =>
-                    console.warn("Autoplay was prevented by browser:", e),
-                );
+            if (videoElement) {
+                videoElement
+                    .play()
+                    .catch((e) =>
+                        console.warn("Autoplay was prevented by browser:", e),
+                    );
+            }
         } catch (e) {
             error = "Could not load video.";
             console.error("Failed to get video URL:", e);
@@ -42,11 +42,16 @@
             isLoadingUrl = false;
         }
     }
+
+    onMount(() => {
+        if (!isLazyLoad) {
+            loadAndPlay(); // Eager load for live chat
+        }
+    });
 </script>
 
-<!-- ✅ UI FIX: Set a consistent, larger width -->
 <div
-    class="group relative w-full max-w-md overflow-hidden rounded-xl border border-border bg-muted shadow-sm"
+    class="group relative w-full overflow-hidden rounded-xl border border-border bg-muted shadow-sm"
 >
     {#if videoUrl}
         <video
@@ -57,45 +62,32 @@
         />
     {:else}
         <div
-            class="relative flex aspect-video w-full cursor-pointer flex-col justify-between p-3"
+            class="relative flex aspect-video w-full cursor-pointer flex-col items-center justify-center p-4 text-center"
             on:click={loadAndPlay}
         >
-            <div
-                class="absolute inset-0 bg-gradient-to-br from-background/50 to-muted"
-            ></div>
-            <div class="absolute inset-0 bg-black/20"></div>
-            <div class="relative z-10 flex items-center gap-2 text-white">
-                <Film class="h-5 w-5 flex-shrink-0" />
-                <span class="truncate text-sm font-medium drop-shadow-md"
-                    >{attachment.filename}</span
-                >
-            </div>
-            <div class="relative z-10 flex items-center justify-center">
-                <button
-                    disabled={isLoadingUrl}
-                    class="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors group-hover:bg-black/70 disabled:opacity-50"
-                    aria-label="Play video"
-                >
-                    {#if isLoadingUrl}
-                        <div
-                            class="h-7 w-7 animate-spin rounded-full border-4 border-white/50 border-t-white"
-                        />
-                    {:else if error}
-                        <AlertTriangle class="h-7 w-7 text-danger" />
-                    {:else}
-                        <Play class="h-7 w-7 ml-1" />
-                    {/if}
-                </button>
-            </div>
-            <div class="relative z-10">
-                {#if error}
-                    <p
-                        class="text-center text-xs font-semibold text-danger drop-shadow-md"
-                    >
-                        {error}
-                    </p>
+            <button
+                disabled={isLoadingUrl}
+                class="flex h-16 w-16 items-center justify-center rounded-full bg-background/50 text-foreground shadow-lg backdrop-blur-sm transition-colors hover:bg-background/80"
+                aria-label="Play video"
+            >
+                {#if isLoadingUrl}
+                    <div
+                        class="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground/50 border-t-foreground"
+                    />
+                {:else if error}
+                    <AlertTriangle class="h-8 w-8 text-danger" />
                 {:else}
-                    <p class="text-xs font-mono text-white/80 drop-shadow-md">
+                    <Play class="h-8 w-8 ml-1" />
+                {/if}
+            </button>
+            <div class="absolute bottom-4 left-4 right-4 min-w-0">
+                <p class="truncate font-semibold text-foreground">
+                    {attachment.filename}
+                </p>
+                {#if error}
+                    <p class="text-xs text-danger">{error}</p>
+                {:else}
+                    <p class="text-xs text-muted-foreground">
                         {formatFileSize(attachment.size)}
                     </p>
                 {/if}
@@ -103,10 +95,9 @@
         </div>
     {/if}
 
-    <!-- ✅ UX FIX: Action bar only appears when media is loaded and playable -->
     {#if videoUrl}
         <div
-            class="absolute inset-0 z-20 flex items-end justify-end bg-black/40 p-2 opacity-0 transition-opacity group-hover:opacity-100"
+            class="absolute top-2 right-2 z-20 opacity-0 transition-opacity group-hover:opacity-100"
         >
             <ActionBar
                 {attachment}

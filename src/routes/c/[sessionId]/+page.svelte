@@ -84,6 +84,7 @@
             userName={$authStore.user?.name || "You"}
             userAvatarUrl={$authStore.user?.avatar}
             on:viewImage={handleViewImage}
+            isLazyLoad={true}
         />
         <div bind:this={messagesEnd}></div>
     </div>

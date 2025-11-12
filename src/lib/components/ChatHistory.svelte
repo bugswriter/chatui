@@ -8,6 +8,7 @@
 
     export let messages: Message[] = [];
     export let isLoading: boolean = false;
+    export let isLazyLoad: boolean = false;
     export let userName: string = "You";
     export let userAvatarUrl: string | null | undefined = undefined;
 
@@ -83,6 +84,7 @@
             <div class="flex flex-col gap-y-6">
                 {#each messages as message (message.clientId || message.id)}
                     <MessageBubble
+                        {isLazyLoad}
                         {message}
                         {userName}
                         {userAvatarUrl}

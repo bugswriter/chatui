@@ -24,10 +24,13 @@
     }
 </script>
 
-<div class="flex items-center justify-end gap-x-2">
+<!-- A floating "pill" container with a shadow to give it depth -->
+<div
+    class="flex items-center justify-end gap-x-1 rounded-full bg-black/60 p-1 text-white shadow-lg backdrop-blur-md"
+>
     <button
         on:click|stopPropagation={handleReattach}
-        class="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white transition-colors ease-in-out hover:bg-black/70 active:scale-95"
+        class="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/20 active:scale-95"
         aria-label="Re-attach file"
     >
         <Reply class="h-4 w-4" />
@@ -35,7 +38,7 @@
     <button
         on:click|stopPropagation={handleDownload}
         disabled={isDownloading}
-        class="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white transition-colors ease-in-out hover:bg-black/70 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+        class="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
         aria-label="Download file"
     >
         {#if isDownloading}
