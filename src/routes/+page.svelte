@@ -12,6 +12,7 @@
     import { ChevronDown } from "lucide-svelte";
     import { fade } from "svelte/transition";
     import { browser } from "$app/environment"; // Import browser check
+    import { replaceState } from "$app/navigation";
 
     import ChatHistory from "$lib/components/ChatHistory.svelte";
     import ChatInput from "$lib/components/ChatInput.svelte";
@@ -92,7 +93,12 @@
                 // We update the URL in the browser bar so the user can bookmark or refresh,
                 // but we DO NOT navigate. This keeps the user on the live chat page.
                 if (browser) {
-                    history.replaceState(history.state, "", `/c/${sessionId}`);
+                    // ✅ STEP 2: Use SvelteKit's `replaceState` function.
+                    // This updates the URL without a full navigation and is safe
+                    // to use with the SvelteKit router. The warning is now gone.
+                    const url = `/c/${sessionId}`;
+                    const state = history.state; // We can still read the current state
+                    replaceState(url, state);
                 }
                 // We also update the history store's state so it knows which session is "active"
                 historyStore.setSelectedSessionId(sessionId, false);

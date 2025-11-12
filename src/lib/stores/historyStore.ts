@@ -30,6 +30,7 @@ function createHistoryStore() {
   async function loadSessions(fetchFn: typeof fetch = fetch) {
     update((s) => ({ ...s, isLoading: true, error: null }));
     try {
+      // ✅ Pass the fetchFn down to the service
       const sessions = await getSessionsList(fetchFn);
       set({
         sessions,
@@ -45,24 +46,20 @@ function createHistoryStore() {
     }
   }
 
-  // When a user clicks a session in the history list, we navigate them to the read-only view.
   function selectSession(sessionId: string) {
     goto(`/c/${sessionId}`);
   }
 
-  // When a user wants to start a new chat (from history or elsewhere).
   function createNewSession() {
-    // 1. Reset the chat store completely (clears messages, session ID, etc.).
     chatStore.reset();
-    // 2. Clear this store's own selection state.
     clearSelection();
-    // 3. Navigate to the homepage, which is the dedicated page for starting new live chats.
     goto("/");
   }
 
-  async function refreshSessionList() {
+  async function refreshSessionList(fetchFn: typeof fetch = fetch) {
     try {
-      const sessions = await getSessionsList();
+      // ✅ Pass the fetchFn down to the service
+      const sessions = await getSessionsList(fetchFn);
       update((s) => ({ ...s, sessions }));
     } catch (e) {
       console.error("Failed to refresh session list:", e);
@@ -91,7 +88,6 @@ function createHistoryStore() {
     refreshSessionList,
     reset,
     clearSelection,
-    // This is called by the page components to keep the UI in sync with the URL.
     setSelectedSessionId: (id: string | null, isHistory: boolean) =>
       update((s) => ({
         ...s,

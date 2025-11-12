@@ -28,13 +28,17 @@ export interface SessionDetails {
 
 /**
  * Fetches the list of past chat sessions for the authenticated user.
+ * @param fetchFn The SvelteKit fetch function, passed from the load function.
  * @returns A promise that resolves to an array of session previews.
  */
-export const getSessionsList = async (): Promise<SessionPreview[]> => {
+export const getSessionsList = async (
+  fetchFn: typeof fetch = fetch, // ✅ Accept the SvelteKit fetch function
+): Promise<SessionPreview[]> => {
   const token = getAuthToken();
   if (!token) throw new Error("Authentication token not found.");
 
-  const response = await fetch(
+  // ✅ Use the provided fetchFn for the API call
+  const response = await fetchFn(
     `${API_CONFIG.sysAPIURL}/api/v1/history/sessions`,
     {
       method: "GET",
@@ -56,15 +60,18 @@ export const getSessionsList = async (): Promise<SessionPreview[]> => {
 /**
  * Fetches the full details and message history for a specific session.
  * @param sessionId The ID of the session to fetch.
+ * @param fetchFn The SvelteKit fetch function, passed from the load function.
  * @returns A promise that resolves to the detailed session data.
  */
 export const getSessionDetails = async (
   sessionId: string,
+  fetchFn: typeof fetch = fetch, // ✅ Accept the SvelteKit fetch function
 ): Promise<SessionDetails> => {
   const token = getAuthToken();
   if (!token) throw new Error("Authentication token not found.");
 
-  const response = await fetch(
+  // ✅ Use the provided fetchFn for the API call
+  const response = await fetchFn(
     `${API_CONFIG.sysAPIURL}/api/v1/history/sessions/${sessionId}`,
     {
       method: "GET",
