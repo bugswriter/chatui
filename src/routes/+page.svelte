@@ -22,6 +22,18 @@
 
     let shouldAutoScroll = true;
 
+    // --- REVERTED LOGIC: Simple state for a single fullscreen image ---
+    let fullscreenImageUrl: string | null = null;
+
+    function handleViewImage(event: CustomEvent<{ url: string }>) {
+        fullscreenImageUrl = event.detail.url;
+    }
+
+    function closeLightbox() {
+        fullscreenImageUrl = null;
+    }
+    // --- End of reverted logic ---
+
     onMount(() => {
         chatStore.reset();
         historyStore.clearSelection();
@@ -72,7 +84,6 @@
 
         chatStore.sendMessage(message, attachments);
 
-        // ✅ THIS IS THE FIX: Clear the reattached files after sending.
         reattachedFiles = [];
 
         try {
@@ -108,8 +119,6 @@
         }
     }
 
-    // --- Unchanged Helper Functions ---
-    let fullscreenImageUrl: string | null = null;
     let reattachedFiles: Attachment[] = [];
     function handleReattach(event: CustomEvent<Attachment>) {
         if (
@@ -123,24 +132,16 @@
             (_, i) => i !== event.detail.index,
         );
     }
-    function handleViewImage(event: CustomEvent<{ url: string }>) {
-        fullscreenImageUrl = event.detail.url;
-    }
+
     $: isStreaming = $chatStore.activeStreams.size > 0;
 </script>
 
 <div class="relative h-full w-full bg-background text-foreground">
-    <!--
-      ✅ SCROLL-FIX: The scroll container itself has no bottom padding.
-      This ensures its `scrollHeight` is calculated correctly.
-    -->
     <div
         class="h-full overflow-y-auto pt-16"
         bind:this={chatContainer}
         on:scroll={handleScroll}
     >
-        <!-- ✅ SCROLL-FIX: An inner div now provides the bottom padding (safe area)
-             for the fixed input, without interfering with scroll calculations. -->
         <div class="pb-32">
             <ChatHistory
                 messages={$chatStore.messages}
@@ -181,7 +182,4 @@
     </div>
 </div>
 
-<ImageLightbox
-    url={fullscreenImageUrl}
-    on:close={() => (fullscreenImageUrl = null)}
-/>
+<ImageLightbox url={fullscreenImageUrl} on:close={closeLightbox} />

@@ -10,28 +10,30 @@
     import { authStore } from "$lib/stores/authStore";
     import { MessageSquarePlus } from "lucide-svelte";
 
-    // This component is now for READ-ONLY history viewing.
     import ChatHistory from "$lib/components/ChatHistory.svelte";
     import ImageLightbox from "$lib/components/ImageLightbox.svelte";
 
-    let fullscreenImageUrl: string | null = null;
     let chatContainer: HTMLDivElement;
     let messagesEnd: HTMLDivElement;
-
     $: sessionId = $page.params.sessionId;
 
-    // This reactive block runs when the component loads or the sessionId in the URL changes.
+    // ✅ THIS IS THE FIX: The missing variable declaration is now added.
+    let fullscreenImageUrl: string | null = null;
+
+    function handleViewImage(event: CustomEvent<{ url: string }>) {
+        fullscreenImageUrl = event.detail.url;
+    }
+
+    function closeLightbox() {
+        fullscreenImageUrl = null;
+    }
+
     $: (async (id) => {
         if (!id) return;
-
-        // Mark that we are in a history-viewing state.
         historyStore.setSelectedSessionId(id, true);
         chatStore.setLoadingState();
-
         try {
-            // Fetch the historical details for this session.
             const sessionDetails = await getSessionDetails(id);
-
             const transformedMessages: Message[] = sessionDetails.messages.map(
                 (apiMsg, index) => {
                     const agent = apiMsg.agent_name
@@ -39,7 +41,7 @@
                         : null;
                     return {
                         id: `hist_${id}_${index}`,
-                        clientId: `hist_${id}_${index}`, // Use stable ID for keying
+                        clientId: `hist_${id}_${index}`,
                         role: apiMsg.role,
                         content: apiMsg.content,
                         attachments: apiMsg.attachments || [],
@@ -48,13 +50,10 @@
                     };
                 },
             );
-
             const lastAgent = transformedMessages
                 .slice()
                 .reverse()
                 .find((m) => m.role === "assistant")?.agent;
-
-            // Load the fetched history into the chat store for display.
             chatStore.loadFromHistory({
                 messages: transformedMessages,
                 sessionId: sessionDetails.session_id,
@@ -69,13 +68,8 @@
             chatStore.handleStreamFailure(error);
         }
     })(sessionId);
-
-    function handleViewImage(event: CustomEvent<{ url: string }>) {
-        fullscreenImageUrl = event.detail.url;
-    }
 </script>
 
-<!-- This is now a self-contained, read-only view -->
 <div class="relative h-full w-full bg-background text-foreground">
     <div class="h-full overflow-y-auto pt-16 pb-32" bind:this={chatContainer}>
         <ChatHistory
@@ -89,7 +83,6 @@
         <div bind:this={messagesEnd}></div>
     </div>
 
-    <!-- The footer is now a simple "Start New Chat" button -->
     <div class="fixed bottom-0 left-0 right-0">
         <div
             class="w-full shrink-0 border-t bg-background/80 pb-4 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)] backdrop-blur-lg"
@@ -112,7 +105,4 @@
     </div>
 </div>
 
-<ImageLightbox
-    url={fullscreenImageUrl}
-    on:close={() => (fullscreenImageUrl = null)}
-/>
+<ImageLightbox url={fullscreenImageUrl} on:close={closeLightbox} />

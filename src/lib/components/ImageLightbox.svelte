@@ -1,3 +1,4 @@
+<!-- src/lib/components/ImageLightbox.svelte -->
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { fade } from "svelte/transition";
@@ -21,7 +22,6 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if url}
-    <!-- ✅ FIX: Added tabindex and role to the img to make it focusable and interactive for accessibility -->
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div
         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-lg"
@@ -38,7 +38,7 @@
         />
 
         <button
-            class="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white/70 transition-colors hover:text-white"
+            class="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/80 transition-colors hover:bg-black/70 hover:text-white"
             on:click={closeModal}
             aria-label="Close image view"
         >

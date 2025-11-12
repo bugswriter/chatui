@@ -13,6 +13,7 @@
     export let userName: string = "You";
     export let userAvatarUrl: string | null | undefined = undefined;
     export let urls: Record<string, string> = {};
+    export let isLazyLoad: boolean = false; // ✅ Receive the prop
 
     const dispatch = createEventDispatcher();
     $: isUser = message.role === "user";
@@ -49,8 +50,6 @@
             {userName}
             agent={message.agent}
         />
-
-        <!-- This is the key layout fix. Attachments and text are now siblings, not nested. -->
         <div
             class="flex flex-col gap-2"
             class:items-end={isUser}
@@ -59,19 +58,16 @@
             <p class="px-1 text-xs font-medium text-muted-foreground">
                 {displayName}
             </p>
-
-            <!-- Attachments render first, taking up their own defined width -->
             {#if message.attachments && message.attachments.length > 0}
                 <MessageAttachments
                     attachments={message.attachments}
                     {urls}
+                    {isLazyLoad}
                     on:reattach={forward}
                     on:download={handleDownload}
                     on:viewImage={forward}
                 />
             {/if}
-
-            <!-- The text bubble has its own width constraint, which no longer affects attachments -->
             {#if message.content || isCurrentlyStreaming || message.progress}
                 <div class="max-w-[75%]" class:user-bubble={isUser}>
                     <MessageContent {message} {isUser} {isCurrentlyStreaming} />

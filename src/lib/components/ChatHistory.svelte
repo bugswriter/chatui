@@ -8,9 +8,9 @@
 
     export let messages: Message[] = [];
     export let isLoading: boolean = false;
-    export let isLazyLoad: boolean = false;
     export let userName: string = "You";
     export let userAvatarUrl: string | null | undefined = undefined;
+    export let isLazyLoad: boolean = false; // ✅ Receive the prop
 
     const dispatch = createEventDispatcher();
     let imageUrls: Record<string, string> = {};
@@ -20,10 +20,8 @@
             imageUrls = {};
             return;
         }
-
         const promises: Promise<void>[] = [];
         const newUrls: Record<string, string> = {};
-
         for (const msg of currentMessages) {
             if (msg.attachments) {
                 for (const att of msg.attachments) {
@@ -46,14 +44,12 @@
                 }
             }
         }
-
         if (promises.length > 0) {
             await Promise.all(promises);
             imageUrls = { ...imageUrls, ...newUrls };
         }
     })(messages);
 
-    // This ensures events bubble up correctly to the parent page.
     function forward(event: CustomEvent) {
         dispatch(event.type, event.detail);
     }
@@ -84,11 +80,11 @@
             <div class="flex flex-col gap-y-6">
                 {#each messages as message (message.clientId || message.id)}
                     <MessageBubble
-                        {isLazyLoad}
                         {message}
                         {userName}
                         {userAvatarUrl}
                         urls={imageUrls}
+                        {isLazyLoad}
                         on:reattach={forward}
                         on:viewImage={forward}
                     />

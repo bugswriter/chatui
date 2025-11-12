@@ -1,20 +1,18 @@
 <!-- src/lib/components/previews/VideoPreview.svelte -->
 <script lang="ts">
-    import { createEventDispatcher, tick, onMount } from "svelte";
-    import { Play, Film, AlertTriangle } from "lucide-svelte";
+    import { createEventDispatcher, onMount } from "svelte";
+    import { Play, Loader2 } from "lucide-svelte";
     import type { Attachment } from "$lib/types";
     import { getPresignedUrl } from "$lib/services/files";
-    import { formatFileSize } from "$lib/utils";
     import ActionBar from "./ActionBar.svelte";
 
     export let attachment: Attachment;
-    export let isLazyLoad: boolean = false; // The new conditional loading prop
+    export let isReadOnly: boolean = false;
 
     const dispatch = createEventDispatcher();
 
     let videoUrl: string | null = null;
-    let isLoadingUrl = false;
-    let error: string | null = null;
+    let isLoading = false;
     let videoElement: HTMLVideoElement;
 
     function forward(event: CustomEvent) {
@@ -22,89 +20,70 @@
     }
 
     async function loadAndPlay() {
-        if (isLoadingUrl || videoUrl) return;
-        isLoadingUrl = true;
-        error = null;
+        if (isLoading || videoUrl) return;
+        isLoading = true;
         try {
             videoUrl = await getPresignedUrl(attachment.file_id);
-            await tick();
-            if (videoElement) {
-                videoElement
-                    .play()
-                    .catch((e) =>
-                        console.warn("Autoplay was prevented by browser:", e),
-                    );
-            }
         } catch (e) {
-            error = "Could not load video.";
-            console.error("Failed to get video URL:", e);
+            console.error("Could not load video.", e);
         } finally {
-            isLoadingUrl = false;
+            isLoading = false;
         }
     }
 
     onMount(() => {
-        if (!isLazyLoad) {
-            loadAndPlay(); // Eager load for live chat
+        if (!isReadOnly) {
+            loadAndPlay();
         }
     });
 </script>
 
 <div
-    class="group relative w-full overflow-hidden rounded-xl border border-border bg-muted shadow-sm"
+    class="group relative w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm"
 >
-    {#if videoUrl}
-        <video
-            bind:this={videoElement}
-            src={videoUrl}
-            controls
-            class="block w-full"
-        />
-    {:else}
-        <div
-            class="relative flex aspect-video w-full cursor-pointer flex-col items-center justify-center p-4 text-center"
-            on:click={loadAndPlay}
-        >
+    <!-- ✅ FIX: The 'aspect-video' class is crucial. It reserves a 16:9 space
+         for the video, preventing any layout shift when the video loads. The
+         'w-full' ensures it fills the parent's width. -->
+    <div class="aspect-video w-full">
+        {#if videoUrl}
+            <video
+                bind:this={videoElement}
+                src={videoUrl}
+                controls
+                preload="metadata"
+                autoplay
+                class="block h-full w-full"
+            />
+        {:else}
+            <!-- This placeholder fills the same 16:9 space. -->
             <button
-                disabled={isLoadingUrl}
-                class="flex h-16 w-16 items-center justify-center rounded-full bg-background/50 text-foreground shadow-lg backdrop-blur-sm transition-colors hover:bg-background/80"
+                on:click={loadAndPlay}
+                disabled={isLoading}
+                class="flex h-full w-full cursor-pointer items-center justify-center bg-muted/20 transition-colors hover:bg-muted/30"
                 aria-label="Play video"
             >
-                {#if isLoadingUrl}
-                    <div
-                        class="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground/50 border-t-foreground"
-                    />
-                {:else if error}
-                    <AlertTriangle class="h-8 w-8 text-danger" />
-                {:else}
-                    <Play class="h-8 w-8 ml-1" />
-                {/if}
+                <div
+                    class="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-sm transition-transform group-hover:scale-110"
+                >
+                    {#if isLoading}
+                        <Loader2 class="h-8 w-8 animate-spin" />
+                    {:else}
+                        <Play class="ml-1 h-8 w-8" />
+                    {/if}
+                </div>
             </button>
-            <div class="absolute bottom-4 left-4 right-4 min-w-0">
-                <p class="truncate font-semibold text-foreground">
-                    {attachment.filename}
-                </p>
-                {#if error}
-                    <p class="text-xs text-danger">{error}</p>
-                {:else}
-                    <p class="text-xs text-muted-foreground">
-                        {formatFileSize(attachment.size)}
-                    </p>
-                {/if}
-            </div>
-        </div>
-    {/if}
+        {/if}
+    </div>
 
-    {#if videoUrl}
-        <div
-            class="absolute top-2 right-2 z-20 opacity-0 transition-opacity group-hover:opacity-100"
-        >
-            <ActionBar
-                {attachment}
-                url={videoUrl}
-                on:reattach={forward}
-                on:download={forward}
-            />
-        </div>
-    {/if}
+    <div
+        class="absolute top-2 right-2 z-20 opacity-0 transition-opacity group-hover:opacity-100"
+    >
+        <ActionBar
+            {attachment}
+            url={videoUrl}
+            {isReadOnly}
+            on:reattach={forward}
+            on:download={forward}
+        />
+    </div>
 </div>
