@@ -1,3 +1,3 @@
 # ChatUI
 
-frontend for bugswriter.ai
+frontend for bugswriter.ai :)
