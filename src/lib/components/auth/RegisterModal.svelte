@@ -1,5 +1,7 @@
 <!-- src/lib/components/auth/RegisterModal.svelte -->
 <script lang="ts">
+    import { API_CONFIG } from "$lib/services/api";
+
     import { createEventDispatcher } from "svelte";
     import { fade, scale } from "svelte/transition";
     import { authStore } from "$lib/stores/authStore";
