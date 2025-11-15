@@ -14,7 +14,7 @@
 
     // This should be an environment variable in a real application
     const FORGOT_PASSWORD_API =
-        "https://api.bugswriter.ai/api/v1/auth/password/forgot";
+        `${API_CONFIG.bizAPIURL}/api/v1/auth/password/forgot`;
 
     function closeModal() {
         if (isLoading) return;

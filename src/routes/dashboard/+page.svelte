@@ -64,7 +64,7 @@
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/users/me/transactions",
+                `${API_CONFIG.bizAPIURL}/api/v1/users/me/transactions`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -95,7 +95,7 @@
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/payments/customer-portal",
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/customer-portal`,
                 {
                     method: "POST",
                     headers: {
@@ -140,7 +140,7 @@
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/payments/subscriptions/cancel",
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/subscriptions/cancel`,
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },
@@ -171,7 +171,7 @@
             if (!token) throw new Error("Authentication token not found.");
 
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/users/reactivate-subscription",
+                `${API_CONFIG.bizAPIURL}/api/v1/users/reactivate-subscription`,
                 {
                     method: "POST",
                     headers: { Authorization: `Bearer ${token}` },

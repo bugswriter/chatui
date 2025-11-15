@@ -60,7 +60,7 @@
         try {
             // This URL should be an environment variable in a real app
             const response = await fetch(
-                "https://api.bugswriter.ai/api/v1/auth/oauth2/google",
+                `${API_CONFIG.bizAPIURL}/api/v1/auth/oauth2/google`,
             );
             if (!response.ok) {
                 throw new Error("Failed to retrieve Google sign-in link.");

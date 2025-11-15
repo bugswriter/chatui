@@ -37,7 +37,7 @@
         try {
             // In a real app, this URL should come from an environment variable
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/payments/products",
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/products`,
             );
             if (!res.ok) throw new Error("Unable to load pricing plans.");
             const data = await res.json();
@@ -67,7 +67,7 @@
             const cancel_url = window.location.href;
             // This URL should be an environment variable
             const res = await fetch(
-                "https://api.bugswriter.ai/api/v1/payments/checkout-session",
+                `${API_CONFIG.bizAPIURL}/api/v1/payments/checkout-session`,
                 {
                     method: "POST",
                     headers: {

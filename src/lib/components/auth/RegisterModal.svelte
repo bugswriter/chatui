@@ -58,7 +58,7 @@
         googleUrlError = null;
         try {
             const response = await fetch(
-                "https://api.bugswriter.ai/api/v1/auth/oauth2/google",
+                `${API_CONFIG.bizAPIURL}/api/v1/auth/oauth2/google`,
             );
             if (!response.ok) {
                 throw new Error("Failed to retrieve Google sign-up link.");

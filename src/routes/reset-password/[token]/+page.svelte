@@ -16,7 +16,7 @@
 
     // This should be an environment variable in a real application
     const RESET_CONFIRM_API =
-        "https://api.bugswriter.ai/api/v1/auth/password/reset-confirm";
+        `${API_CONFIG.bizAPIURL}/api/v1/auth/password/reset-confirm`;
 
     async function handleResetPassword() {
         if (!token) {
