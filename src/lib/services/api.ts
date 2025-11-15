@@ -2,12 +2,15 @@
 import { get } from "svelte/store";
 import { authToken } from "$lib/stores/tokenStore";
 
+// import { BIZAPIURL SYSAPIURL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
+
 export const API_CONFIG = {
   // The FastAPI/Jinja app is the primary entry point for business logic,
   // including authentication, payments, and user management.
-  bizAPIURL: "https://api.bugswriter.ai",
+  bizAPIURL: env.PUBLIC_BIZAPIURL,
   // The FastAPI API for core chat services.
-  sysAPIURL: "https://sys.bugswriter.ai",
+  sysAPIURL: env.PUBLIC_SYSAPIURL
 };
 
 /**
